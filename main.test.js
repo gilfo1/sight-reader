@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { regenerateAndRender, initMIDI, musicData, currentBeatIndex, activeMidiNotes, suppressedNotes, computeMeasureCounts, resetGameState, updateNoteSelectors, setMusicData, renderStaff, setCurrentBeatIndex } from './main.js';
+import { regenerateAndRender, initMIDI, musicData, currentBeatIndex, activeMidiNotes, suppressedNotes, computeMeasureCounts, resetGameState, updateNoteSelectors, setMusicData, renderStaff, setCurrentBeatIndex, getNoteValue, isNoteInKey, initKeySignatures } from './main.js';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi
@@ -853,6 +853,124 @@ describe('Music Staff Project', () => {
       const svgContent = document.getElementById('output').innerHTML;
       const accsCount = (svgContent.match(/[\ue262\ue261\ue260]/g) || []).length;
       expect(accsCount).toBe(2);
+    });
+  });
+
+  describe('Key Signatures', () => {
+
+    beforeEach(() => {
+      resetGameState();
+      document.body.innerHTML = `
+        <div id="controls">
+          <select id="measures-per-line"><option value="1">1</option></select>
+          <select id="lines"><option value="1">1</option></select>
+          <select id="staff-type"><option value="treble">treble</option></select>
+          <select id="notes-per-beat"><option value="1">1</option></select>
+          <select id="min-note"><option value="C3">C3</option></select>
+          <select id="max-note"><option value="C6">C6</option></select>
+          <div id="key-signatures"></div>
+        </div>
+        <div id="output"></div>
+      `;
+      initKeySignatures();
+    });
+
+    it('should create checkboxes for all 15 key signatures plus Chromatic', () => {
+      const container = document.getElementById('key-signatures');
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      // 15 keys (C, G, D, A, E, B, F#, C#, F, Bb, Eb, Ab, Db, Gb, Cb) + Chromatic = 16
+      expect(checkboxes.length).toBe(16);
+      expect(Array.from(checkboxes).map(cb => cb.value)).toContain('G');
+      expect(Array.from(checkboxes).map(cb => cb.value)).toContain('Chromatic');
+    });
+
+    it('should default to Key of C checked', () => {
+      const cbC = document.getElementById('key-C');
+      expect(cbC.checked).toBe(true);
+    });
+
+    it('should generate music in the selected key signature', () => {
+      // Uncheck C, check G
+      document.getElementById('key-C').checked = false;
+      document.getElementById('key-G').checked = true;
+      
+      regenerateAndRender();
+      
+      expect(musicData[0].keySignature).toBe('G');
+      
+      // All generated notes should be in G Major
+      musicData[0].trebleBeats.forEach(beat => {
+        beat.forEach(note => {
+          const name = note.match(/^([A-G][#b]*)/)[1];
+          expect(isNoteInKey(name, 'G')).toBe(true);
+        });
+      });
+    });
+
+    it('should change key signatures at the start of a new line if multiple are selected', () => {
+      document.getElementById('measures-per-line').innerHTML = '<option value="4">4</option>';
+      document.getElementById('measures-per-line').value = '4';
+      document.getElementById('lines').innerHTML = '<option value="10">10</option>';
+      document.getElementById('lines').value = '10';
+      document.getElementById('key-C').checked = true;
+      document.getElementById('key-G').checked = true;
+      
+      regenerateAndRender();
+      
+      const keysUsed = new Set(musicData.map(m => m.keySignature));
+      expect(keysUsed.has('C')).toBe(true);
+      expect(keysUsed.has('G')).toBe(true);
+      
+      // Measures in the same line (4 measures per line) should have the same key
+      for (let i = 0; i < musicData.length; i += 4) {
+        const lineKey = musicData[i].keySignature;
+        for (let j = 0; j < 4; j++) {
+           if (i + j < musicData.length) {
+             expect(musicData[i + j].keySignature).toBe(lineKey);
+           }
+        }
+      }
+    });
+
+    it('should allow non-diatonic notes when Chromatic is checked', () => {
+      document.getElementById('key-C').checked = true;
+      document.getElementById('key-Chromatic').checked = true;
+      
+      // We'll run it a few times to increase chance of seeing a chromatic note
+      let foundChromatic = false;
+      for (let i = 0; i < 10; i++) {
+        regenerateAndRender();
+        musicData[0].trebleBeats.forEach(beat => {
+          beat.forEach(note => {
+            const name = note.match(/^([A-G][#b]*)/)[1];
+            if (!isNoteInKey(name, 'C')) foundChromatic = true;
+          });
+        });
+        if (foundChromatic) break;
+      }
+      expect(foundChromatic).toBe(true);
+    });
+
+    it('should handle flat key signatures correctly in MIDI matching (getNoteValue enharmonics)', () => {
+      // D#4 should equal Eb4
+      expect(getNoteValue('D#4')).toBe(getNoteValue('Eb4'));
+      // F#4 should equal Gb4
+      expect(getNoteValue('F#4')).toBe(getNoteValue('Gb4'));
+      // B#3 should equal C4
+      expect(getNoteValue('B#3')).toBe(getNoteValue('C4'));
+      // Cb4 should equal B3
+      expect(getNoteValue('Cb4')).toBe(getNoteValue('B3'));
+    });
+
+    it('should render the key signature on the staff', () => {
+      document.getElementById('key-C').checked = false;
+      document.getElementById('key-G').checked = true;
+      regenerateAndRender();
+      
+      const svg = document.getElementById('output').innerHTML;
+      // Key of G has one sharp (F#). VexFlow renders this.
+      // We check for the sharp glyph in the SVG (u+e262)
+      expect(svg).toContain('\ue262');
     });
   });
 });

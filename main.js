@@ -19,15 +19,91 @@ for (let octave = 0; octave <= 8; octave++) {
   }
 }
 
+const KEY_SIGNATURES = [
+  'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
+  'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'
+];
+
 /**
  * Returns a numeric value for a note to help with sorting and filtering.
+ * Handles both sharp and flat names.
  * @param {string} note 
  * @returns {number}
  */
-function getNoteValue(note) {
-  const name = note.slice(0, -1);
-  const octave = parseInt(note.slice(-1));
-  return (octave * 12) + NOTES_IN_OCTAVE.indexOf(name);
+export function getNoteValue(note) {
+  const match = note.match(/^([A-G][#b]*)(-?\d+)$/);
+  if (!match) return -1;
+  const name = match[1];
+  const octave = parseInt(match[2]);
+  
+  const offsets = {
+    'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11,
+    'B#': 0, 'Cb': 11, 'Fb': 4, 'E#': 5 // Enharmonics that might appear in key signatures
+  };
+  
+  let val = offsets[name];
+  // Special case: B# is same as C but in next octave, Cb is same as B but in prev octave
+  let octShift = 0;
+  if (name === 'B#') octShift = 1;
+  if (name === 'Cb') octShift = -1;
+  
+  return (octave + 1 + octShift) * 12 + val;
+}
+
+/**
+ * Returns whether a note name is in a given key signature.
+ * @param {string} noteName - e.g. 'C', 'C#', 'Db'
+ * @param {string} keySignature - e.g. 'G'
+ * @returns {boolean}
+ */
+export function isNoteInKey(noteName, keySignature) {
+  const scales = {
+    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
+    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
+    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
+  };
+  const scale = scales[keySignature] || scales['C'];
+  const semitones = scale.map(n => getNoteValue(n + '4') % 12);
+  return semitones.includes(getNoteValue(noteName + '4') % 12);
+}
+
+/**
+ * Gets a random note from a key.
+ * @param {string} keySignature
+ * @returns {string} - Note name
+ */
+function getRandomNoteFromKey(keySignature) {
+  const scales = {
+    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
+    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
+    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
+  };
+  const scale = scales[keySignature] || scales['C'];
+  return scale[Math.floor(Math.random() * scale.length)];
 }
 
 /**
@@ -47,9 +123,11 @@ export function resetGameState() {
  * @param {string} minNote - e.g. 'C2'
  * @param {string} maxNote - e.g. 'C6'
  * @param {string} staffType - 'grand', 'treble', or 'bass'
+ * @param {string} keySignature - e.g. 'G'
+ * @param {boolean} isChromatic - whether to allow non-diatonic notes
  * @returns {string[]}
  */
-function getRandomPitches(clef, count, minNote, maxNote, staffType) {
+function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature = 'C', isChromatic = false) {
   const minVal = getNoteValue(minNote);
   const maxVal = getNoteValue(maxNote);
   
@@ -58,6 +136,36 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType) {
     return val >= minVal && val <= maxVal;
   });
 
+  if (!isChromatic) {
+    options = options.filter(n => {
+      // Extract name without octave
+      const name = n.match(/^([A-G][#b]*)/)[1];
+      return isNoteInKey(name, keySignature);
+    });
+  } else {
+    // If chromatic, we can also pick notes with their "correct" names for the key
+    // Involve both sharps and flats.
+    options = options.map(n => {
+      const name = n.match(/^([A-G][#b]*)/)[1];
+      if (name.includes('#')) {
+        const flatNames = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
+        const isFlatKey = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'].includes(keySignature);
+        const isSharpKey = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#'].includes(keySignature);
+        
+        // Probability of picking a flat instead of sharp
+        let probabilityOfFlat = 0.5;
+        if (isFlatKey) probabilityOfFlat = 0.8;
+        if (isSharpKey) probabilityOfFlat = 0.2;
+        
+        if (Math.random() < probabilityOfFlat) {
+          const newName = flatNames[name];
+          if (newName) return newName + n.match(/\d+$/)[0];
+        }
+      }
+      return n;
+    });
+  }
+
   if (staffType === 'grand') {
     const middleC = getNoteValue('C4');
     if (clef === 'treble') {
@@ -65,13 +173,21 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType) {
     } else {
       options = options.filter(n => getNoteValue(n) <= middleC);
     }
-    
-    // If we filtered too much and have no options, revert to full range for that clef
-    if (options.length === 0) {
-      options = ALL_PIANO_NOTES.filter(n => {
-        const val = getNoteValue(n);
-        return val >= minVal && val <= maxVal;
-      });
+  }
+  
+  // If we filtered too much and have no options, revert to full range for that clef
+  if (options.length === 0) {
+    options = ALL_PIANO_NOTES.filter(n => {
+      const val = getNoteValue(n);
+      return val >= minVal && val <= maxVal;
+    });
+    if (staffType === 'grand') {
+      const middleC = getNoteValue('C4');
+      if (clef === 'treble') {
+        options = options.filter(n => getNoteValue(n) >= middleC);
+      } else {
+        options = options.filter(n => getNoteValue(n) <= middleC);
+      }
     }
   }
   
@@ -86,32 +202,6 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType) {
   return selected.sort((a, b) => getNoteValue(a) - getNoteValue(b));
 }
 
-/**
- * Generates a string of 4 random quarter beats (single notes or chords).
- * @param {string} clef - 'treble' or 'bass'
- * @param {number|number[]} noteCounts - number of notes per beat (or array of 4 counts)
- * @returns {string}
- */
-function getRandomMeasureNotes(clef = 'treble', noteCounts = 1) {
-  const beats = [];
-  const restPitch = clef === 'treble' ? 'B4' : 'D3';
-  const counts = Array.isArray(noteCounts) ? noteCounts : Array(4).fill(noteCounts);
-  for (let b = 0; b < 4; b++) {
-    const count = counts[b];
-    if (count === 0) {
-      // Use rests for empty beats.
-      beats.push(`${restPitch}/q/r`);
-    } else {
-      const pitches = getRandomPitches(clef, count);
-      if (count > 1) {
-        beats.push(`(${pitches.join(' ')})/q`);
-      } else {
-        beats.push(`${pitches[0]}/q`);
-      }
-    }
-  }
-  return beats.join(', ');
-}
 
 /**
  * Compute per-beat note distribution for a single measure.
@@ -179,19 +269,37 @@ export function generateMusicData() {
   const minNote = document.getElementById('min-note')?.value || 'C2';
   const maxNote = document.getElementById('max-note')?.value || 'C6';
 
+  // Get selected key signatures
+  const keyContainer = document.getElementById('key-signatures');
+  let selectedKeys = [];
+  if (keyContainer) {
+    selectedKeys = Array.from(keyContainer.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+  }
+  
+  const isChromatic = selectedKeys.includes('Chromatic');
+  const actualKeys = selectedKeys.filter(k => k !== 'Chromatic');
+  const availableKeys = actualKeys.length > 0 ? actualKeys : ['C'];
+
   const totalMeasures = measuresPerLine * linesCount;
   const data = [];
 
-  for (let m = 0; m < totalMeasures; m++) {
-    const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, m);
-    const trebleBeats = [];
-    const bassBeats = [];
+  for (let l = 0; l < linesCount; l++) {
+    // Pick a random key for this line
+    const lineKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+    
+    for (let m = 0; m < measuresPerLine; m++) {
+      const globalMeasureIdx = (l * measuresPerLine) + m;
+      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, globalMeasureIdx);
+      const trebleBeats = [];
+      const bassBeats = [];
 
-    for (let b = 0; b < 4; b++) {
-      trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b], minNote, maxNote, staffType) : []);
-      bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b], minNote, maxNote, staffType) : []);
+      for (let b = 0; b < 4; b++) {
+        trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b], minNote, maxNote, staffType, lineKey, isChromatic) : []);
+        bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b], minNote, maxNote, staffType, lineKey, isChromatic) : []);
+      }
+      data.push({ trebleBeats, bassBeats, staffType, keySignature: lineKey });
     }
-    data.push({ trebleBeats, bassBeats, staffType });
   }
   musicData = data;
   currentBeatIndex = 0;
@@ -348,9 +456,14 @@ export function renderStaff(outputDiv) {
         if (hasRealNote) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
-        Accidental.applyAccidentals(voices, 'C');
+        Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
         const stave = system.addStave({ voices });
-        if (m === 0) stave.addClef('treble').addTimeSignature('4/4');
+        if (m === 0) {
+          stave.addClef('treble').addTimeSignature('4/4');
+          if (measureData.keySignature && measureData.keySignature !== 'C') {
+            stave.addKeySignature(measureData.keySignature);
+          }
+        }
       }
       
       if (staffType === 'bass' || staffType === 'grand') {
@@ -360,9 +473,14 @@ export function renderStaff(outputDiv) {
         if (hasRealNote) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
-        Accidental.applyAccidentals(voices, 'C');
+        Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
         const stave = system.addStave({ voices });
-        if (m === 0) stave.addClef('bass').addTimeSignature('4/4');
+        if (m === 0) {
+          stave.addClef('bass').addTimeSignature('4/4');
+          if (measureData.keySignature && measureData.keySignature !== 'C') {
+            stave.addKeySignature(measureData.keySignature);
+          }
+        }
       }
       
       const isLastMeasure = (measureIdx === musicData.length - 1);
@@ -484,9 +602,11 @@ export function initMIDI() {
     if (!measureData) return;
 
     const targetNotes = Array.from(new Set([...measureData.trebleBeats[beatInMeasure], ...measureData.bassBeats[beatInMeasure]]));
+    const targetVals = targetNotes.map(getNoteValue);
+    const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
-    // Check if activeMidiNotes exactly match targetNotes
-    if (activeMidiNotes.size === targetNotes.length && targetNotes.every(n => activeMidiNotes.has(n))) {
+    // Check if activeVals exactly match targetVals
+    if (activeVals.length === targetVals.length && targetVals.every(v => activeVals.includes(v))) {
       currentBeatIndex++;
       
       // If we reached the end, regenerate music
@@ -583,9 +703,47 @@ export function updateNoteSelectors() {
   maxSelect.value = isValueInRange(prevMax) ? prevMax : defaultMax;
 }
 
+/**
+ * Initializes the key signature checkboxes.
+ */
+export function initKeySignatures() {
+  const container = document.getElementById('key-signatures');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const choices = [...KEY_SIGNATURES, 'Chromatic'];
+  
+  choices.forEach(key => {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '3px';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = key;
+    cb.id = 'key-' + key;
+    if (key === 'C') cb.checked = true;
+    
+    cb.addEventListener('change', () => {
+      regenerateAndRender();
+    });
+
+    const label = document.createElement('label');
+    label.htmlFor = 'key-' + key;
+    label.textContent = key;
+    label.style.cursor = 'pointer';
+
+    wrapper.appendChild(cb);
+    wrapper.appendChild(label);
+    container.appendChild(wrapper);
+  });
+}
+
 // Automatically initialize if we're in a browser environment.
 if (typeof document !== 'undefined') {
   updateNoteSelectors();
+  initKeySignatures();
 
   const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type', 'min-note', 'max-note'];
   selectors.forEach(id => {
