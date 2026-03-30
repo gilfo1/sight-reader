@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { generateRhythmicPattern, getRandomPitches, computeMeasureCounts, generateMusicData } from '../../../src/engine/generator.js';
 import { getNoteValue } from '../../../src/utils/music-theory.js';
+import { DURATION_WEIGHTS } from '../../../src/constants/music.js';
 
 describe('Music Generator Engine', () => {
   it('should generate valid rhythmic patterns', () => {
     const pattern = generateRhythmicPattern(['q', '8']);
     const weightSum = pattern.reduce((acc, d) => {
-      const weights = { 'w': 16, 'h': 8, 'q': 4, '8': 2, '16': 1 };
-      return acc + weights[d];
+      return acc + DURATION_WEIGHTS[d];
     }, 0);
     expect(weightSum).toBe(16); // 4/4 measure
   });
@@ -64,8 +64,7 @@ describe('Music Generator Engine', () => {
       for (let i = 0; i < 20; i++) {
         const pattern = generateRhythmicPattern(sel);
         const sum = pattern.reduce((acc, d) => {
-          const weights = { 'w': 16, 'h': 8, 'q': 4, '8': 2, '16': 1 };
-          return acc + weights[d];
+          return acc + DURATION_WEIGHTS[d];
         }, 0);
         expect(sum).toBe(16);
       }

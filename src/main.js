@@ -9,7 +9,7 @@ import {
   getStepInfo,
   getTotalSteps
 } from './engine/state.js';
-import { generateMusicData, getRandomPitches, computeMeasureCounts, generateRhythmicPattern } from './engine/generator.js';
+import { generateMusicData, getRandomPitches, generateRhythmicPattern } from './engine/generator.js';
 import { renderStaff, clearRenderCache } from './rendering/renderer.js';
 
 function resetGameState() {
@@ -31,17 +31,14 @@ function checkMatch() {
   if (typeof engineInitMIDI.checkMatch === 'function') engineInitMIDI.checkMatch();
 }
 
-function updateStatus() {
-  if (typeof engineInitMIDI.updateStatus === 'function') engineInitMIDI.updateStatus();
-}
 import { 
   initKeySignatures, 
   updateNoteSelectors, 
   getUIConfig, 
   setupEventListeners 
 } from './ui/controls.js';
-import { getNoteValue, isNoteInKey } from './utils/music-theory.js';
-import { ALL_PIANO_NOTES, SCALES, KEY_SIGNATURES, DURATION_WEIGHTS, NOTES_IN_OCTAVE } from './constants/music.js';
+import { getNoteValue } from './utils/music-theory.js';
+import { SCALES } from './constants/music.js';
 
 function getAppState() {
   return { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes };
@@ -69,20 +66,12 @@ function handleStateChange(shouldRegenerate = false) {
   renderStaff(null, config, getAppState(), getAppSelectors());
 }
 
-function regenerateAndRender() {
-  handleRegenerate();
-}
-
 // Initialize application
 function legacyGenerateMusicData() {
   const config = getUIConfig();
   const data = generateMusicData(config);
   setMusicData(data);
   return data;
-}
-
-function legacyIsNoteInKey(noteName, keySignature) {
-  return isNoteInKey(noteName, keySignature, SCALES);
 }
 
 function legacyRenderStaff(outputDiv, config) {
@@ -120,31 +109,19 @@ export {
 } from './engine/state.js';
 
 export { 
-  handleRegenerate, 
-  handleStateChange, 
-  regenerateAndRender,
   setMusicData, 
   resetGameState, 
   setCurrentBeatIndex,
   legacyRenderStaff as renderStaff, 
   initMIDI, 
   checkMatch,
-  updateStatus,
   initKeySignatures, 
   updateNoteSelectors, 
-  getUIConfig, 
-  setupEventListeners,
   legacyGenerateMusicData as generateMusicData,
   getRandomPitches,
-  computeMeasureCounts,
   getStepInfo,
   getTotalSteps,
   generateRhythmicPattern,
   getNoteValue,
-  legacyIsNoteInKey as isNoteInKey,
-  ALL_PIANO_NOTES,
-  SCALES,
-  KEY_SIGNATURES,
-  DURATION_WEIGHTS,
-  NOTES_IN_OCTAVE
+  SCALES
 };

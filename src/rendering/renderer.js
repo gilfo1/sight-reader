@@ -8,7 +8,7 @@ export function clearRenderCache() {
   cachedColWidths = null;
 }
 
-export function getTargetNotes(score, measureData, measureIdx, isTreble, currentNotesArray, currentBeatIndex, getStepInfo) {
+function getTargetNotes(score, measureData, measureIdx, isTreble, currentNotesArray, currentBeatIndex, getStepInfo) {
   if (!measureData) return [];
   const beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
   const pattern = measureData.pattern || beats.map(() => 'q');
@@ -34,7 +34,7 @@ export function getTargetNotes(score, measureData, measureIdx, isTreble, current
   });
 }
 
-export function drawHighlight(f, currentNotes) {
+function drawHighlight(f, currentNotes) {
   if (currentNotes.length === 0) return;
   const ctx = f.getContext();
   
