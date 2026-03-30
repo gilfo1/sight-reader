@@ -24,6 +24,24 @@ const KEY_SIGNATURES = [
   'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'
 ];
 
+const SCALES = {
+  'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+  'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+  'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+  'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+  'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+  'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+  'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+  'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
+  'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+  'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+  'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+  'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+  'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+  'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
+  'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
+};
+
 /**
  * Returns a numeric value for a note to help with sorting and filtering.
  * Handles both sharp and flat names.
@@ -51,59 +69,14 @@ export function getNoteValue(note) {
 }
 
 /**
- * Returns whether a note name is in a given key signature.
+ * Returns whether a note name is strictly in a given key signature's scale.
  * @param {string} noteName - e.g. 'C', 'C#', 'Db'
  * @param {string} keySignature - e.g. 'G'
  * @returns {boolean}
  */
 export function isNoteInKey(noteName, keySignature) {
-  const scales = {
-    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
-    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
-    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
-    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
-    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
-    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
-    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
-    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
-  };
-  const scale = scales[keySignature] || scales['C'];
-  const semitones = scale.map(n => getNoteValue(n + '4') % 12);
-  return semitones.includes(getNoteValue(noteName + '4') % 12);
-}
-
-/**
- * Gets a random note from a key.
- * @param {string} keySignature
- * @returns {string} - Note name
- */
-function getRandomNoteFromKey(keySignature) {
-  const scales = {
-    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
-    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
-    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
-    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
-    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
-    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
-    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
-    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
-  };
-  const scale = scales[keySignature] || scales['C'];
-  return scale[Math.floor(Math.random() * scale.length)];
+  const scale = SCALES[keySignature] || SCALES['C'];
+  return scale.includes(noteName);
 }
 
 /**
@@ -131,21 +104,35 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature
   const minVal = getNoteValue(minNote);
   const maxVal = getNoteValue(maxNote);
   
-  let options = ALL_PIANO_NOTES.filter(n => {
-    const val = getNoteValue(n);
-    return val >= minVal && val <= maxVal;
-  });
+  let options = [];
 
   if (!isChromatic) {
-    options = options.filter(n => {
-      // Extract name without octave
+    // Pick strictly from the scale of the key signature to ensure correct note names (e.g. Bb vs A#)
+    const scale = SCALES[keySignature] || SCALES['C'];
+    ALL_PIANO_NOTES.forEach(n => {
+      const val = getNoteValue(n);
+      if (val < minVal || val > maxVal) return;
+      
       const name = n.match(/^([A-G][#b]*)/)[1];
-      return isNoteInKey(name, keySignature);
+      // Check if this note (by name) is in the scale
+      if (scale.includes(name)) {
+        options.push(n);
+      } else {
+        // Handle enharmonics: if the semitone is in the scale, we might need to rename it
+        const semitone = val % 12;
+        const scaleNote = scale.find(sn => getNoteValue(sn + '4') % 12 === semitone);
+        if (scaleNote) {
+          // This ensures we use 'Bb' instead of 'A#' if 'Bb' is in the scale
+          options.push(scaleNote + n.match(/\d+$/)[0]);
+        }
+      }
     });
   } else {
-    // If chromatic, we can also pick notes with their "correct" names for the key
-    // Involve both sharps and flats.
-    options = options.map(n => {
+    // Chromatic: pick from all piano notes and randomly assign enharmonics
+    options = ALL_PIANO_NOTES.filter(n => {
+      const val = getNoteValue(n);
+      return val >= minVal && val <= maxVal;
+    }).map(n => {
       const name = n.match(/^([A-G][#b]*)/)[1];
       if (name.includes('#')) {
         const flatNames = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
@@ -166,6 +153,7 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature
     });
   }
 
+  // Filter by clef/staffType
   if (staffType === 'grand') {
     const middleC = getNoteValue('C4');
     if (clef === 'treble') {
@@ -175,20 +163,21 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature
     }
   }
   
-  // If we filtered too much and have no options, revert to full range for that clef
+  // Deduplicate options (renaming might have created duplicates)
+  options = Array.from(new Set(options));
+
+  // Fallback if no options found (shouldn't happen with correct ranges)
   if (options.length === 0) {
     options = ALL_PIANO_NOTES.filter(n => {
       const val = getNoteValue(n);
-      return val >= minVal && val <= maxVal;
-    });
-    if (staffType === 'grand') {
-      const middleC = getNoteValue('C4');
-      if (clef === 'treble') {
-        options = options.filter(n => getNoteValue(n) >= middleC);
-      } else {
-        options = options.filter(n => getNoteValue(n) <= middleC);
+      if (val < minVal || val > maxVal) return false;
+      if (staffType === 'grand') {
+        const middleC = getNoteValue('C4');
+        if (clef === 'treble') return val >= middleC;
+        return val <= middleC;
       }
-    }
+      return true;
+    });
   }
   
   const selected = [];
