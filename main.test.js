@@ -40,6 +40,8 @@ describe('Music Staff Project', () => {
     expect(html).toContain('id="notes-per-beat"');
     expect(html).toContain('id="lines"');
     expect(html).toContain('id="staff-type"');
+    expect(html).toContain('id="min-note"');
+    expect(html).toContain('id="max-note"');
   });
 
   it('should have a main.js file that exports renderStaff and initMIDI', async () => {
@@ -199,7 +201,9 @@ describe('Music Staff Project', () => {
       document.body.innerHTML += '<select id="measures-per-line"><option value="4">4</option></select>' +
                                 '<select id="lines"><option value="1">1</option></select>' +
                                 '<select id="staff-type"><option value="treble">Treble Clef</option></select>' +
-                                '<select id="notes-per-beat"><option value="1">1</option></select>';
+                                '<select id="notes-per-beat"><option value="1">1</option></select>' +
+                                '<select id="min-note"><option value="C2">C2</option></select>' +
+                                '<select id="max-note"><option value="C6">C6</option></select>';
       regenerateAndRender(document.getElementById('output'));
       expect(currentBeatIndex).toBe(0);
 
@@ -234,7 +238,9 @@ describe('Music Staff Project', () => {
       document.body.innerHTML += '<select id="measures-per-line"><option value="4">4</option></select>' +
                                 '<select id="lines"><option value="1">1</option></select>' +
                                 '<select id="staff-type"><option value="treble">Treble Clef</option></select>' +
-                                '<select id="notes-per-beat"><option value="1">1</option></select>';
+                                '<select id="notes-per-beat"><option value="1">1</option></select>' +
+                                '<select id="min-note"><option value="C2">C2</option></select>' +
+                                '<select id="max-note"><option value="C6">C6</option></select>';
       regenerateAndRender(document.getElementById('output'));
       expect(currentBeatIndex).toBe(0);
 
@@ -294,6 +300,18 @@ describe('Music Staff Project', () => {
           <option value="grand" selected>Grand Staff</option>
           <option value="treble">Treble Clef</option>
           <option value="bass">Bass Clef</option>
+        </select>
+        <select id="min-note">
+          <option value="A0">A0</option>
+          <option value="C2" selected>C2</option>
+          <option value="C4">C4</option>
+          <option value="C8">C8</option>
+        </select>
+        <select id="max-note">
+          <option value="A0">A0</option>
+          <option value="C4">C4</option>
+          <option value="C6" selected>C6</option>
+          <option value="C8">C8</option>
         </select>
         <div id="output"></div>
       `;
@@ -414,6 +432,23 @@ describe('Music Staff Project', () => {
       
       expect(nonRestNotes.length).toBe(4);
       expect(rests.length).toBe(4);
+    });
+
+    it('should respect the note range selectors', () => {
+      document.getElementById('min-note').value = "C4";
+      document.getElementById('max-note').value = "C4";
+      document.getElementById('staff-type').value = "treble";
+      
+      regenerateAndRender(div);
+      
+      // Every beat should be C4
+      musicData.forEach(measure => {
+        measure.trebleBeats.forEach(beat => {
+          if (beat.length > 0) {
+            expect(beat).toEqual(['C4']);
+          }
+        });
+      });
     });
 
     describe('computeMeasureCounts', () => {

@@ -7,6 +7,29 @@ export let currentBeatIndex = 0;
 export const activeMidiNotes = new Set();
 export const suppressedNotes = new Set();
 
+const NOTES_IN_OCTAVE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const ALL_PIANO_NOTES = [];
+for (let octave = 0; octave <= 8; octave++) {
+  for (const n of NOTES_IN_OCTAVE) {
+    const name = n + octave;
+    // Piano starts at A0, ends at C8
+    if (octave === 0 && (n === 'C' || n === 'C#' || n === 'D' || n === 'D#' || n === 'E' || n === 'F' || n === 'F#' || n === 'G' || n === 'G#')) continue;
+    if (octave === 8 && n !== 'C') continue;
+    ALL_PIANO_NOTES.push(name);
+  }
+}
+
+/**
+ * Returns a numeric value for a note to help with sorting and filtering.
+ * @param {string} note 
+ * @returns {number}
+ */
+function getNoteValue(note) {
+  const name = note.slice(0, -1);
+  const octave = parseInt(note.slice(-1));
+  return (octave * 12) + NOTES_IN_OCTAVE.indexOf(name);
+}
+
 /**
  * Resets the global game state.
  */
@@ -21,34 +44,46 @@ export function resetGameState() {
  * Generates random pitches for VexFlow.
  * @param {string} clef - 'treble' or 'bass'
  * @param {number} count - number of unique pitches
+ * @param {string} minNote - e.g. 'C2'
+ * @param {string} maxNote - e.g. 'C6'
+ * @param {string} staffType - 'grand', 'treble', or 'bass'
  * @returns {string[]}
  */
-function getRandomPitches(clef, count) {
-  const trebleNotes = [
-    'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 
-    'C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 
-    'C6'
-  ];
-  const bassNotes = [
-    'C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4'
-  ];
-  const options = [...(clef === 'treble' ? trebleNotes : bassNotes)];
+function getRandomPitches(clef, count, minNote, maxNote, staffType) {
+  const minVal = getNoteValue(minNote);
+  const maxVal = getNoteValue(maxNote);
+  
+  let options = ALL_PIANO_NOTES.filter(n => {
+    const val = getNoteValue(n);
+    return val >= minVal && val <= maxVal;
+  });
+
+  if (staffType === 'grand') {
+    const middleC = getNoteValue('C4');
+    if (clef === 'treble') {
+      options = options.filter(n => getNoteValue(n) >= middleC);
+    } else {
+      options = options.filter(n => getNoteValue(n) <= middleC);
+    }
+    
+    // If we filtered too much and have no options, revert to full range for that clef
+    if (options.length === 0) {
+      options = ALL_PIANO_NOTES.filter(n => {
+        const val = getNoteValue(n);
+        return val >= minVal && val <= maxVal;
+      });
+    }
+  }
   
   const selected = [];
+  const pool = [...options];
   for (let i = 0; i < count; i++) {
-    if (options.length === 0) break;
-    const idx = Math.floor(Math.random() * options.length);
-    selected.push(options.splice(idx, 1)[0]);
+    if (pool.length === 0) break;
+    const idx = Math.floor(Math.random() * pool.length);
+    selected.push(pool.splice(idx, 1)[0]);
   }
 
-  // Sort pitches for VexFlow chords
-  const order = { 'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6 };
-  return selected.sort((a, b) => {
-    const octaveA = parseInt(a[a.length - 1]);
-    const octaveB = parseInt(b[b.length - 1]);
-    if (octaveA !== octaveB) return octaveA - octaveB;
-    return order[a[0]] - order[b[0]];
-  });
+  return selected.sort((a, b) => getNoteValue(a) - getNoteValue(b));
 }
 
 /**
@@ -125,6 +160,8 @@ export function generateMusicData() {
   const notesPerBeat = parseInt(document.getElementById('notes-per-beat')?.value || '1');
   const linesCount = parseInt(document.getElementById('lines')?.value || '1');
   const staffType = document.getElementById('staff-type')?.value || 'grand';
+  const minNote = document.getElementById('min-note')?.value || 'C2';
+  const maxNote = document.getElementById('max-note')?.value || 'C6';
 
   const totalMeasures = measuresPerLine * linesCount;
   const data = [];
@@ -135,8 +172,8 @@ export function generateMusicData() {
     const bassBeats = [];
 
     for (let b = 0; b < 4; b++) {
-      trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b]) : []);
-      bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b]) : []);
+      trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b], minNote, maxNote, staffType) : []);
+      bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b], minNote, maxNote, staffType) : []);
     }
     data.push({ trebleBeats, bassBeats, staffType });
   }
@@ -463,7 +500,25 @@ export function initMIDI() {
 
 // Automatically initialize if we're in a browser environment.
 if (typeof document !== 'undefined') {
-  const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type'];
+  const minSelect = document.getElementById('min-note');
+  const maxSelect = document.getElementById('max-note');
+  if (minSelect && maxSelect) {
+    ALL_PIANO_NOTES.forEach(note => {
+      const opt1 = document.createElement('option');
+      opt1.value = note;
+      opt1.textContent = note;
+      minSelect.appendChild(opt1);
+      
+      const opt2 = document.createElement('option');
+      opt2.value = note;
+      opt2.textContent = note;
+      maxSelect.appendChild(opt2);
+    });
+    minSelect.value = 'C2';
+    maxSelect.value = 'C6';
+  }
+
+  const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type', 'min-note', 'max-note'];
   selectors.forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => regenerateAndRender());
   });
