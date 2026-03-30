@@ -1,5 +1,9 @@
 export const NOTES_IN_OCTAVE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+export const ENHARMONIC_MAP = { 
+  'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' 
+};
+
 export const ALL_PIANO_NOTES = [];
 for (let octave = 0; octave <= 8; octave++) {
   for (const n of NOTES_IN_OCTAVE) {

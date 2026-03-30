@@ -5,8 +5,8 @@ export const activeMidiNotes = new Set();
 export const suppressedNotes = new Set();
 
 export function setMusicData(data) {
-  // Automatically convert legacy steps structure to new decoupled structure for backward compatibility
   const processedData = data.map(m => {
+    // If it's the legacy steps structure, convert it
     if (m.steps && !m.trebleBeats) {
       return {
         ...m,
@@ -15,12 +15,9 @@ export function setMusicData(data) {
         pattern: m.steps.map(s => s.duration || 'q')
       };
     }
-    // If pattern is missing but beats are present, default to quarter notes
+    // Ensure pattern is always present
     if (!m.pattern && m.trebleBeats) {
-      return {
-        ...m,
-        pattern: m.trebleBeats.map(() => 'q')
-      };
+      return { ...m, pattern: m.trebleBeats.map(() => 'q') };
     }
     return m;
   });
@@ -51,9 +48,7 @@ export function getStepInfo(index) {
   for (let m = 0; m < musicData.length; m++) {
     const measure = musicData[m];
     if (!measure) continue;
-    const pattern = measure.pattern || measure.steps;
-    if (!pattern) continue;
-    const stepsInMeasure = pattern.length;
+    const stepsInMeasure = (measure.pattern || []).length;
     if (index < count + stepsInMeasure) {
       return { measureIdx: m, stepIdx: index - count };
     }
@@ -67,5 +62,5 @@ export function getStepInfo(index) {
  * @returns {number}
  */
 export function getTotalSteps() {
-  return musicData.reduce((acc, m) => acc + (m.pattern?.length || m.steps?.length || 0), 0);
+  return musicData.reduce((acc, m) => acc + (m.pattern?.length || 0), 0);
 }

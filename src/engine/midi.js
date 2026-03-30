@@ -44,19 +44,10 @@ export function initMIDI(onStateChange) {
     const measureData = info ? musicData[info.measureIdx] : null;
     if (!measureData) return;
 
-    let targetNotes;
-    if (measureData.steps) {
-      const step = measureData.steps[info.stepIdx];
-      targetNotes = Array.from(new Set([
-        ...(step.treblePitches || []),
-        ...(step.bassPitches || [])
-      ]));
-    } else {
-      targetNotes = Array.from(new Set([
-        ...(measureData.trebleBeats[info.stepIdx] || []), 
-        ...(measureData.bassBeats[info.stepIdx] || [])
-      ]));
-    }
+    const targetNotes = Array.from(new Set([
+      ...(measureData.trebleBeats[info.stepIdx] || []), 
+      ...(measureData.bassBeats[info.stepIdx] || [])
+    ]));
     const targetVals = targetNotes.map(getNoteValue);
     const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
@@ -79,16 +70,10 @@ export function initMIDI(onStateChange) {
     const info = getStepInfo(currentBeatIndex);
     const measureData = info ? musicData[info.measureIdx] : null;
     if (measureData) {
-      let targetPitches;
-      if (measureData.steps) {
-        const step = measureData.steps[info.stepIdx];
-        targetPitches = [...(step.treblePitches || []), ...(step.bassPitches || [])];
-      } else {
-        targetPitches = [
-          ...(measureData.trebleBeats[info.stepIdx] || []), 
-          ...(measureData.bassBeats[info.stepIdx] || [])
-        ];
-      }
+      const targetPitches = [
+        ...(measureData.trebleBeats[info.stepIdx] || []), 
+        ...(measureData.bassBeats[info.stepIdx] || [])
+      ];
       if (!targetPitches.includes(e.note.identifier)) {
         suppressedNotes.clear();
       }

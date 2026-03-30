@@ -1,5 +1,5 @@
-import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES } from '../constants/music.js';
-import { getNoteValue } from '../utils/music-theory.js';
+import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP } from '../constants/music.js';
+import { getNoteValue, getEnharmonic } from '../utils/music-theory.js';
 
 export function generateRhythmicPattern(selectedDurations) {
   const pattern = [];
@@ -24,112 +24,53 @@ export function generateRhythmicPattern(selectedDurations) {
 export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature, isChromatic) {
   const minVal = getNoteValue(minNote);
   const maxVal = getNoteValue(maxNote);
+  const midC = getNoteValue('C4');
   
   let validNotes = ALL_PIANO_NOTES.filter(n => {
     const v = getNoteValue(n);
-    return v >= minVal && v <= maxVal;
-  });
-
-  if (staffType === 'grand') {
-    if (clef === 'bass') {
-      validNotes = validNotes.filter(n => getNoteValue(n) < getNoteValue('C4'));
-    } else {
-      validNotes = validNotes.filter(n => getNoteValue(n) >= getNoteValue('C4'));
+    if (v < minVal || v > maxVal) return false;
+    
+    if (staffType === 'grand') {
+      return clef === 'bass' ? v < midC : v >= midC;
     }
-  } else if (staffType === 'bass') {
-    validNotes = validNotes.filter(n => getNoteValue(n) < getNoteValue('C4'));
-  } else {
-    validNotes = validNotes.filter(n => getNoteValue(n) >= getNoteValue('C4'));
-  }
+    return staffType === 'bass' ? v < midC : v >= midC;
+  });
 
   if (validNotes.length === 0) return [];
 
   const scale = SCALES[keySignature] || SCALES['C'];
-  let pool;
-  if (isChromatic) {
-    pool = validNotes;
-  } else {
-    pool = validNotes.filter(n => {
-      const nameOnly = n.match(/^[A-G][#b]*/)[0];
-      return scale.includes(nameOnly);
-    });
-    if (pool.length === 0) pool = validNotes;
-  }
+  let pool = isChromatic ? validNotes : validNotes.filter(n => {
+    const name = n.match(/^[A-G][#b]*/)[0];
+    return scale.includes(name) || (ENHARMONIC_MAP[name] && scale.includes(ENHARMONIC_MAP[name]));
+  });
+  if (pool.length === 0) pool = validNotes;
 
+  const tempPool = [...pool];
   const selected = [];
-  const actualCount = Math.min(count, pool.length);
-  
-  // If we want fewer notes than pool, pick random ones.
-  // If we want more or equal, just take the pool (as unique notes).
-  // Actually, the test suggests if count exceeds pool, we take unique notes from pool.
-  if (count >= pool.length) {
-    pool.forEach(n => {
-      let note = n;
-      if (isChromatic && note.includes('#')) {
-         const hasSharps = keySignature.includes('#') || ['G', 'D', 'A', 'E', 'B'].includes(keySignature);
-         const hasFlats = keySignature.includes('b') || ['F'].includes(keySignature);
-         const r = Math.random();
-         let useFlat = hasFlats ? r < 0.8 : (hasSharps ? r < 0.2 : r < 0.5);
-         if (useFlat) {
-            const enharmonics = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
-            const base = note.slice(0, 2);
-            const oct = note.slice(2);
-            if (enharmonics[base]) note = enharmonics[base] + oct;
-         }
-      }
-      selected.push(note);
-    });
-  } else {
-    const tempPool = [...pool];
-    for (let i = 0; i < count; i++) {
-      const idx = Math.floor(Math.random() * tempPool.length);
-      let note = tempPool.splice(idx, 1)[0];
-      
-      if (isChromatic && note.includes('#')) {
-        const hasSharps = keySignature.includes('#') || ['G', 'D', 'A', 'E', 'B'].includes(keySignature);
-        const hasFlats = keySignature.includes('b') || ['F'].includes(keySignature);
-        const r = Math.random();
-        let useFlat = hasFlats ? r < 0.8 : (hasSharps ? r < 0.2 : r < 0.5);
+  const iterations = Math.min(count, tempPool.length);
 
-        if (useFlat) {
-          const enharmonics = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
-          const base = note.slice(0, 2);
-          const oct = note.slice(2);
-          if (enharmonics[base]) note = enharmonics[base] + oct;
-        }
-      }
-      selected.push(note);
-    }
+  for (let i = 0; i < iterations; i++) {
+    const idx = Math.floor(Math.random() * tempPool.length);
+    const note = tempPool.splice(idx, 1)[0];
+    selected.push(getEnharmonic(note, keySignature, isChromatic));
   }
+  
   return selected.sort((a, b) => getNoteValue(a) - getNoteValue(b));
 }
 
 export function computeMeasureCounts(staffType, notesPerStep, measureIndex = 0, pattern = ['q', 'q', 'q', 'q']) {
-  const trebleCounts = [];
-  const bassCounts = [];
-  for (let b = 0; b < pattern.length; b++) {
-    if (staffType === 'treble') {
-      trebleCounts.push(notesPerStep);
-      bassCounts.push(0);
-    } else if (staffType === 'bass') {
-      trebleCounts.push(0);
-      bassCounts.push(notesPerStep);
-    } else if (staffType === 'grand') {
-      if (notesPerStep === 1) {
-        if ((b + measureIndex) % 2 === 0) {
-          trebleCounts.push(1);
-          bassCounts.push(0);
-        } else {
-          trebleCounts.push(0);
-          bassCounts.push(1);
-        }
-      } else {
-        trebleCounts.push(Math.ceil(notesPerStep / 2));
-        bassCounts.push(Math.floor(notesPerStep / 2));
-      }
-    }
-  }
-  return { trebleCounts, bassCounts };
+  return {
+    trebleCounts: pattern.map((_, b) => {
+      if (staffType === 'treble') return notesPerStep;
+      if (staffType === 'bass') return 0;
+      return notesPerStep === 1 ? ((b + measureIndex) % 2 === 0 ? 1 : 0) : Math.ceil(notesPerStep / 2);
+    }),
+    bassCounts: pattern.map((_, b) => {
+      if (staffType === 'bass') return notesPerStep;
+      if (staffType === 'treble') return 0;
+      return notesPerStep === 1 ? ((b + measureIndex) % 2 === 0 ? 0 : 1) : Math.floor(notesPerStep / 2);
+    })
+  };
 }
 
 export function generateMusicData(config) {

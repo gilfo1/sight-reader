@@ -9,40 +9,29 @@ export function clearRenderCache() {
 }
 
 export function getTargetNotes(score, measureData, measureIdx, isTreble, currentNotesArray, currentBeatIndex, getStepInfo) {
-    if (!measureData) return [];
-    
-    // Support legacy steps structure
-    let beats, pattern;
-    if (measureData.steps) {
-      beats = measureData.steps.map(s => (isTreble ? s.treblePitches : s.bassPitches) || []);
-      pattern = measureData.steps.map(s => s.duration || 'q');
-    } else {
-      beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
-      pattern = measureData.pattern || beats.map(() => 'q');
-    }
+  if (!measureData) return [];
+  const beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
+  const pattern = measureData.pattern || beats.map(() => 'q');
+  const clef = isTreble ? 'treble' : 'bass';
+  const stem = isTreble ? 'up' : 'down';
 
-    return beats.map((pitches, bIdx) => {
-      const duration = pattern[bIdx] || 'q';
-      const info = (typeof getStepInfo === 'function') ? getStepInfo(currentBeatIndex) : null;
-      const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === bIdx);
-      if (pitches.length === 0) {
-        const restPitch = isTreble ? 'B4' : 'D3';
-        const notes = score.notes(`${restPitch}/${duration}/r`, { 
-          clef: isTreble ? 'treble' : 'bass' 
-        });
-        const note = notes[0];
-        if (isCurrent && currentNotesArray) currentNotesArray.push(note);
-        return note;
-      } else {
-        const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
-        const notes = score.notes(noteStr, { 
-          stem: isTreble ? 'up' : 'down',
-          clef: isTreble ? 'treble' : 'bass'
-        });
-        if (isCurrent && currentNotesArray) currentNotesArray.push(notes[0]);
-        return notes[0];
-      }
-    });
+  return beats.map((pitches, bIdx) => {
+    const duration = pattern[bIdx] || 'q';
+    const info = (typeof getStepInfo === 'function') ? getStepInfo(currentBeatIndex) : null;
+    const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === bIdx);
+    
+    let note;
+    if (pitches.length === 0) {
+      const restPitch = isTreble ? 'B4' : 'D3';
+      note = score.notes(`${restPitch}/${duration}/r`, { clef })[0];
+    } else {
+      const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
+      note = score.notes(noteStr, { stem, clef })[0];
+    }
+    
+    if (isCurrent && currentNotesArray) currentNotesArray.push(note);
+    return note;
+  });
 }
 
 export function drawHighlight(f, currentNotes) {
@@ -203,28 +192,15 @@ export function renderStaff(outputDiv, config, state, selectors) {
         const info = getStepInfo(currentBeatIndex);
         if (info && info.measureIdx === measureIdx) {
             const b = info.stepIdx;
-            
-            // Support legacy steps structure
-            let duration, targetPitches;
-            if (measureData.steps && measureData.steps[b]) {
-              duration = measureData.steps[b].duration || 'q';
-              targetPitches = isTreble ? (measureData.steps[b].treblePitches || []) : (measureData.steps[b].bassPitches || []);
-            } else if (measureData.pattern && measureData.pattern[b]) {
-              duration = measureData.pattern[b];
-              targetPitches = isTreble ? (measureData.trebleBeats[b] || []) : (measureData.bassBeats[b] || []);
-            } else {
-              // Fallback
-              duration = 'q';
-              targetPitches = [];
-            }
+            const duration = (measureData.pattern || [])[b] || 'q';
+            const targetPitches = isTreble ? (measureData.trebleBeats[b] || []) : (measureData.bassBeats[b] || []);
             
             const pitches = Array.from(activeMidiNotes).filter(p => {
               if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
               const octave = parseInt(p.slice(-1));
               if (staffType === 'treble') return isTreble;
               if (staffType === 'bass') return !isTreble;
-              if (isTreble) return octave >= 4;
-              return octave < 4;
+              return isTreble ? octave >= 4 : octave < 4;
             });
 
             if (pitches.length > 0) {
@@ -245,9 +221,7 @@ export function renderStaff(outputDiv, config, state, selectors) {
                     const originalDraw = note.draw.bind(note);
                     note.draw = function() {
                         if (targetNote.getTickContext() && note.getTickContext()) {
-                          const targetX = targetNote.getAbsoluteX();
-                          const currentXPos = note.getAbsoluteX();
-                          note.setXShift(targetX - currentXPos);
+                          note.setXShift(targetNote.getAbsoluteX() - note.getAbsoluteX());
                         }
                         originalDraw();
                     };
@@ -261,71 +235,49 @@ export function renderStaff(outputDiv, config, state, selectors) {
         return null;
       };
 
+      const addVoicesToStave = (isTreble, targetNotes) => {
+        const v = [];
+        if (targetNotes.length > 0) {
+          const voice = vf.Voice().setMode(2).addTickables(targetNotes);
+          v.push(voice);
+          Accidental.applyAccidentals(v, measureData.keySignature || 'C');
+          allTargetVoices.push(voice);
+        }
+        const pmVoice = formatPlayedVoice(isTreble, targetNotes);
+        if (pmVoice) v.push(pmVoice);
+        return v;
+      };
+
       if (staffType === 'grand') {
         const tNotes = formatTargetVoice(true);
         const bNotes = formatTargetVoice(false);
-        const pmVoiceT = formatPlayedVoice(true, tNotes);
-        const pmVoiceB = formatPlayedVoice(false, bNotes);
-
-        const vT = [];
-        if (tNotes.length > 0) {
-          const v = vf.Voice().setMode(2).addTickables(tNotes);
-          vT.push(v);
-          Accidental.applyAccidentals(vT, measureData.keySignature || 'C');
-          allTargetVoices.push(v);
-        }
-        if (pmVoiceT) vT.push(pmVoiceT);
-
-        const vB = [];
-        if (bNotes.length > 0) {
-          const v = vf.Voice().setMode(2).addTickables(bNotes);
-          vB.push(v);
-          Accidental.applyAccidentals(vB, measureData.keySignature || 'C');
-          allTargetVoices.push(v);
-        }
-        if (pmVoiceB) vB.push(pmVoiceB);
-
-        const st = system.addStave({ voices: vT });
-        const sb = system.addStave({ voices: vB });
+        const st = system.addStave({ voices: addVoicesToStave(true, tNotes) });
+        const sb = system.addStave({ voices: addVoicesToStave(false, bNotes) });
 
         if (m === 0) {
-          if (measureData.keySignature) {
-            st.addClef('treble').addKeySignature(measureData.keySignature);
-            sb.addClef('bass').addKeySignature(measureData.keySignature);
-          } else {
-            st.addClef('treble');
-            sb.addClef('bass');
+          st.addClef('treble');
+          sb.addClef('bass');
+          if (measureData.keySignature && measureData.keySignature !== 'C') {
+            st.addKeySignature(measureData.keySignature);
+            sb.addKeySignature(measureData.keySignature);
           }
           system.addConnector('brace');
         }
         system.addConnector('singleRight');
-        if (measureIdx === musicData.length - 1) {
-            system.addConnector('boldDoubleRight');
-        }
       } else {
         const isTreble = staffType === 'treble';
         const notes = formatTargetVoice(isTreble);
-        const pmVoice = formatPlayedVoice(isTreble, notes);
-        const voices = [];
-        if (notes.length > 0) {
-          const v = vf.Voice().setMode(2).addTickables(notes);
-          voices.push(v);
-          Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
-          allTargetVoices.push(v);
-        }
-        if (pmVoice) voices.push(pmVoice);
-        
-        const stave = system.addStave({ voices });
-
+        const stave = system.addStave({ voices: addVoicesToStave(isTreble, notes) });
         if (m === 0) {
           stave.addClef(isTreble ? 'treble' : 'bass');
-          if (measureData.keySignature) {
+          if (measureData.keySignature && measureData.keySignature !== 'C') {
             stave.addKeySignature(measureData.keySignature);
           }
         }
-        if (measureIdx === musicData.length - 1) {
-            system.addConnector('boldDoubleRight');
-        }
+      }
+      
+      if (measureIdx === musicData.length - 1) {
+          system.addConnector('boldDoubleRight');
       }
     }
   }
