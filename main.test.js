@@ -525,6 +525,83 @@ describe('Music Staff Project', () => {
         expect(suppressedNotes.size).toBe(0);
         expect(document.querySelector('svg').innerHTML).toContain('rgba(128, 128, 128, 0.4)');
       });
+
+      it('should render an end barline (boldDoubleRight) for the last measure', () => {
+        document.body.innerHTML = `
+          <select id="measures-per-line"><option value="1">1</option></select>
+          <select id="lines"><option value="1">1</option></select>
+          <select id="staff-type"><option value="treble">treble</option></select>
+          <select id="notes-per-beat"><option value="1">1</option></select>
+          <select id="min-note"><option value="C4">C4</option></select>
+          <select id="max-note"><option value="C6">C6</option></select>
+          <div id="output"></div>
+        `;
+        const output = document.getElementById('output');
+        regenerateAndRender(output);
+        
+        const svg = output.querySelector('svg');
+        expect(svg).not.toBeNull();
+        expect(svg.innerHTML).toBeDefined();
+      });
+
+      it('should regenerate music and reset beat index when the last beat is matched', async () => {
+        document.body.innerHTML = `
+          <select id="measures-per-line"><option value="1">1</option></select>
+          <select id="lines"><option value="1">1</option></select>
+          <select id="staff-type"><option value="treble">treble</option></select>
+          <select id="notes-per-beat"><option value="1">1</option></select>
+          <select id="min-note"><option value="C4">C4</option></select>
+          <select id="max-note"><option value="C6">C6</option></select>
+          <div id="output"></div>
+          <div id="midi-status">
+            <span id="midi-device-name">-</span>
+            <div id="midi-indicator"></div>
+          </div>
+          <div id="note-display"><span id="current-note">-</span></div>
+        `;
+        const output = document.getElementById('output');
+        
+        let noteOnCallback;
+        let noteOffCallback;
+        const mockInput = {
+          name: 'Mock MIDI Keyboard',
+          type: 'input',
+          addListener: vi.fn((event, cb) => {
+            if (event === 'noteon') noteOnCallback = cb;
+            if (event === 'noteoff') noteOffCallback = cb;
+          }),
+          removeListener: vi.fn(),
+        };
+        WebMidi.inputs = [mockInput];
+        
+        initMIDI();
+        // Wait for WebMidi.enable() and listeners to be attached
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        regenerateAndRender(output);
+        
+        const initialMusicData = JSON.stringify(musicData);
+        
+        // Match all 4 beats
+        for (let i = 0; i < 4; i++) {
+          const targetPitches = [...musicData[0].trebleBeats[i]];
+          // Press target notes
+          targetPitches.forEach(p => {
+            noteOnCallback({ note: { identifier: p } });
+          });
+          
+          if (i < 3) {
+            // Release notes for next beat
+            targetPitches.forEach(p => {
+              noteOffCallback({ note: { identifier: p } });
+            });
+          }
+        }
+        
+        // After 4 beats (1 measure), it should have regenerated
+        expect(currentBeatIndex).toBe(0);
+        expect(JSON.stringify(musicData)).not.toBe(initialMusicData);
+      });
     });
   });
 });

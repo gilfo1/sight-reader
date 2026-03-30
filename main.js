@@ -356,9 +356,11 @@ export function renderStaff(outputDiv) {
         if (m === 0) stave.addClef('bass').addTimeSignature('4/4');
       }
       
+      const isLastMeasure = (measureIdx === musicData.length - 1);
+      
       if (staffType === 'grand') {
         if (m === 0) system.addConnector('brace');
-        system.addConnector('singleRight');
+        system.addConnector(isLastMeasure ? 'boldDoubleRight' : 'singleRight');
       }
       
       if (m === 0) {
@@ -366,7 +368,7 @@ export function renderStaff(outputDiv) {
       }
       
       if (m === measuresPerLine - 1 && staffType !== 'grand') {
-        system.addConnector('singleRight');
+        system.addConnector(isLastMeasure ? 'boldDoubleRight' : 'singleRight');
       }
     }
   }
@@ -465,6 +467,12 @@ export function initMIDI() {
     // Check if activeMidiNotes exactly match targetNotes
     if (activeMidiNotes.size === targetNotes.length && targetNotes.every(n => activeMidiNotes.has(n))) {
       currentBeatIndex++;
+      
+      // If we reached the end, regenerate music
+      if (currentBeatIndex >= musicData.length * 4) {
+          generateMusicData();
+      }
+
       // Suppress currently held notes so they don't show as wrong on the next beat
       activeMidiNotes.forEach(n => suppressedNotes.add(n));
     }
