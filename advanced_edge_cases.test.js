@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
+import { WebMidi } from 'webmidi';
 import { 
   regenerateAndRender, 
   initMIDI, 
@@ -358,6 +359,112 @@ describe('Advanced Edge Cases and Stress Tests', () => {
 
       // Complex measure with 16 accidentals should definitely be wider than a simple quarter note measure
       expect(complexWidth).toBeGreaterThan(simpleWidth);
+    });
+  });
+
+  describe('Accidental Rule Enforcement Detailed', () => {
+    it('should respect the Octave Rule: accidental on C4 does not affect C5', () => {
+      // In a measure, C4# is followed by C5. C5 should not have a natural/sharp unless it was in the key.
+      const customMusicData = [
+        { 
+          pattern: ['q', 'q', 'q', 'q'], 
+          trebleBeats: [['C#4'], ['C5'], ['C4'], ['C5']], 
+          bassBeats: [[], [], [], []], 
+          staffType: 'treble', 
+          keySignature: 'C' 
+        }
+      ];
+      setMusicData(customMusicData);
+      renderStaff();
+      
+      const svg = document.querySelector('#output svg');
+      const html = svg.innerHTML;
+      
+      // We expect 1 sharp (for C#4) and 1 natural (for the second C4).
+      // C5 should not have any accidental marks in C major.
+      const sharps = (html.match(/\uE262/g) || []).length; // #
+      const naturals = (html.match(/\uE261/g) || []).length; // natural
+      
+      expect(sharps).toBe(1);
+      expect(naturals).toBe(1);
+    });
+
+    it('should respect Staff Independence: accidental in treble does not affect bass', () => {
+      const customMusicData = [
+        { 
+          pattern: ['q', 'q', 'q', 'q'], 
+          trebleBeats: [['F#4'], ['F4'], [], []], 
+          bassBeats: [[], ['F3'], ['F#3'], ['F3']], 
+          staffType: 'grand', 
+          keySignature: 'C' 
+        }
+      ];
+      setMusicData(customMusicData);
+      renderStaff();
+      
+      const svg = document.querySelector('#output svg');
+      const html = svg.innerHTML;
+      
+      // Treble: F#4 (sharp), F4 (natural)
+      // Bass: F3 (nothing), F#3 (sharp), F3 (natural)
+      // Total: 2 sharps, 2 naturals
+      const sharps = (html.match(/\uE262/g) || []).length;
+      const naturals = (html.match(/\uE261/g) || []).length;
+      
+      expect(sharps).toBe(2);
+      expect(naturals).toBe(2);
+    });
+  });
+
+  describe('Extreme Rhythmic and Range Edge Cases', () => {
+    it('should handle regeneration at the end of a 16th note measure', async () => {
+      const customMusicData = [
+        { pattern: ['16', '16'], trebleBeats: [['C4'], ['D4']], bassBeats: [[], []], staffType: 'treble', keySignature: 'C' }
+      ];
+      setMusicData(customMusicData);
+      setCurrentBeatIndex(0);
+      
+      let noteOnCallback;
+      const mockInput = { 
+          name: 'Keyboard', 
+          addListener: vi.fn((event, cb) => {
+              if (event === 'noteon') noteOnCallback = cb;
+          }),
+          removeListener: vi.fn()
+      };
+      WebMidi.inputs = [mockInput];
+      
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      // Match first 16th
+      noteOnCallback({ note: { identifier: 'C4' } });
+      expect(currentBeatIndex).toBe(1);
+      
+      // Match second 16th (last beat)
+      activeMidiNotes.clear();
+      noteOnCallback({ note: { identifier: 'D4' } });
+      
+      // Should have regenerated and reset index
+      expect(currentBeatIndex).toBe(0);
+      expect(musicData.length).toBeGreaterThan(1); // Default is usually more than 1 measure
+    });
+
+    it('should handle extremely narrow note range (one note)', () => {
+      document.getElementById('min-note').innerHTML = '<option value="C4">C4</option>';
+      document.getElementById('min-note').value = 'C4';
+      document.getElementById('max-note').innerHTML = '<option value="C4">C4</option>';
+      document.getElementById('max-note').value = 'C4';
+      
+      regenerateAndRender();
+      
+      musicData.forEach(m => {
+        m.trebleBeats.forEach(beat => {
+          if (beat.length > 0) {
+            expect(beat.every(p => p === 'C4')).toBe(true);
+          }
+        });
+      });
     });
   });
 });

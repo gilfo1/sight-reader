@@ -696,6 +696,11 @@ export function initMIDI() {
     } else {
       deviceNameEl.textContent = 'No device connected';
       indicatorEl.style.backgroundColor = 'red';
+      // Clear active notes when no device is connected
+      activeMidiNotes.clear();
+      suppressedNotes.clear();
+      noteDisplayEl.textContent = '-';
+      renderStaff();
     }
   };
 
