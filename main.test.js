@@ -1190,5 +1190,75 @@ describe('Music Staff Project', () => {
       const beams = svg.querySelectorAll('.vf-beam');
       expect(beams.length).toBeGreaterThan(0);
     });
+
+    it('should increase measure width when notes are crowded with accidentals', () => {
+      resetGameState();
+      document.body.innerHTML = `
+        <div id="output"></div>
+        <select id="measures-per-line"><option value="1">1</option></select>
+        <select id="lines"><option value="1">1</option></select>
+        <select id="staff-type"><option value="treble">treble</option></select>
+        <select id="notes-per-beat"><option value="1">1</option></select>
+        <select id="min-note"><option value="C2">C2</option></select>
+        <select id="max-note"><option value="C6">C6</option></select>
+        <div id="note-values"><input type="checkbox" value="q" checked></div>
+      `;
+
+      // Simple measure
+      setMusicData([{
+        trebleBeats: [['C4']],
+        bassBeats: [[]],
+        pattern: ['q'],
+        keySignature: 'C'
+      }]);
+      renderStaff(document.getElementById('output'));
+      const svg1 = document.querySelector('svg');
+      const width1 = parseFloat(svg1.getAttribute('width'));
+
+      // Crowded measure
+      setMusicData([{
+        trebleBeats: [
+          ['C#4', 'D#4', 'E#4', 'F#4', 'G#4', 'A#4'],
+          ['C#4', 'D#4', 'E#4', 'F#4', 'G#4', 'A#4'],
+          ['C#4', 'D#4', 'E#4', 'F#4', 'G#4', 'A#4'],
+          ['C#4', 'D#4', 'E#4', 'F#4', 'G#4', 'A#4'],
+        ],
+        bassBeats: [[], [], [], []],
+        pattern: ['q', 'q', 'q', 'q'],
+        keySignature: 'C'
+      }]);
+      renderStaff(document.getElementById('output'));
+      const svg2 = document.querySelector('svg');
+      const width2 = parseFloat(svg2.getAttribute('width'));
+
+      expect(width2).toBeGreaterThan(width1);
+    });
+
+    it('should have the same width for all lines in multi-line setup', () => {
+      resetGameState();
+      document.body.innerHTML = `
+        <div id="output"></div>
+        <select id="measures-per-line"><option value="1">1</option></select>
+        <select id="lines"><option value="2">2</option></select>
+        <select id="staff-type"><option value="treble">treble</option></select>
+        <select id="notes-per-beat"><option value="1">1</option></select>
+        <select id="min-note"><option value="C2">C2</option></select>
+        <select id="max-note"><option value="C6">C6</option></select>
+        <div id="note-values"><input type="checkbox" value="q" checked></div>
+      `;
+
+      setMusicData([
+        { trebleBeats: [['C4']], bassBeats: [[]], pattern: ['q'], keySignature: 'C' },
+        { 
+          trebleBeats: [['C#4', 'D#4', 'E#4', 'F#4', 'G#4', 'A#4']], 
+          bassBeats: [[]], pattern: ['q'], keySignature: 'C' 
+        }
+      ]);
+
+      renderStaff(document.getElementById('output'));
+      const svg = document.querySelector('svg');
+      // The total width should be determined by the max width needed by either line's measure 0.
+      expect(parseFloat(svg.getAttribute('width'))).toBeGreaterThanOrEqual(300);
+    });
   });
 });

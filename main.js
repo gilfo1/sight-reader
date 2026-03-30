@@ -7,6 +7,9 @@ export let currentBeatIndex = 0;
 export const activeMidiNotes = new Set();
 export const suppressedNotes = new Set();
 
+let lastRenderParams = null;
+let cachedColWidths = null;
+
 const NOTES_IN_OCTAVE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const ALL_PIANO_NOTES = [];
 for (let octave = 0; octave <= 8; octave++) {
@@ -392,14 +395,97 @@ export function renderStaff(outputDiv) {
   const linesCount = parseInt(document.getElementById('lines')?.value || '1');
   const staffType = document.getElementById('staff-type')?.value || 'grand';
 
+  // Check cache for column widths
   // Ensure the div has an ID
   if (!div.id) {
     div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
   }
-  
-  const widthPerMeasure = 200;
+
+  // Helper to format voices for a measure (used in both passes)
+  const getTargetNotes = (score, measureData, mIdx, isTreble, currentNotesArray) => {
+    return measureData[isTreble ? 'trebleBeats' : 'bassBeats'].map((pitches, bIdx) => {
+      const duration = measureData.pattern[bIdx];
+      const info = getStepInfo(currentBeatIndex);
+      const isCurrent = (info && info.measureIdx === mIdx && info.stepIdx === bIdx);
+      if (pitches.length === 0) {
+        const restPitch = isTreble ? 'B4' : 'D3';
+        const notes = score.notes(`${restPitch}/${duration}/r`, { 
+          clef: isTreble ? 'treble' : 'bass' 
+        });
+        const note = notes[0];
+        if (isCurrent && currentNotesArray) currentNotesArray.push(note);
+        return note;
+      } else {
+        const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
+        const notes = score.notes(noteStr, { 
+          stem: isTreble ? 'up' : 'down',
+          clef: isTreble ? 'treble' : 'bass'
+        });
+        if (isCurrent && currentNotesArray) currentNotesArray.push(notes[0]);
+        return notes[0];
+      }
+    });
+  };
+
+  const currentParams = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
+  if (lastRenderParams !== currentParams) {
+    // FIRST PASS: Calculate required widths for each column
+    const colWidths = new Array(measuresPerLine).fill(200);
+    const hiddenDiv = document.createElement('div');
+    hiddenDiv.style.display = 'none';
+    document.body.appendChild(hiddenDiv);
+    hiddenDiv.id = 'temp-vf-' + Math.random().toString(36).substring(2, 9);
+
+    const tempVf = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
+    const tempScore = tempVf.EasyScore();
+
+    for (let m = 0; m < measuresPerLine; m++) {
+      for (let l = 0; l < linesCount; l++) {
+        const measureIdx = (l * measuresPerLine) + m;
+        const measureData = musicData[measureIdx];
+        if (!measureData) continue;
+
+        const system = tempVf.System({ x: 0, y: 0 }); // autoWidth enabled by default when width is undefined
+        
+        if (staffType === 'treble' || staffType === 'grand') {
+          const targetNotes = getTargetNotes(tempScore, measureData, measureIdx, true, null);
+          const voices = [tempVf.Voice().setMode(2).addTickables(targetNotes)];
+          Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
+          const stave = system.addStave({ voices });
+          if (m === 0) {
+            stave.addClef('treble').addTimeSignature('4/4');
+            if (measureData.keySignature && measureData.keySignature !== 'C') {
+              stave.addKeySignature(measureData.keySignature);
+            }
+          }
+        }
+        if (staffType === 'bass' || staffType === 'grand') {
+          const targetNotes = getTargetNotes(tempScore, measureData, measureIdx, false, null);
+          const voices = [tempVf.Voice().setMode(2).addTickables(targetNotes)];
+          Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
+          const stave = system.addStave({ voices });
+          if (m === 0) {
+            stave.addClef('bass').addTimeSignature('4/4');
+            if (measureData.keySignature && measureData.keySignature !== 'C') {
+              stave.addKeySignature(measureData.keySignature);
+            }
+          }
+        }
+        
+        system.format();
+        colWidths[m] = Math.max(colWidths[m], system.options.width);
+        tempVf.reset();
+        hiddenDiv.innerHTML = '';
+      }
+    }
+    document.body.removeChild(hiddenDiv);
+    cachedColWidths = colWidths;
+    lastRenderParams = currentParams;
+  }
+
+  const colWidths = cachedColWidths;
   const padding = 100;
-  const totalWidth = (measuresPerLine * widthPerMeasure) + padding;
+  const totalWidth = colWidths.reduce((a, b) => a + b, 0) + padding;
   const heightPerLine = staffType === 'grand' ? 250 : 150;
   const totalHeight = (linesCount * heightPerLine) + 100;
 
@@ -412,43 +498,25 @@ export function renderStaff(outputDiv) {
   });
   
   const score = vf.EasyScore();
-  
   const currentNotes = [];
 
   for (let l = 0; l < linesCount; l++) {
     const y = 50 + (l * heightPerLine);
+    let currentX = 50;
     
     for (let m = 0; m < measuresPerLine; m++) {
       const measureIdx = (l * measuresPerLine) + m;
       const measureData = musicData[measureIdx];
       if (!measureData) continue;
 
-      const x = 50 + (m * widthPerMeasure);
-      const system = vf.System({ x, y, width: widthPerMeasure });
+      const width = colWidths[m];
+      const x = currentX;
+      currentX += width;
+
+      const system = vf.System({ x, y, width });
       
       const formatTargetVoice = (beatsData, isTreble) => {
-        return beatsData.map((pitches, bIdx) => {
-          const duration = measureData.pattern[bIdx];
-          const info = getStepInfo(currentBeatIndex);
-          const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === bIdx);
-          if (pitches.length === 0) {
-            const restPitch = isTreble ? 'B4' : 'D3';
-            const notes = score.notes(`${restPitch}/${duration}/r`, { 
-              clef: isTreble ? 'treble' : 'bass' 
-            });
-            const note = notes[0];
-            if (isCurrent) currentNotes.push(note);
-            return note;
-          } else {
-            const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
-            const notes = score.notes(noteStr, { 
-              stem: isTreble ? 'up' : 'down',
-              clef: isTreble ? 'treble' : 'bass'
-            });
-            if (isCurrent) currentNotes.push(notes[0]);
-            return notes[0];
-          }
-        });
+        return getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes);
       };
 
       const formatPlayedVoice = (isTreble, targetNotesForStave) => {
