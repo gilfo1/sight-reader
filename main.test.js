@@ -58,8 +58,11 @@ describe('Music Staff Project', () => {
     expect(html).toContain('id="midi-indicator"');
     expect(html).toContain('id="note-display"');
     expect(html).toContain('id="current-note"');
-    expect(html).toContain('<details');
-    expect(html).toContain('<summary');
+    // Should have at least two accordions now: Settings and MIDI Notes
+    const detailsCount = (html.match(/<details/g) || []).length;
+    expect(detailsCount).toBeGreaterThanOrEqual(2);
+    expect(html).toContain('Settings');
+    expect(html).toContain('Show MIDI Notes');
   });
 
   it('should have an index.html with music configuration selectors', () => {
