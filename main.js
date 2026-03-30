@@ -58,7 +58,7 @@ const DURATION_WEIGHTS = {
  * @param {string[]} selectedDurations 
  * @returns {string[]}
  */
-function generateRhythmicPattern(selectedDurations) {
+export function generateRhythmicPattern(selectedDurations) {
   const pattern = [];
   let remaining = 16;
   const allDurations = ['w', 'h', 'q', '8', '16'];
@@ -124,6 +124,8 @@ export function resetGameState() {
   currentBeatIndex = 0;
   activeMidiNotes.clear();
   suppressedNotes.clear();
+  lastRenderParams = null;
+  cachedColWidths = null;
 }
 
 /**
@@ -137,7 +139,7 @@ export function resetGameState() {
  * @param {boolean} isChromatic - whether to allow non-diatonic notes
  * @returns {string[]}
  */
-function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature = 'C', isChromatic = false) {
+export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature = 'C', isChromatic = false) {
   const minVal = getNoteValue(minNote);
   const maxVal = getNoteValue(maxNote);
   
@@ -348,6 +350,7 @@ export function generateMusicData() {
  * @returns {{measureIdx: number, stepIdx: number} | null}
  */
 export function getStepInfo(index) {
+  if (index < 0) return null;
   let count = 0;
   for (let m = 0; m < musicData.length; m++) {
     const stepsInMeasure = musicData[m].pattern.length;
