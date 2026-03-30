@@ -70,6 +70,12 @@ describe('Music Staff Project', () => {
     expect(html).toContain('id="staff-type"');
     expect(html).toContain('id="min-note"');
     expect(html).toContain('id="max-note"');
+    expect(html).toContain('id="note-values"');
+    expect(html).toContain('value="w"');
+    expect(html).toContain('value="h"');
+    expect(html).toContain('value="q"');
+    expect(html).toContain('value="8"');
+    expect(html).toContain('value="16"');
   });
 
   it('should have a main.js file that exports renderStaff and initMIDI', async () => {
@@ -971,6 +977,218 @@ describe('Music Staff Project', () => {
       // Key of G has one sharp (F#). VexFlow renders this.
       // We check for the sharp glyph in the SVG (u+e262)
       expect(svg).toContain('\ue262');
+    });
+  });
+
+  describe('Note Values', () => {
+    beforeEach(() => {
+      resetGameState();
+      document.body.innerHTML = `
+        <div id="controls">
+          <select id="measures-per-line"><option value="1">1</option></select>
+          <select id="lines"><option value="1">1</option></select>
+          <select id="staff-type"><option value="treble">treble</option></select>
+          <select id="notes-per-beat"><option value="1">1</option></select>
+          <select id="min-note"><option value="C3">C3</option></select>
+          <select id="max-note"><option value="C6">C6</option></select>
+          <div id="key-signatures"></div>
+          <div id="note-values">
+            <input type="checkbox" id="nv-w" value="w">
+            <input type="checkbox" id="nv-h" value="h">
+            <input type="checkbox" id="nv-q" value="q" checked>
+            <input type="checkbox" id="nv-8" value="8">
+            <input type="checkbox" id="nv-16" value="16">
+          </div>
+        </div>
+        <div id="output"></div>
+      `;
+      initKeySignatures();
+    });
+
+    it('should default to quarter notes if no note value is checked', () => {
+      document.getElementById('nv-q').checked = false;
+      regenerateAndRender();
+      
+      // Should default to 'q'
+      expect(musicData[0].pattern).toEqual(['q', 'q', 'q', 'q']);
+    });
+
+    it('should include selected note values in the generated pattern', () => {
+      document.getElementById('nv-q').checked = false;
+      document.getElementById('nv-h').checked = true;
+      
+      regenerateAndRender();
+      
+      // With only 'h' selected, pattern should be ['h', 'h']
+      expect(musicData[0].pattern).toEqual(['h', 'h']);
+      expect(musicData[0].trebleBeats.length).toBe(2);
+    });
+
+    it('should generate random patterns from multiple selected note values', () => {
+      document.getElementById('nv-q').checked = true;
+      document.getElementById('nv-8').checked = true;
+      
+      // Run multiple times to see different patterns
+      const patterns = new Set();
+      for (let i = 0; i < 20; i++) {
+        regenerateAndRender();
+        patterns.add(musicData[0].pattern.join(','));
+      }
+      
+      // There should be more than 1 distinct pattern if randomization works
+      expect(patterns.size).toBeGreaterThan(1);
+      
+      // All durations in all patterns should be either 'q' or '8'
+      for (const p of patterns) {
+        const durations = p.split(',');
+        durations.forEach(d => expect(['q', '8']).toContain(d));
+      }
+    });
+
+    it('should correctly advance currentBeatIndex through variable-length measures', async () => {
+      // Set a specific pattern: [half, quarter, quarter]
+      setMusicData([
+        {
+          trebleBeats: [['C4'], ['D4'], ['E4']],
+          bassBeats: [[], [], []],
+          pattern: ['h', 'q', 'q'],
+          staffType: 'treble'
+        }
+      ]);
+      
+      expect(musicData[0].pattern.length).toBe(3);
+      
+      // MIDI setup
+      document.body.innerHTML += `
+        <div id="midi-status">
+          <span id="midi-device-name">-</span>
+          <div id="midi-indicator"></div>
+        </div>
+        <div id="note-display"><span id="current-note">-</span></div>
+      `;
+      
+      let noteOnCallback;
+      const mockInput = {
+        name: 'Mock MIDI',
+        type: 'input',
+        addListener: vi.fn((event, cb) => {
+          if (event === 'noteon') noteOnCallback = cb;
+        }),
+        removeListener: vi.fn(),
+      };
+      WebMidi.inputs = [mockInput];
+
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      // Trigger connected to be safe, though inputs.forEach should have handled it
+      WebMidi._trigger('connected', { port: mockInput });
+
+      // Match step 0 (half note C4)
+      noteOnCallback({ note: { identifier: 'C4' } });
+      expect(currentBeatIndex).toBe(1);
+      
+      // Match step 1 (quarter note D4)
+      activeMidiNotes.clear();
+      noteOnCallback({ note: { identifier: 'D4' } });
+      expect(currentBeatIndex).toBe(2);
+      
+      // Match step 2 (quarter note E4)
+      activeMidiNotes.clear();
+      noteOnCallback({ note: { identifier: 'E4' } });
+      // Should advance and trigger regeneration since it's the end
+      expect(currentBeatIndex).toBe(0); 
+    });
+  });
+
+  describe('Music Beaming', () => {
+    beforeEach(() => {
+      resetGameState();
+      document.body.innerHTML = `
+        <select id="measures-per-line"><option value="1">1</option></select>
+        <select id="lines"><option value="1">1</option></select>
+        <select id="staff-type"><option value="treble">treble</option></select>
+        <select id="notes-per-beat"><option value="1">1</option></select>
+        <select id="min-note"><option value="C3">C3</option></select>
+        <select id="max-note"><option value="C6">C6</option></select>
+        <div id="output"></div>
+      `;
+    });
+
+    it('should render beams for consecutive 8th notes', () => {
+      const testData = [{
+        trebleBeats: [['C5'], ['D5'], ['E5'], ['F5']],
+        bassBeats: [[], [], [], []],
+        pattern: ['8', '8', '8', '8'],
+        keySignature: 'C',
+        staffType: 'treble'
+      }];
+      setMusicData(testData);
+      
+      const output = document.getElementById('output');
+      renderStaff(output);
+      
+      const svg = output.querySelector('svg');
+      expect(svg).not.toBeNull();
+      
+      // VexFlow 5 uses "vf-beam" class for beams
+      const beams = svg.querySelectorAll('.vf-beam');
+      expect(beams.length).toBeGreaterThan(0);
+    });
+
+    it('should render beams for consecutive 16th notes', () => {
+      const testData = [{
+        trebleBeats: [['C5'], ['D5'], ['E5'], ['F5'], ['G5'], ['A5'], ['B5'], ['C6']],
+        bassBeats: [[], [], [], [], [], [], [], []],
+        pattern: ['16', '16', '16', '16', '16', '16', '16', '16'],
+        keySignature: 'C',
+        staffType: 'treble'
+      }];
+      setMusicData(testData);
+      
+      const output = document.getElementById('output');
+      renderStaff(output);
+      
+      const svg = output.querySelector('svg');
+      const beams = svg.querySelectorAll('.vf-beam');
+      expect(beams.length).toBeGreaterThan(0);
+    });
+
+    it('should not render beams for quarter notes', () => {
+      const testData = [{
+        trebleBeats: [['C5'], ['D5'], ['E5'], ['F5']],
+        bassBeats: [[], [], [], []],
+        pattern: ['q', 'q', 'q', 'q'],
+        keySignature: 'C',
+        staffType: 'treble'
+      }];
+      setMusicData(testData);
+      
+      const output = document.getElementById('output');
+      renderStaff(output);
+      
+      const svg = output.querySelector('svg');
+      const beams = svg.querySelectorAll('.vf-beam');
+      expect(beams.length).toBe(0);
+    });
+
+    it('should handle measures with rests and still beam appropriate notes', () => {
+      const testData = [{
+        trebleBeats: [['C5'], [], ['E5'], ['F5']],
+        bassBeats: [[], [], [], []],
+        pattern: ['8', '8', '8', '8'],
+        keySignature: 'C',
+        staffType: 'treble'
+      }];
+      setMusicData(testData);
+      
+      const output = document.getElementById('output');
+      renderStaff(output);
+      
+      const svg = output.querySelector('svg');
+      // Beats 2 and 3 should be beamed together. Beat 0 might be beamed or not depending on VexFlow defaults (usually single 8th notes aren't beamed).
+      const beams = svg.querySelectorAll('.vf-beam');
+      expect(beams.length).toBeGreaterThan(0);
     });
   });
 });

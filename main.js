@@ -1,4 +1,4 @@
-import { Factory, Accidental } from 'vexflow';
+import { Factory, Accidental, Beam } from 'vexflow';
 import { WebMidi } from 'webmidi';
 
 // Global state for music data and progress
@@ -41,6 +41,40 @@ const SCALES = {
   'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
   'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb']
 };
+
+const DURATION_WEIGHTS = {
+  'w': 16,
+  'h': 8,
+  'q': 4,
+  '8': 2,
+  '16': 1
+};
+
+/**
+ * Generates a rhythmic pattern that fills a 4/4 measure.
+ * @param {string[]} selectedDurations 
+ * @returns {string[]}
+ */
+function generateRhythmicPattern(selectedDurations) {
+  const pattern = [];
+  let remaining = 16;
+  const allDurations = ['w', 'h', 'q', '8', '16'];
+  
+  while (remaining > 0) {
+    const options = selectedDurations.filter(d => DURATION_WEIGHTS[d] <= remaining);
+    let chosen;
+    if (options.length > 0) {
+      chosen = options[Math.floor(Math.random() * options.length)];
+    } else {
+      // Fallback: pick the largest duration that fits from allDurations
+      const fallbackOptions = allDurations.filter(d => DURATION_WEIGHTS[d] <= remaining);
+      chosen = fallbackOptions[0]; // 'w' is first, but we want the largest fitting, which is actually the first in list if we order by weight
+    }
+    pattern.push(chosen);
+    remaining -= DURATION_WEIGHTS[chosen];
+  }
+  return pattern;
+}
 
 /**
  * Returns a numeric value for a note to help with sorting and filtering.
@@ -193,28 +227,26 @@ function getRandomPitches(clef, count, minNote, maxNote, staffType, keySignature
 
 
 /**
- * Compute per-beat note distribution for a single measure.
- * - For 'treble' or 'bass', all beats go to the selected staff.
- * - For 'grand' with notesPerBeat = 1, put notes on bass only (deterministic).
- * - For 'grand' with notesPerBeat > 1, split ceil/floor between treble/bass.
+ * Compute per-step note distribution for a single measure.
  * @param {string} staffType
- * @param {number} notesPerBeat
+ * @param {number} notesPerStep
  * @param {number} measureIndex
+ * @param {string[]} pattern
  * @returns {{trebleCounts:number[], bassCounts:number[]}}
  */
-export function computeMeasureCounts(staffType, notesPerBeat, measureIndex = 0) {
+export function computeMeasureCounts(staffType, notesPerStep, measureIndex = 0, pattern = ['q', 'q', 'q', 'q']) {
   const trebleCounts = [];
   const bassCounts = [];
-  for (let b = 0; b < 4; b++) {
+  for (let b = 0; b < pattern.length; b++) {
     if (staffType === 'treble') {
-      trebleCounts.push(notesPerBeat);
+      trebleCounts.push(notesPerStep);
       bassCounts.push(0);
     } else if (staffType === 'bass') {
       trebleCounts.push(0);
-      bassCounts.push(notesPerBeat);
+      bassCounts.push(notesPerStep);
     } else if (staffType === 'grand') {
-      if (notesPerBeat === 1) {
-        // Alternate between treble and bass based on measure and beat index.
+      if (notesPerStep === 1) {
+        // Alternate between treble and bass based on measure and step index.
         if ((b + measureIndex) % 2 === 0) {
           trebleCounts.push(1);
           bassCounts.push(0);
@@ -223,8 +255,8 @@ export function computeMeasureCounts(staffType, notesPerBeat, measureIndex = 0) 
           bassCounts.push(1);
         }
       } else {
-        trebleCounts.push(Math.ceil(notesPerBeat / 2));
-        bassCounts.push(Math.floor(notesPerBeat / 2));
+        trebleCounts.push(Math.ceil(notesPerStep / 2));
+        bassCounts.push(Math.floor(notesPerStep / 2));
       }
     }
   }
@@ -244,7 +276,10 @@ export function setCurrentBeatIndex(index) {
  * @param {Array} data 
  */
 export function setMusicData(data) {
-  musicData = data;
+  musicData = data.map(m => ({
+    ...m,
+    pattern: m.pattern || (m.trebleBeats ? m.trebleBeats.map(() => 'q') : ['q', 'q', 'q', 'q'])
+  }));
 }
 
 /**
@@ -257,6 +292,15 @@ export function generateMusicData() {
   const staffType = document.getElementById('staff-type')?.value || 'grand';
   const minNote = document.getElementById('min-note')?.value || 'C2';
   const maxNote = document.getElementById('max-note')?.value || 'C6';
+
+  // Get selected note values
+  const noteValuesContainer = document.getElementById('note-values');
+  let selectedNoteValues = ['q'];
+  if (noteValuesContainer) {
+    const checked = Array.from(noteValuesContainer.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+    if (checked.length > 0) selectedNoteValues = checked;
+  }
 
   // Get selected key signatures
   const keyContainer = document.getElementById('key-signatures');
@@ -279,19 +323,45 @@ export function generateMusicData() {
     
     for (let m = 0; m < measuresPerLine; m++) {
       const globalMeasureIdx = (l * measuresPerLine) + m;
-      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, globalMeasureIdx);
+      const pattern = generateRhythmicPattern(selectedNoteValues);
+      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, globalMeasureIdx, pattern);
       const trebleBeats = [];
       const bassBeats = [];
 
-      for (let b = 0; b < 4; b++) {
+      for (let b = 0; b < pattern.length; b++) {
         trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b], minNote, maxNote, staffType, lineKey, isChromatic) : []);
         bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b], minNote, maxNote, staffType, lineKey, isChromatic) : []);
       }
-      data.push({ trebleBeats, bassBeats, staffType, keySignature: lineKey });
+      data.push({ trebleBeats, bassBeats, pattern, staffType, keySignature: lineKey });
     }
   }
   musicData = data;
   currentBeatIndex = 0;
+}
+
+/**
+ * Gets the measure and step index for a global step index.
+ * @param {number} index 
+ * @returns {{measureIdx: number, stepIdx: number} | null}
+ */
+export function getStepInfo(index) {
+  let count = 0;
+  for (let m = 0; m < musicData.length; m++) {
+    const stepsInMeasure = musicData[m].pattern.length;
+    if (index < count + stepsInMeasure) {
+      return { measureIdx: m, stepIdx: index - count };
+    }
+    count += stepsInMeasure;
+  }
+  return null;
+}
+
+/**
+ * Gets the total number of steps in the music data.
+ * @returns {number}
+ */
+export function getTotalSteps() {
+  return musicData.reduce((acc, m) => acc + (m.pattern?.length || 0), 0);
 }
 
 /**
@@ -358,18 +428,19 @@ export function renderStaff(outputDiv) {
       
       const formatTargetVoice = (beatsData, isTreble) => {
         return beatsData.map((pitches, bIdx) => {
-          const absBeatIdx = (measureIdx * 4) + bIdx;
-          const isCurrent = (absBeatIdx === currentBeatIndex);
+          const duration = measureData.pattern[bIdx];
+          const info = getStepInfo(currentBeatIndex);
+          const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === bIdx);
           if (pitches.length === 0) {
             const restPitch = isTreble ? 'B4' : 'D3';
-            const notes = score.notes(`${restPitch}/q/r`, { 
+            const notes = score.notes(`${restPitch}/${duration}/r`, { 
               clef: isTreble ? 'treble' : 'bass' 
             });
             const note = notes[0];
             if (isCurrent) currentNotes.push(note);
             return note;
           } else {
-            const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/q` : `${pitches[0]}/q`;
+            const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
             const notes = score.notes(noteStr, { 
               stem: isTreble ? 'up' : 'down',
               clef: isTreble ? 'treble' : 'bass'
@@ -383,9 +454,11 @@ export function renderStaff(outputDiv) {
       const formatPlayedVoice = (isTreble, targetNotesForStave) => {
         const beats = [];
         let hasRealNote = false;
-        for (let b = 0; b < 4; b++) {
-          const absBeatIdx = (measureIdx * 4) + b;
-          if (absBeatIdx === currentBeatIndex && activeMidiNotes.size > 0) {
+        const info = getStepInfo(currentBeatIndex);
+        for (let b = 0; b < measureData.pattern.length; b++) {
+          const duration = measureData.pattern[b];
+          const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === b);
+          if (isCurrent && activeMidiNotes.size > 0) {
             const targetPitches = isTreble ? measureData.trebleBeats[b] : measureData.bassBeats[b];
             
             const pitches = Array.from(activeMidiNotes).filter(p => {
@@ -400,7 +473,7 @@ export function renderStaff(outputDiv) {
             });
 
             if (pitches.length > 0) {
-              const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/q` : `${pitches[0]}/q`;
+              const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
               const notes = score.notes(noteStr, { 
                 stem: isTreble ? 'up' : 'down',
                 clef: isTreble ? 'treble' : 'bass'
@@ -429,10 +502,10 @@ export function renderStaff(outputDiv) {
               beats.push(note);
               hasRealNote = true;
             } else {
-              beats.push(vf.GhostNote({ duration: 'q' }));
+              beats.push(vf.GhostNote({ duration }));
             }
           } else {
-            beats.push(vf.GhostNote({ duration: 'q' }));
+            beats.push(vf.GhostNote({ duration }));
           }
         }
         return { beats, hasRealNote };
@@ -446,6 +519,7 @@ export function renderStaff(outputDiv) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
         Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
+        Beam.generateBeams(targetNotes).forEach(beam => vf.renderQ.push(beam));
         const stave = system.addStave({ voices });
         if (m === 0) {
           stave.addClef('treble').addTimeSignature('4/4');
@@ -463,6 +537,7 @@ export function renderStaff(outputDiv) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
         Accidental.applyAccidentals(voices, measureData.keySignature || 'C');
+        Beam.generateBeams(targetNotes).forEach(beam => vf.renderQ.push(beam));
         const stave = system.addStave({ voices });
         if (m === 0) {
           stave.addClef('bass').addTimeSignature('4/4');
@@ -557,11 +632,13 @@ export function initMIDI() {
     activeMidiNotes.add(e.note.identifier);
     
     // Check if we should stop suppressing wrong notes
-    const measureIdx = Math.floor(currentBeatIndex / 4);
-    const beatInMeasure = currentBeatIndex % 4;
-    const measureData = musicData[measureIdx];
+    const info = getStepInfo(currentBeatIndex);
+    const measureData = info ? musicData[info.measureIdx] : null;
     if (measureData) {
-      const targetPitches = [...measureData.trebleBeats[beatInMeasure], ...measureData.bassBeats[beatInMeasure]];
+      const targetPitches = [
+        ...(measureData.trebleBeats[info.stepIdx] || []), 
+        ...(measureData.bassBeats[info.stepIdx] || [])
+      ];
       if (!targetPitches.includes(e.note.identifier)) {
         suppressedNotes.clear();
       }
@@ -585,12 +662,14 @@ export function initMIDI() {
   };
 
   const checkMatch = () => {
-    const measureIdx = Math.floor(currentBeatIndex / 4);
-    const beatInMeasure = currentBeatIndex % 4;
-    const measureData = musicData[measureIdx];
+    const info = getStepInfo(currentBeatIndex);
+    const measureData = info ? musicData[info.measureIdx] : null;
     if (!measureData) return;
 
-    const targetNotes = Array.from(new Set([...measureData.trebleBeats[beatInMeasure], ...measureData.bassBeats[beatInMeasure]]));
+    const targetNotes = Array.from(new Set([
+      ...(measureData.trebleBeats[info.stepIdx] || []), 
+      ...(measureData.bassBeats[info.stepIdx] || [])
+    ]));
     const targetVals = targetNotes.map(getNoteValue);
     const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
@@ -599,7 +678,7 @@ export function initMIDI() {
       currentBeatIndex++;
       
       // If we reached the end, regenerate music
-      if (currentBeatIndex >= musicData.length * 4) {
+      if (currentBeatIndex >= getTotalSteps()) {
           generateMusicData();
       }
 
