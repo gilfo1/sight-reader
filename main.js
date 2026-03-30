@@ -198,7 +198,7 @@ export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySi
     if (clef === 'treble') {
       options = options.filter(n => getNoteValue(n) >= middleC);
     } else {
-      options = options.filter(n => getNoteValue(n) <= middleC);
+      options = options.filter(n => getNoteValue(n) < middleC);
     }
   }
   
@@ -213,7 +213,7 @@ export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySi
       if (staffType === 'grand') {
         const middleC = getNoteValue('C4');
         if (clef === 'treble') return val >= middleC;
-        return val <= middleC;
+        return val < middleC;
       }
       return true;
     });
