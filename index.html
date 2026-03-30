@@ -6,6 +6,13 @@
     <title>VexFlow Grand Staff</title>
   </head>
   <body>
+    <div id="midi-status" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; display: inline-block;">
+      MIDI: <span id="midi-device-name">No device connected</span>
+      <div id="midi-indicator" style="width: 15px; height: 15px; background-color: gray; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
+    </div>
+    <div id="note-display" style="margin-bottom: 10px; font-size: 24px; font-weight: bold;">
+      Note: <span id="current-note">-</span>
+    </div>
     <div id="output"></div>
     <script type="module" src="/main.js"></script>
   </body>

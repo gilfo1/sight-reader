@@ -9,7 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "vexflow": "^5.0.0"
+    "vexflow": "^5.0.0",
+    "webmidi": "^3.1.14"
   },
   "devDependencies": {
     "@vitest/browser": "^3.2.4",

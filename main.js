@@ -1,4 +1,5 @@
 import { Factory } from 'vexflow';
+import { WebMidi } from 'webmidi';
 
 /**
  * Renders a grand staff with some notes.
@@ -45,10 +46,75 @@ export function renderStaff(div) {
   vf.draw();
 }
 
-// Automatically render if we're in a browser environment.
+/**
+ * Initializes MIDI detection.
+ */
+export function initMIDI() {
+  const deviceNameEl = document.getElementById('midi-device-name');
+  const indicatorEl = document.getElementById('midi-indicator');
+  const noteDisplayEl = document.getElementById('current-note');
+
+  if (!deviceNameEl || !indicatorEl || !noteDisplayEl) return;
+
+  const updateStatus = () => {
+    if (WebMidi.inputs.length > 0) {
+      deviceNameEl.textContent = WebMidi.inputs[0].name;
+      indicatorEl.style.backgroundColor = 'green';
+    } else {
+      deviceNameEl.textContent = 'No device connected';
+      indicatorEl.style.backgroundColor = 'gray';
+    }
+  };
+
+  const activeNotes = new Set();
+
+  const onNoteOn = (e) => {
+    activeNotes.add(e.note.identifier);
+    noteDisplayEl.textContent = Array.from(activeNotes).join(', ');
+  };
+
+  const onNoteOff = (e) => {
+    activeNotes.delete(e.note.identifier);
+    if (activeNotes.size === 0) {
+      noteDisplayEl.textContent = '-';
+    } else {
+      noteDisplayEl.textContent = Array.from(activeNotes).join(', ');
+    }
+  };
+
+  const addInputListeners = (input) => {
+    input.removeListener('noteon');
+    input.removeListener('noteoff');
+    input.addListener('noteon', onNoteOn);
+    input.addListener('noteoff', onNoteOff);
+  };
+
+  WebMidi.enable().then(() => {
+    updateStatus();
+    
+    WebMidi.inputs.forEach(addInputListeners);
+
+    WebMidi.addListener('connected', (e) => {
+      if (e.port.type === 'input') {
+        addInputListeners(e.port);
+      }
+      updateStatus();
+    });
+
+    WebMidi.addListener('disconnected', () => {
+      updateStatus();
+    });
+  }).catch(err => {
+    console.error('MIDI could not be enabled:', err);
+    deviceNameEl.textContent = 'MIDI Error: ' + err.message;
+  });
+}
+
+// Automatically initialize if we're in a browser environment.
 if (typeof document !== 'undefined') {
   const div = document.getElementById('output');
   if (div) {
     renderStaff(div);
   }
+  initMIDI();
 }
