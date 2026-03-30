@@ -1,0 +1,20 @@
+{
+  "name": "sight-reader",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "vexflow": "^5.0.0"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "vite": "^6.4.1",
+    "vitest": "^3.2.4"
+  }
+}
