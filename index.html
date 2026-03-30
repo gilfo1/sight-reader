@@ -7,23 +7,48 @@
   </head>
   <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px;">
     <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: flex-start;">
-      <div id="controls" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-        <div>
-          <label for="measures-per-line">Measures per Line:</label>
-          <select id="measures-per-line">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4" selected>4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-          </select>
+      <div id="controls" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <div>
+            <label for="measures-per-line">Measures per Line:</label>
+            <select id="measures-per-line">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
+          </div>
+          <div>
+            <label for="lines">Lines:</label>
+            <select id="lines">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+          <div>
+            <label for="staff-type">Staff Type:</label>
+            <select id="staff-type">
+              <option value="grand" selected>Grand Staff</option>
+              <option value="treble">Treble Clef</option>
+              <option value="bass">Bass Clef</option>
+            </select>
+          </div>
         </div>
         <div>
-          <label for="lines">Lines:</label>
-          <select id="lines">
+          <label for="notes-per-beat">Notes per Beat:</label>
+          <select id="notes-per-beat">
             <option value="1" selected>1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -34,14 +59,6 @@
             <option value="8">8</option>
             <option value="9">9</option>
             <option value="10">10</option>
-          </select>
-        </div>
-        <div>
-          <label for="staff-type">Staff Type:</label>
-          <select id="staff-type">
-            <option value="grand" selected>Grand Staff</option>
-            <option value="treble">Treble Clef</option>
-            <option value="bass">Bass Clef</option>
           </select>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { renderStaff, initMIDI } from './main.js';
+import { renderStaff, initMIDI, computeMeasureCounts } from './main.js';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi
@@ -37,6 +37,7 @@ describe('Music Staff Project', () => {
   it('should have an index.html with music configuration selectors', () => {
     const html = readFileSync('./index.html', 'utf-8');
     expect(html).toContain('id="measures-per-line"');
+    expect(html).toContain('id="notes-per-beat"');
     expect(html).toContain('id="lines"');
     expect(html).toContain('id="staff-type"');
   });
@@ -193,6 +194,18 @@ describe('Music Staff Project', () => {
           <option value="7">7</option>
           <option value="8">8</option>
         </select>
+        <select id="notes-per-beat">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
         <select id="lines">
           <option value="1" selected>1</option>
           <option value="2">2</option>
@@ -272,15 +285,10 @@ describe('Music Staff Project', () => {
 
     it('should update rendering when a selector is changed', async () => {
       // Mock the auto-initialization listener by manually triggering change
-      // Or we can rely on the fact that renderStaff() is exported and can be called.
-      
-      // Let's simulate what happens when user selects 2 lines instead of 1
       const linesSelect = document.getElementById('lines');
       linesSelect.value = "2";
       
-      // In main.js we attached listeners in the browser block.
-      // But here we might need to attach them manually if we want to test the listener.
-      const selectors = ['measures-per-line', 'lines', 'staff-type'];
+      const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type'];
       selectors.forEach(id => {
         document.getElementById(id).addEventListener('change', () => renderStaff(div));
       });
@@ -291,6 +299,73 @@ describe('Music Staff Project', () => {
       // Now 2 lines * 4 measures * 2 staves = 16 staves
       const staves = div.querySelectorAll('.vf-stave');
       expect(staves.length).toBe(16);
+    });
+
+    it('should render correct number of noteheads for chords', () => {
+      document.getElementById('measures-per-line').value = "1";
+      document.getElementById('lines').value = "1";
+      document.getElementById('staff-type').value = "treble";
+      document.getElementById('notes-per-beat').value = "3";
+      
+      renderStaff(div);
+      
+      // 1 measure * 4 beats * 3 notes = 12 noteheads
+      const noteheads = div.querySelectorAll('.vf-notehead');
+      expect(noteheads.length).toBe(12);
+    });
+
+    it('should divide notes between treble and bass in grand staff mode', () => {
+      document.getElementById('measures-per-line').value = "1";
+      document.getElementById('lines').value = "1";
+      document.getElementById('staff-type').value = "grand";
+      document.getElementById('notes-per-beat').value = "5";
+      
+      renderStaff(div);
+      
+      // 1 measure * 4 beats * 5 notes = 20 noteheads total
+      const noteheads = div.querySelectorAll('.vf-notehead');
+      expect(noteheads.length).toBe(20);
+      
+      const allStaveNotes = div.querySelectorAll('.vf-stavenote');
+      const nonRestNotes = Array.from(allStaveNotes).filter(n => n.querySelector('.vf-stem'));
+      const rests = Array.from(allStaveNotes).filter(n => !n.querySelector('.vf-stem'));
+      
+      expect(rests.length).toBe(0);
+    });
+
+    it('should render 4 notes and 4 rests total when notes-per-beat is 1 in grand staff mode (one note per beat, alternating staves)', () => {
+      document.getElementById('measures-per-line').value = "1";
+      document.getElementById('lines').value = "1";
+      document.getElementById('staff-type').value = "grand";
+      document.getElementById('notes-per-beat').value = "1";
+      
+      renderStaff(div);
+      
+      // 1 measure * 4 beats total. Each beat has 1 note on one staff and 1 rest on the other.
+      const allStaveNotes = div.querySelectorAll('.vf-stavenote');
+      const nonRestNotes = Array.from(allStaveNotes).filter(n => n.querySelector('.vf-stem'));
+      const rests = Array.from(allStaveNotes).filter(n => !n.querySelector('.vf-stem'));
+      
+      expect(nonRestNotes.length).toBe(4);
+      expect(rests.length).toBe(4);
+    });
+
+    describe('computeMeasureCounts', () => {
+      it('should alternate notes between treble and bass for grand staff with notesPerBeat = 1', () => {
+        const measure0 = computeMeasureCounts('grand', 1, 0);
+        expect(measure0.trebleCounts).toEqual([1, 0, 1, 0]);
+        expect(measure0.bassCounts).toEqual([0, 1, 0, 1]);
+
+        const measure1 = computeMeasureCounts('grand', 1, 1);
+        expect(measure1.trebleCounts).toEqual([0, 1, 0, 1]);
+        expect(measure1.bassCounts).toEqual([1, 0, 1, 0]);
+      });
+
+      it('should split notes for grand staff with notesPerBeat > 1', () => {
+        const counts = computeMeasureCounts('grand', 3, 0);
+        expect(counts.trebleCounts).toEqual([2, 2, 2, 2]);
+        expect(counts.bassCounts).toEqual([1, 1, 1, 1]);
+      });
     });
   });
 });
