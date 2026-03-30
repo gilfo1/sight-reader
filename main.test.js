@@ -34,6 +34,13 @@ describe('Music Staff Project', () => {
     expect(html).toContain('<summary');
   });
 
+  it('should have an index.html with music configuration selectors', () => {
+    const html = readFileSync('./index.html', 'utf-8');
+    expect(html).toContain('id="measures-per-line"');
+    expect(html).toContain('id="lines"');
+    expect(html).toContain('id="staff-type"');
+  });
+
   it('should have a main.js file that exports renderStaff and initMIDI', async () => {
     const main = await import('./main.js');
     expect(main.renderStaff).toBeDefined();
@@ -175,7 +182,36 @@ describe('Music Staff Project', () => {
     let div;
 
     beforeEach(() => {
-      document.body.innerHTML = '<div id="output"></div>';
+      document.body.innerHTML = `
+        <select id="measures-per-line">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+        <select id="lines">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+        <select id="staff-type">
+          <option value="grand" selected>Grand Staff</option>
+          <option value="treble">Treble Clef</option>
+          <option value="bass">Bass Clef</option>
+        </select>
+        <div id="output"></div>
+      `;
       div = document.getElementById('output');
     });
 
@@ -185,17 +221,76 @@ describe('Music Staff Project', () => {
       const svg = div.querySelector('svg');
       expect(svg).not.toBeNull();
       
-      // Check for staves
+      // Default grand staff (4 measures, 1 line) = 8 staves
       const staves = div.querySelectorAll('.vf-stave');
-      expect(staves.length).toBeGreaterThanOrEqual(2);
+      expect(staves.length).toBe(8);
 
-      // Check for clefs (treble and bass)
+      // Check for clefs
       const clefs = div.querySelectorAll('.vf-clef');
       expect(clefs.length).toBeGreaterThanOrEqual(2);
 
       // Check for notes
       const notes = div.querySelectorAll('.vf-stavenote');
       expect(notes.length).toBeGreaterThan(0);
+    });
+
+    it('should render correct number of staves based on selectors', () => {
+      document.getElementById('measures-per-line').value = "2";
+      document.getElementById('lines').value = "2";
+      document.getElementById('staff-type').value = "grand";
+      
+      renderStaff(div);
+      
+      // 2 measures * 2 lines * 2 staves per measure = 8 staves
+      const staves = div.querySelectorAll('.vf-stave');
+      expect(staves.length).toBe(8);
+    });
+
+    it('should render correct number of staves for treble only', () => {
+      document.getElementById('measures-per-line').value = "3";
+      document.getElementById('lines').value = "1";
+      document.getElementById('staff-type').value = "treble";
+      
+      renderStaff(div);
+      
+      // 3 measures * 1 line * 1 stave per measure = 3 staves
+      const staves = div.querySelectorAll('.vf-stave');
+      expect(staves.length).toBe(3);
+    });
+
+    it('should render correct number of staves for bass only', () => {
+      document.getElementById('measures-per-line').value = "4";
+      document.getElementById('lines').value = "2";
+      document.getElementById('staff-type').value = "bass";
+      
+      renderStaff(div);
+      
+      // 4 measures * 2 lines * 1 stave per measure = 8 staves
+      const staves = div.querySelectorAll('.vf-stave');
+      expect(staves.length).toBe(8);
+    });
+
+    it('should update rendering when a selector is changed', async () => {
+      // Mock the auto-initialization listener by manually triggering change
+      // Or we can rely on the fact that renderStaff() is exported and can be called.
+      
+      // Let's simulate what happens when user selects 2 lines instead of 1
+      const linesSelect = document.getElementById('lines');
+      linesSelect.value = "2";
+      
+      // In main.js we attached listeners in the browser block.
+      // But here we might need to attach them manually if we want to test the listener.
+      const selectors = ['measures-per-line', 'lines', 'staff-type'];
+      selectors.forEach(id => {
+        document.getElementById(id).addEventListener('change', () => renderStaff(div));
+      });
+      
+      linesSelect.dispatchEvent(new Event('change'));
+      
+      // Default was grand staff (4 measures per line)
+      // Now 2 lines * 4 measures * 2 staves = 16 staves
+      const staves = div.querySelectorAll('.vf-stave');
+      expect(staves.length).toBe(16);
     });
   });
 });

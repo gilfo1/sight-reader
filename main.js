@@ -2,47 +2,105 @@ import { Factory } from 'vexflow';
 import { WebMidi } from 'webmidi';
 
 /**
- * Renders a grand staff with some notes.
- * @param {HTMLElement} div - The element where the staff will be rendered.
+ * Generates a random note identifier for VexFlow.
+ * @param {string} clef - 'treble' or 'bass'
+ * @returns {string}
  */
-export function renderStaff(div) {
+function getRandomNote(clef = 'treble') {
+  const trebleNotes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'];
+  const bassNotes = ['C2', 'D2', 'E2', 'F2', 'G2', 'A2', 'B2', 'C3', 'D3', 'E3'];
+  const options = clef === 'treble' ? trebleNotes : bassNotes;
+  return options[Math.floor(Math.random() * options.length)] + '/q';
+}
+
+/**
+ * Generates a string of 4 random quarter notes.
+ * @param {string} clef - 'treble' or 'bass'
+ * @returns {string}
+ */
+function getRandomMeasureNotes(clef = 'treble') {
+  return [
+    getRandomNote(clef),
+    getRandomNote(clef),
+    getRandomNote(clef),
+    getRandomNote(clef)
+  ].join(', ');
+}
+
+/**
+ * Renders the music staff based on current selector values.
+ * @param {HTMLElement} [outputDiv] - Optional div to render into.
+ */
+export function renderStaff(outputDiv) {
+  const div = outputDiv || document.getElementById('output');
   if (!div) return;
   
-  // Ensure the div has an ID, as VexFlow Factory requires one.
+  // Clear previous content
+  div.innerHTML = '';
+  
+  const measuresPerLine = parseInt(document.getElementById('measures-per-line')?.value || '4');
+  const linesCount = parseInt(document.getElementById('lines')?.value || '1');
+  const staffType = document.getElementById('staff-type')?.value || 'grand';
+
+  // Ensure the div has an ID
   if (!div.id) {
     div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
   }
   
+  const widthPerMeasure = 200;
+  const padding = 100;
+  const totalWidth = (measuresPerLine * widthPerMeasure) + padding;
+  const heightPerLine = staffType === 'grand' ? 250 : 150;
+  const totalHeight = (linesCount * heightPerLine) + 100;
+
   const vf = new Factory({ 
     renderer: { 
       elementId: div.id, 
-      width: 600, 
-      height: 400 
+      width: totalWidth, 
+      height: totalHeight 
     } 
   });
   
   const score = vf.EasyScore();
-  const system = vf.System({ x: 50, y: 50, width: 500 });
-
-  // Add treble stave
-  system.addStave({
-    voices: [
-      score.voice(score.notes('C4/q, D4/q, E4/q, F4/q', { stem: 'up' })),
-    ],
-  }).addClef('treble').addTimeSignature('4/4');
-
-  // Add bass stave
-  system.addStave({
-    voices: [
-      score.voice(score.notes('C3/h, G2/h', { clef: 'bass' })),
-    ],
-  }).addClef('bass').addTimeSignature('4/4');
-
-  // Connect staves
-  system.addConnector('brace');
-  system.addConnector('singleLeft');
-  system.addConnector('singleRight');
-
+  
+  for (let l = 0; l < linesCount; l++) {
+    const y = 50 + (l * heightPerLine);
+    
+    for (let m = 0; m < measuresPerLine; m++) {
+      const x = 50 + (m * widthPerMeasure);
+      const system = vf.System({ x, y, width: widthPerMeasure });
+      
+      if (staffType === 'treble' || staffType === 'grand') {
+        const notes = getRandomMeasureNotes('treble');
+        const stave = system.addStave({
+          voices: [score.voice(score.notes(notes, { stem: 'up' }))],
+        });
+        if (m === 0) stave.addClef('treble').addTimeSignature('4/4');
+      }
+      
+      if (staffType === 'bass' || staffType === 'grand') {
+        const notes = getRandomMeasureNotes('bass');
+        const stave = system.addStave({
+          voices: [score.voice(score.notes(notes, { clef: 'bass', stem: 'down' }))],
+        });
+        if (m === 0) stave.addClef('bass').addTimeSignature('4/4');
+      }
+      
+      if (staffType === 'grand') {
+        if (m === 0) system.addConnector('brace');
+        system.addConnector('singleRight');
+      }
+      
+      if (m === 0) {
+        system.addConnector('singleLeft');
+      }
+      
+      if (m === measuresPerLine - 1 && staffType !== 'grand') {
+        system.addConnector('singleRight');
+      }
+    }
+  }
+  
   vf.draw();
 }
 
@@ -112,9 +170,11 @@ export function initMIDI() {
 
 // Automatically initialize if we're in a browser environment.
 if (typeof document !== 'undefined') {
-  const div = document.getElementById('output');
-  if (div) {
-    renderStaff(div);
-  }
+  const selectors = ['measures-per-line', 'lines', 'staff-type'];
+  selectors.forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => renderStaff());
+  });
+  
+  renderStaff();
   initMIDI();
 }
