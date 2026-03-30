@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { renderStaff, initMIDI, computeMeasureCounts } from './main.js';
+import { regenerateAndRender, initMIDI, musicData, currentBeatIndex, activeMidiNotes, suppressedNotes, computeMeasureCounts, resetGameState } from './main.js';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi
@@ -55,6 +55,7 @@ describe('Music Staff Project', () => {
 
   describe('MIDI Functionality', () => {
     beforeEach(() => {
+      resetGameState();
       document.body.innerHTML = `
         <div id="midi-status">
           <span id="midi-device-name">No device connected</span>
@@ -177,12 +178,83 @@ describe('Music Staff Project', () => {
       }
       expect(noteDisplay.textContent).toBe('-');
     });
+
+    it('should advance to the next beat when correct MIDI notes are played', async () => {
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      let noteOnCallback;
+      const mockInput = {
+        name: 'Mock MIDI',
+        type: 'input',
+        addListener: vi.fn((event, cb) => {
+          if (event === 'noteon') noteOnCallback = cb;
+        }),
+        removeListener: vi.fn(),
+      };
+      WebMidi.inputs = [mockInput];
+      WebMidi._trigger('connected', { port: mockInput });
+
+      // Initial state
+      document.body.innerHTML += '<select id="measures-per-line"><option value="4">4</option></select>' +
+                                '<select id="lines"><option value="1">1</option></select>' +
+                                '<select id="staff-type"><option value="treble">Treble Clef</option></select>' +
+                                '<select id="notes-per-beat"><option value="1">1</option></select>';
+      regenerateAndRender(document.getElementById('output'));
+      expect(currentBeatIndex).toBe(0);
+
+      const targetNotes = [...musicData[0].trebleBeats[0], ...musicData[0].bassBeats[0]];
+      targetNotes.forEach(note => {
+        noteOnCallback({ note: { identifier: note } });
+      });
+
+      expect(currentBeatIndex).toBe(1);
+      
+      const svg = document.querySelector('svg');
+      const highlight = Array.from(svg.querySelectorAll('rect')).find(r => r.getAttribute('fill')?.includes('rgba(173, 216, 230'));
+      expect(highlight).not.toBeNull();
+    });
+
+    it('should not advance if incorrect MIDI notes are played and should show wrong notes', async () => {
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      let noteOnCallback;
+      const mockInput = {
+        name: 'Mock MIDI',
+        type: 'input',
+        addListener: vi.fn((event, cb) => {
+          if (event === 'noteon') noteOnCallback = cb;
+        }),
+        removeListener: vi.fn(),
+      };
+      WebMidi.inputs = [mockInput];
+      WebMidi._trigger('connected', { port: mockInput });
+
+      document.body.innerHTML += '<select id="measures-per-line"><option value="4">4</option></select>' +
+                                '<select id="lines"><option value="1">1</option></select>' +
+                                '<select id="staff-type"><option value="treble">Treble Clef</option></select>' +
+                                '<select id="notes-per-beat"><option value="1">1</option></select>';
+      regenerateAndRender(document.getElementById('output'));
+      expect(currentBeatIndex).toBe(0);
+
+      const wrongNote = 'F#4';
+      noteOnCallback({ note: { identifier: wrongNote } });
+
+      expect(currentBeatIndex).toBe(0);
+
+      const svg = document.querySelector('svg');
+      const inner = svg.innerHTML.toLowerCase();
+      const hasGrey = inner.includes('gray') || inner.includes('grey') || inner.includes('808080') || inner.includes('128, 128, 128');
+      expect(hasGrey).toBe(true);
+    });
   });
 
   describe('Staff Rendering', () => {
     let div;
 
     beforeEach(() => {
+      resetGameState();
       document.body.innerHTML = `
         <select id="measures-per-line">
           <option value="1">1</option>
@@ -229,7 +301,7 @@ describe('Music Staff Project', () => {
     });
 
     it('should render a music staff into the div', () => {
-      renderStaff(div);
+      regenerateAndRender(div);
       
       const svg = div.querySelector('svg');
       expect(svg).not.toBeNull();
@@ -252,7 +324,7 @@ describe('Music Staff Project', () => {
       document.getElementById('lines').value = "2";
       document.getElementById('staff-type').value = "grand";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 2 measures * 2 lines * 2 staves per measure = 8 staves
       const staves = div.querySelectorAll('.vf-stave');
@@ -264,7 +336,7 @@ describe('Music Staff Project', () => {
       document.getElementById('lines').value = "1";
       document.getElementById('staff-type').value = "treble";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 3 measures * 1 line * 1 stave per measure = 3 staves
       const staves = div.querySelectorAll('.vf-stave');
@@ -276,7 +348,7 @@ describe('Music Staff Project', () => {
       document.getElementById('lines').value = "2";
       document.getElementById('staff-type').value = "bass";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 4 measures * 2 lines * 1 stave per measure = 8 staves
       const staves = div.querySelectorAll('.vf-stave');
@@ -284,16 +356,10 @@ describe('Music Staff Project', () => {
     });
 
     it('should update rendering when a selector is changed', async () => {
-      // Mock the auto-initialization listener by manually triggering change
       const linesSelect = document.getElementById('lines');
       linesSelect.value = "2";
       
-      const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type'];
-      selectors.forEach(id => {
-        document.getElementById(id).addEventListener('change', () => renderStaff(div));
-      });
-      
-      linesSelect.dispatchEvent(new Event('change'));
+      regenerateAndRender(div);
       
       // Default was grand staff (4 measures per line)
       // Now 2 lines * 4 measures * 2 staves = 16 staves
@@ -307,7 +373,7 @@ describe('Music Staff Project', () => {
       document.getElementById('staff-type').value = "treble";
       document.getElementById('notes-per-beat').value = "3";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 1 measure * 4 beats * 3 notes = 12 noteheads
       const noteheads = div.querySelectorAll('.vf-notehead');
@@ -320,7 +386,7 @@ describe('Music Staff Project', () => {
       document.getElementById('staff-type').value = "grand";
       document.getElementById('notes-per-beat').value = "5";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 1 measure * 4 beats * 5 notes = 20 noteheads total
       const noteheads = div.querySelectorAll('.vf-notehead');
@@ -339,7 +405,7 @@ describe('Music Staff Project', () => {
       document.getElementById('staff-type').value = "grand";
       document.getElementById('notes-per-beat').value = "1";
       
-      renderStaff(div);
+      regenerateAndRender(div);
       
       // 1 measure * 4 beats total. Each beat has 1 note on one staff and 1 rest on the other.
       const allStaveNotes = div.querySelectorAll('.vf-stavenote');
@@ -365,6 +431,64 @@ describe('Music Staff Project', () => {
         const counts = computeMeasureCounts('grand', 3, 0);
         expect(counts.trebleCounts).toEqual([2, 2, 2, 2]);
         expect(counts.bassCounts).toEqual([1, 1, 1, 1]);
+      });
+    });
+
+    describe('MIDI Suppression Logic', () => {
+      it('should suppress notes after a correct match', async () => {
+        const output = document.getElementById('output');
+        initMIDI();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        let noteOnCallback;
+        const mockInput = {
+          name: 'Mock MIDI',
+          type: 'input',
+          addListener: vi.fn((event, cb) => {
+            if (event === 'noteon') noteOnCallback = cb;
+          }),
+          removeListener: vi.fn(),
+        };
+        WebMidi.inputs = [mockInput];
+        WebMidi._trigger('connected', { port: mockInput });
+
+        regenerateAndRender(output);
+        const targetNote = musicData[0].trebleBeats[0][0] || musicData[0].bassBeats[0][0]; 
+        
+        noteOnCallback({ note: { identifier: targetNote } });
+        expect(currentBeatIndex).toBe(1);
+        expect(suppressedNotes.has(targetNote)).toBe(true);
+        
+        const svg = document.querySelector('svg');
+        expect(svg.innerHTML).not.toContain('rgba(128, 128, 128, 0.4)');
+      });
+
+      it('should stop suppressing when a new wrong note is hit', async () => {
+        const output = document.getElementById('output');
+        initMIDI();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        let noteOnCallback;
+        const mockInput = {
+          name: 'Mock MIDI',
+          type: 'input',
+          addListener: vi.fn((event, cb) => {
+            if (event === 'noteon') noteOnCallback = cb;
+          }),
+          removeListener: vi.fn(),
+        };
+        WebMidi.inputs = [mockInput];
+        WebMidi._trigger('connected', { port: mockInput });
+
+        regenerateAndRender(output);
+        const targetNote0 = musicData[0].trebleBeats[0][0] || musicData[0].bassBeats[0][0];
+        
+        noteOnCallback({ note: { identifier: targetNote0 } });
+        expect(currentBeatIndex).toBe(1);
+        
+        noteOnCallback({ note: { identifier: 'F#4' } }); // Assuming F#4 is wrong
+        expect(suppressedNotes.size).toBe(0);
+        expect(document.querySelector('svg').innerHTML).toContain('rgba(128, 128, 128, 0.4)');
       });
     });
   });

@@ -1,6 +1,22 @@
 import { Factory } from 'vexflow';
 import { WebMidi } from 'webmidi';
 
+// Global state for music data and progress
+export let musicData = [];
+export let currentBeatIndex = 0;
+export const activeMidiNotes = new Set();
+export const suppressedNotes = new Set();
+
+/**
+ * Resets the global game state.
+ */
+export function resetGameState() {
+  musicData = [];
+  currentBeatIndex = 0;
+  activeMidiNotes.clear();
+  suppressedNotes.clear();
+}
+
 /**
  * Generates random pitches for VexFlow.
  * @param {string} clef - 'treble' or 'bass'
@@ -102,6 +118,42 @@ export function computeMeasureCounts(staffType, notesPerBeat, measureIndex = 0) 
 }
 
 /**
+ * Generates the music data structure based on current configuration.
+ */
+export function generateMusicData() {
+  const measuresPerLine = parseInt(document.getElementById('measures-per-line')?.value || '4');
+  const notesPerBeat = parseInt(document.getElementById('notes-per-beat')?.value || '1');
+  const linesCount = parseInt(document.getElementById('lines')?.value || '1');
+  const staffType = document.getElementById('staff-type')?.value || 'grand';
+
+  const totalMeasures = measuresPerLine * linesCount;
+  const data = [];
+
+  for (let m = 0; m < totalMeasures; m++) {
+    const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, m);
+    const trebleBeats = [];
+    const bassBeats = [];
+
+    for (let b = 0; b < 4; b++) {
+      trebleBeats.push(trebleCounts[b] > 0 ? getRandomPitches('treble', trebleCounts[b]) : []);
+      bassBeats.push(bassCounts[b] > 0 ? getRandomPitches('bass', bassCounts[b]) : []);
+    }
+    data.push({ trebleBeats, bassBeats, staffType });
+  }
+  musicData = data;
+  currentBeatIndex = 0;
+}
+
+/**
+ * Resets the music state and re-renders.
+ * @param {HTMLElement} [outputDiv] - Optional div to render into.
+ */
+export function regenerateAndRender(outputDiv) {
+  generateMusicData();
+  renderStaff(outputDiv);
+}
+
+/**
  * Renders the music staff based on current selector values.
  * @param {HTMLElement} [outputDiv] - Optional div to render into.
  */
@@ -109,11 +161,14 @@ export function renderStaff(outputDiv) {
   const div = outputDiv || document.getElementById('output');
   if (!div) return;
   
+  if (musicData.length === 0) {
+    generateMusicData();
+  }
+
   // Clear previous content
   div.innerHTML = '';
   
   const measuresPerLine = parseInt(document.getElementById('measures-per-line')?.value || '4');
-  const notesPerBeat = parseInt(document.getElementById('notes-per-beat')?.value || '1');
   const linesCount = parseInt(document.getElementById('lines')?.value || '1');
   const staffType = document.getElementById('staff-type')?.value || 'grand';
 
@@ -138,28 +193,126 @@ export function renderStaff(outputDiv) {
   
   const score = vf.EasyScore();
   
+  const currentNotes = [];
+
   for (let l = 0; l < linesCount; l++) {
     const y = 50 + (l * heightPerLine);
     
     for (let m = 0; m < measuresPerLine; m++) {
+      const measureIdx = (l * measuresPerLine) + m;
+      const measureData = musicData[measureIdx];
+      if (!measureData) continue;
+
       const x = 50 + (m * widthPerMeasure);
       const system = vf.System({ x, y, width: widthPerMeasure });
       
-      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, m);
-      
-      if (staffType === 'treble' || staffType === 'grand') {
-        const notes = getRandomMeasureNotes('treble', trebleCounts);
-        const stave = system.addStave({
-          voices: [score.voice(score.notes(notes, { stem: 'up' }))],
+      const formatTargetVoice = (beatsData, isTreble) => {
+        return beatsData.map((pitches, bIdx) => {
+          const absBeatIdx = (measureIdx * 4) + bIdx;
+          const isCurrent = (absBeatIdx === currentBeatIndex);
+          if (pitches.length === 0) {
+            const restPitch = isTreble ? 'B4' : 'D3';
+            const note = score.notes(`${restPitch}/q/r`)[0];
+            if (isCurrent) currentNotes.push(note);
+            return note;
+          } else {
+            const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/q` : `${pitches[0]}/q`;
+            const notes = score.notes(noteStr, { 
+              stem: isTreble ? 'up' : 'down',
+              clef: isTreble ? 'treble' : 'bass'
+            });
+            if (isCurrent) currentNotes.push(notes[0]);
+            return notes[0];
+          }
         });
+      };
+
+      const formatPlayedVoice = (isTreble, targetNotesForStave) => {
+        const beats = [];
+        let hasRealNote = false;
+        for (let b = 0; b < 4; b++) {
+          const absBeatIdx = (measureIdx * 4) + b;
+          if (absBeatIdx === currentBeatIndex && activeMidiNotes.size > 0) {
+            const targetPitches = isTreble ? measureData.trebleBeats[b] : measureData.bassBeats[b];
+            
+            // Check if we should suppress grey notes
+            const hasNewWrongNote = Array.from(activeMidiNotes).some(p => 
+              !targetPitches.includes(p) && !suppressedNotes.has(p)
+            );
+            
+            if (hasNewWrongNote) {
+              suppressedNotes.clear();
+            }
+
+            const pitches = Array.from(activeMidiNotes).filter(p => {
+              // If still suppressed, don't show wrong notes
+              if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
+              
+              const octave = parseInt(p.slice(-1));
+              if (staffType === 'treble') return isTreble;
+              if (staffType === 'bass') return !isTreble;
+              if (isTreble) return octave >= 4;
+              return octave < 4;
+            });
+
+            if (pitches.length > 0) {
+              const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/q` : `${pitches[0]}/q`;
+              const notes = score.notes(noteStr, { 
+                stem: isTreble ? 'up' : 'down',
+                clef: isTreble ? 'treble' : 'bass'
+              });
+              const note = notes[0];
+              
+              pitches.forEach((p, idx) => {
+                if (!targetPitches.includes(p)) {
+                  note.setKeyStyle(idx, { fillStyle: 'rgba(128, 128, 128, 0.4)', strokeStyle: 'rgba(128, 128, 128, 0.4)' });
+                }
+              });
+
+              // Align with the target note on the same beat
+              const targetNote = targetNotesForStave[b];
+              if (targetNote) {
+                const originalDraw = note.draw.bind(note);
+                note.draw = () => {
+                  const targetX = targetNote.getAbsoluteX();
+                  const currentX = note.getAbsoluteX();
+                  note.setXShift(targetX - currentX);
+                  originalDraw();
+                };
+              }
+              
+              note.getWidth = () => 0;
+              beats.push(note);
+              hasRealNote = true;
+            } else {
+              beats.push(vf.GhostNote({ duration: 'q' }));
+            }
+          } else {
+            beats.push(vf.GhostNote({ duration: 'q' }));
+          }
+        }
+        return { beats, hasRealNote };
+      };
+
+      if (staffType === 'treble' || staffType === 'grand') {
+        const targetNotes = formatTargetVoice(measureData.trebleBeats, true);
+        const { beats: playedNotes, hasRealNote } = formatPlayedVoice(true, targetNotes);
+        const voices = [vf.Voice().setMode(2).addTickables(targetNotes)];
+        if (hasRealNote) {
+          voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
+        }
+        const stave = system.addStave({ voices });
         if (m === 0) stave.addClef('treble').addTimeSignature('4/4');
       }
       
       if (staffType === 'bass' || staffType === 'grand') {
-        const notes = getRandomMeasureNotes('bass', bassCounts);
-        const stave = system.addStave({
-          voices: [score.voice(score.notes(notes, { clef: 'bass', stem: 'down' }))],
-        });
+        const targetNotes = formatTargetVoice(measureData.bassBeats, false);
+        const { beats: playedNotes, hasRealNote } = formatPlayedVoice(false, targetNotes);
+        const voices = [vf.Voice().setMode(2).addTickables(targetNotes)];
+        if (hasRealNote) {
+          voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
+        }
+        const stave = system.addStave({ voices });
         if (m === 0) stave.addClef('bass').addTimeSignature('4/4');
       }
       
@@ -179,6 +332,47 @@ export function renderStaff(outputDiv) {
   }
   
   vf.draw();
+
+  // Add highlight for the current beat
+  drawHighlight(vf, currentNotes, staffType);
+}
+
+/**
+ * Draws a highlight rectangle over the current beat.
+ */
+function drawHighlight(vf, currentNotes, staffType) {
+  if (currentNotes.length === 0) return;
+
+  const context = vf.getContext();
+  
+  // Find the note with the absolute X
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  currentNotes.forEach(note => {
+     const x = note.getAbsoluteX();
+     // We want a box that covers the beat area.
+     // StaveNote x is the notehead.
+     minX = Math.min(minX, x - 15);
+     maxX = Math.max(maxX, x + 35);
+     
+     const bb = note.getBoundingBox();
+     minY = Math.min(minY, bb.getY());
+     maxY = Math.max(maxY, bb.getY() + bb.getH());
+  });
+
+  // For the highlight, we want it to span the whole staff height
+  // Actually, we can use the stave's Y if we had it.
+  // But we can estimate it.
+  const y = minY - 20;
+  const height = (maxY - minY) + 40;
+  
+  context.save();
+  context.setFillStyle('rgba(173, 216, 230, 0.4)');
+  context.fillRect(minX, y, maxX - minX, height);
+  context.restore();
 }
 
 /**
@@ -201,19 +395,38 @@ export function initMIDI() {
     }
   };
 
-  const activeNotes = new Set();
-
   const onNoteOn = (e) => {
-    activeNotes.add(e.note.identifier);
-    noteDisplayEl.textContent = Array.from(activeNotes).join(', ');
+    activeMidiNotes.add(e.note.identifier);
+    noteDisplayEl.textContent = Array.from(activeMidiNotes).join(', ');
+    checkMatch();
+    renderStaff();
   };
 
   const onNoteOff = (e) => {
-    activeNotes.delete(e.note.identifier);
-    if (activeNotes.size === 0) {
+    activeMidiNotes.delete(e.note.identifier);
+    suppressedNotes.delete(e.note.identifier);
+    if (activeMidiNotes.size === 0) {
       noteDisplayEl.textContent = '-';
     } else {
-      noteDisplayEl.textContent = Array.from(activeNotes).join(', ');
+      noteDisplayEl.textContent = Array.from(activeMidiNotes).join(', ');
+    }
+    checkMatch();
+    renderStaff();
+  };
+
+  const checkMatch = () => {
+    const measureIdx = Math.floor(currentBeatIndex / 4);
+    const beatInMeasure = currentBeatIndex % 4;
+    const measureData = musicData[measureIdx];
+    if (!measureData) return;
+
+    const targetNotes = Array.from(new Set([...measureData.trebleBeats[beatInMeasure], ...measureData.bassBeats[beatInMeasure]]));
+    
+    // Check if activeMidiNotes exactly match targetNotes
+    if (activeMidiNotes.size === targetNotes.length && targetNotes.every(n => activeMidiNotes.has(n))) {
+      currentBeatIndex++;
+      // Suppress currently held notes so they don't show as wrong on the next beat
+      activeMidiNotes.forEach(n => suppressedNotes.add(n));
     }
   };
 
@@ -249,9 +462,9 @@ export function initMIDI() {
 if (typeof document !== 'undefined') {
   const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type'];
   selectors.forEach(id => {
-    document.getElementById(id)?.addEventListener('change', () => renderStaff());
+    document.getElementById(id)?.addEventListener('change', () => regenerateAndRender());
   });
   
-  renderStaff();
+  regenerateAndRender();
   initMIDI();
 }
