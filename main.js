@@ -212,7 +212,10 @@ export function renderStaff(outputDiv) {
           const isCurrent = (absBeatIdx === currentBeatIndex);
           if (pitches.length === 0) {
             const restPitch = isTreble ? 'B4' : 'D3';
-            const note = score.notes(`${restPitch}/q/r`)[0];
+            const notes = score.notes(`${restPitch}/q/r`, { 
+              clef: isTreble ? 'treble' : 'bass' 
+            });
+            const note = notes[0];
             if (isCurrent) currentNotes.push(note);
             return note;
           } else {
