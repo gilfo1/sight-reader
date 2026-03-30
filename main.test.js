@@ -30,6 +30,8 @@ describe('Music Staff Project', () => {
     expect(html).toContain('id="midi-indicator"');
     expect(html).toContain('id="note-display"');
     expect(html).toContain('id="current-note"');
+    expect(html).toContain('<details');
+    expect(html).toContain('<summary');
   });
 
   it('should have a main.js file that exports renderStaff and initMIDI', async () => {
@@ -48,11 +50,14 @@ describe('Music Staff Project', () => {
       document.body.innerHTML = `
         <div id="midi-status">
           <span id="midi-device-name">No device connected</span>
-          <div id="midi-indicator" style="background-color: gray;"></div>
+          <div id="midi-indicator" style="background-color: red;"></div>
         </div>
-        <div id="note-display">
-          <span id="current-note">-</span>
-        </div>
+        <details>
+          <summary>Show MIDI Notes</summary>
+          <div id="note-display">
+            Note: <span id="current-note">-</span>
+          </div>
+        </details>
         <div id="output"></div>
       `;
       vi.clearAllMocks();
@@ -84,6 +89,39 @@ describe('Music Staff Project', () => {
 
       expect(deviceName.textContent).toBe('Mock MIDI Keyboard');
       expect(indicator.style.backgroundColor).toBe('green');
+    });
+
+    it('should show a red indicator when no device is connected', async () => {
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const indicator = document.getElementById('midi-indicator');
+      expect(indicator.style.backgroundColor).toBe('red');
+    });
+
+    it('should turn the indicator back to red when a device is disconnected', async () => {
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const indicator = document.getElementById('midi-indicator');
+      const deviceName = document.getElementById('midi-device-name');
+
+      // Connect
+      const mockInput = {
+        name: 'Mock MIDI Keyboard',
+        type: 'input',
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      };
+      WebMidi.inputs = [mockInput];
+      WebMidi._trigger('connected', { port: mockInput });
+      expect(indicator.style.backgroundColor).toBe('green');
+
+      // Disconnect
+      WebMidi.inputs = [];
+      WebMidi._trigger('disconnected', { port: mockInput });
+      expect(indicator.style.backgroundColor).toBe('red');
+      expect(deviceName.textContent).toBe('No device connected');
     });
 
     it('should display the note name when a noteon event is received', async () => {

@@ -62,7 +62,7 @@ export function initMIDI() {
       indicatorEl.style.backgroundColor = 'green';
     } else {
       deviceNameEl.textContent = 'No device connected';
-      indicatorEl.style.backgroundColor = 'gray';
+      indicatorEl.style.backgroundColor = 'red';
     }
   };
 

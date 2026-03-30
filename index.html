@@ -8,11 +8,14 @@
   <body>
     <div id="midi-status" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; display: inline-block;">
       MIDI: <span id="midi-device-name">No device connected</span>
-      <div id="midi-indicator" style="width: 15px; height: 15px; background-color: gray; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
+      <div id="midi-indicator" style="width: 15px; height: 15px; background-color: red; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
     </div>
-    <div id="note-display" style="margin-bottom: 10px; font-size: 24px; font-weight: bold;">
-      Note: <span id="current-note">-</span>
-    </div>
+    <details style="margin-bottom: 10px;">
+      <summary style="cursor: pointer; color: #666; font-family: sans-serif;">Show MIDI Notes</summary>
+      <div id="note-display" style="margin-top: 10px; font-size: 24px; font-weight: bold;">
+        Note: <span id="current-note">-</span>
+      </div>
+    </details>
     <div id="output"></div>
     <script type="module" src="/main.js"></script>
   </body>
