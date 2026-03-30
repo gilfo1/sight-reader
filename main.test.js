@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { regenerateAndRender, initMIDI, musicData, currentBeatIndex, activeMidiNotes, suppressedNotes, computeMeasureCounts, resetGameState } from './main.js';
+import { regenerateAndRender, initMIDI, musicData, currentBeatIndex, activeMidiNotes, suppressedNotes, computeMeasureCounts, resetGameState, updateNoteSelectors, setMusicData, renderStaff, setCurrentBeatIndex } from './main.js';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi
@@ -21,6 +21,34 @@ vi.mock('webmidi', () => {
     }
   };
 });
+
+// Mock HTMLCanvasElement.prototype.getContext
+if (typeof HTMLCanvasElement !== 'undefined') {
+  HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+    measureText: vi.fn().mockReturnValue({ width: 10, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 10 }),
+    fillRect: vi.fn(),
+    fillText: vi.fn(),
+    getImageData: vi.fn(),
+    putImageData: vi.fn(),
+    createImageData: vi.fn(),
+    setTransform: vi.fn(),
+    drawWindow: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    closePath: vi.fn(),
+    stroke: vi.fn(),
+    fill: vi.fn(),
+    scale: vi.fn(),
+    rotate: vi.fn(),
+    translate: vi.fn(),
+    transform: vi.fn(),
+    rect: vi.fn(),
+    clip: vi.fn(),
+  });
+}
 
 describe('Music Staff Project', () => {
   it('should have an index.html with MIDI container elements', () => {
@@ -602,6 +630,229 @@ describe('Music Staff Project', () => {
         expect(currentBeatIndex).toBe(0);
         expect(JSON.stringify(musicData)).not.toBe(initialMusicData);
       });
+    });
+  });
+
+  describe('Range Selection Logic', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <select id="staff-type">
+          <option value="grand">Grand Staff</option>
+          <option value="treble">Treble Clef</option>
+          <option value="bass">Bass Clef</option>
+        </select>
+        <select id="min-note"></select>
+        <select id="max-note"></select>
+        <div id="output"></div>
+      `;
+    });
+
+    it('should filter notes for Treble Clef to C3-C6', () => {
+      document.getElementById('staff-type').value = 'treble';
+      updateNoteSelectors();
+      
+      const minSelect = document.getElementById('min-note');
+      const options = Array.from(minSelect.options).map(o => o.value);
+      
+      expect(options[0]).toBe('C3');
+      expect(options[options.length - 1]).toBe('C6');
+      expect(options).not.toContain('C2');
+      expect(options).not.toContain('C7');
+    });
+
+    it('should filter notes for Bass Clef to C1-C5', () => {
+      document.getElementById('staff-type').value = 'bass';
+      updateNoteSelectors();
+      
+      const minSelect = document.getElementById('min-note');
+      const options = Array.from(minSelect.options).map(o => o.value);
+      
+      expect(options[0]).toBe('C1');
+      expect(options[options.length - 1]).toBe('C5');
+      expect(options).not.toContain('A0');
+      expect(options).not.toContain('C6');
+    });
+
+    it('should show full piano range for Grand Staff', () => {
+      document.getElementById('staff-type').value = 'grand';
+      updateNoteSelectors();
+      
+      const minSelect = document.getElementById('min-note');
+      const options = Array.from(minSelect.options).map(o => o.value);
+      
+      expect(options[0]).toBe('A0');
+      expect(options[options.length - 1]).toBe('C8');
+    });
+
+    it('should fall back to defaults when switching staff types and current selection is out of range', () => {
+      // Start with Grand Staff, select A0
+      document.getElementById('staff-type').value = 'grand';
+      updateNoteSelectors();
+      document.getElementById('min-note').value = 'A0';
+      
+      // Switch to Treble Clef
+      document.getElementById('staff-type').value = 'treble';
+      updateNoteSelectors();
+      
+      expect(document.getElementById('min-note').value).toBe('C3');
+    });
+
+    it('should preserve selection when switching staff types and current selection is still in range', () => {
+      // Start with Grand Staff, select C4
+      document.getElementById('staff-type').value = 'grand';
+      updateNoteSelectors();
+      document.getElementById('min-note').value = 'C4';
+      
+      // Switch to Treble Clef (C3-C6)
+      document.getElementById('staff-type').value = 'treble';
+      updateNoteSelectors();
+      
+      expect(document.getElementById('min-note').value).toBe('C4');
+    });
+  });
+
+  describe('Accidental Persistence', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <select id="measures-per-line"><option value="4">4</option></select>
+        <select id="notes-per-beat"><option value="1">1</option></select>
+        <select id="lines"><option value="1">1</option></select>
+        <select id="staff-type"><option value="treble">Treble Clef</option></select>
+        <select id="min-note"><option value="C3">C3</option></select>
+        <select id="max-note"><option value="C6">C6</option></select>
+        <div id="output"></div>
+        <div id="midi-status">
+          <span id="midi-device-name">-</span>
+          <div id="midi-indicator"></div>
+        </div>
+        <div id="note-display"><span id="current-note">-</span></div>
+      `;
+    });
+
+    it('should match F#4 correctly even if it is the second F#4 in a measure (persistent accidental)', async () => {
+      // Mock musicData to have two F#4 in a measure
+      resetGameState();
+      setMusicData([{
+        trebleBeats: [['F#4'], [], ['F#4'], []],
+        bassBeats: [[], [], [], []],
+        staffType: 'treble'
+      }]);
+      // currentBeatIndex is reset in resetGameState usually, but let's be sure.
+      
+      renderStaff();
+      
+      // We'll use initMIDI to hook up listeners
+      let noteOnCallback;
+      const mockInput = {
+        name: 'Mock MIDI Keyboard',
+        type: 'input',
+        addListener: vi.fn((event, cb) => {
+          if (event === 'noteon') noteOnCallback = cb;
+        }),
+        removeListener: vi.fn(),
+      };
+      WebMidi.inputs = [mockInput];
+      initMIDI();
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Beat 0: Match F#4
+      noteOnCallback({ note: { identifier: 'F#4' } });
+      expect(currentBeatIndex).toBe(1);
+      
+      // Advance to Beat 2 (another F#4)
+      setCurrentBeatIndex(2);
+      renderStaff(); // Re-render for new beat
+      
+      // Beat 2: Match F#4
+      noteOnCallback({ note: { identifier: 'F#4' } });
+      expect(currentBeatIndex).toBe(3);
+    });
+  });
+
+  describe('Accidental Rules', () => {
+    beforeEach(() => {
+      resetGameState();
+      document.body.innerHTML = `
+        <div id="output"></div>
+        <select id="measures-per-line"><option value="1">1</option></select>
+        <select id="lines"><option value="1">1</option></select>
+        <select id="staff-type"><option value="grand">grand</option></select>
+        <select id="notes-per-beat"><option value="1">1</option></select>
+        <select id="min-note"><option value="A0">A0</option></select>
+        <select id="max-note"><option value="C8">C8</option></select>
+      `;
+    });
+
+    it('should respect the Octave Rule (accidental only applies to specific octave)', () => {
+      setMusicData([
+        {
+          trebleBeats: [['C#4'], ['C5'], ['C#4'], ['C4']],
+          bassBeats: [[], [], [], []]
+        }
+      ]);
+      renderStaff();
+      
+      const svgContent = document.getElementById('output').innerHTML;
+      const sharps = (svgContent.match(/\ue262/g) || []).length;
+      const naturals = (svgContent.match(/\ue261/g) || []).length;
+      
+      // Beat 0: C#4 (Sharp rendered)
+      // Beat 1: C5 (No accidental - Octave Rule)
+      // Beat 2: C#4 (Persistent - No sharp rendered)
+      // Beat 3: C4 (Natural rendered - Octave Rule/Persistence)
+      expect(sharps + naturals).toBe(2);
+    });
+
+    it('should show multiple sharps for different octaves in the same beat', () => {
+      setMusicData([
+        {
+          trebleBeats: [['C#4', 'C#5'], [], [], []],
+          bassBeats: [[], [], [], []]
+        }
+      ]);
+      renderStaff();
+      const svgContent = document.getElementById('output').innerHTML;
+      const sharps = (svgContent.match(/\ue262/g) || []).length;
+      expect(sharps).toBe(2);
+    });
+
+    it('should respect Staff Independence (accidental in treble does not affect bass)', () => {
+      setMusicData([
+        {
+          trebleBeats: [['C#4'], [], [], []],
+          bassBeats: [[], ['C4'], [], []]
+        }
+      ]);
+      renderStaff();
+      const svgContent = document.getElementById('output').innerHTML;
+      const accsCount = (svgContent.match(/[\ue262\ue261\ue260]/g) || []).length;
+      expect(accsCount).toBe(1);
+    });
+
+    it('should mark sharps in both staves if they are in different beats but same measure', () => {
+      setMusicData([
+        {
+          trebleBeats: [['C#4'], [], [], []],
+          bassBeats: [[], ['C#4'], [], []]
+        }
+      ]);
+      renderStaff();
+      const svgContent = document.getElementById('output').innerHTML;
+      const sharps = (svgContent.match(/\ue262/g) || []).length;
+      expect(sharps).toBe(2);
+    });
+
+    it('should mark accidentals in both staves for simultaneous identical notes', () => {
+      setMusicData([
+        {
+          trebleBeats: [['C#4'], [], [], []],
+          bassBeats: [['C#4'], [], [], []]
+        }
+      ]);
+      renderStaff();
+      const svgContent = document.getElementById('output').innerHTML;
+      const accsCount = (svgContent.match(/[\ue262\ue261\ue260]/g) || []).length;
+      expect(accsCount).toBe(2);
     });
   });
 });

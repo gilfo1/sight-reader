@@ -1,4 +1,4 @@
-import { Factory } from 'vexflow';
+import { Factory, Accidental } from 'vexflow';
 import { WebMidi } from 'webmidi';
 
 // Global state for music data and progress
@@ -153,6 +153,22 @@ export function computeMeasureCounts(staffType, notesPerBeat, measureIndex = 0) 
 }
 
 /**
+ * Sets the current beat index.
+ * @param {number} index 
+ */
+export function setCurrentBeatIndex(index) {
+  currentBeatIndex = index;
+}
+
+/**
+ * Sets the music data structure.
+ * @param {Array} data 
+ */
+export function setMusicData(data) {
+  musicData = data;
+}
+
+/**
  * Generates the music data structure based on current configuration.
  */
 export function generateMusicData() {
@@ -275,15 +291,6 @@ export function renderStaff(outputDiv) {
           if (absBeatIdx === currentBeatIndex && activeMidiNotes.size > 0) {
             const targetPitches = isTreble ? measureData.trebleBeats[b] : measureData.bassBeats[b];
             
-            // Check if we should suppress grey notes
-            const hasNewWrongNote = Array.from(activeMidiNotes).some(p => 
-              !targetPitches.includes(p) && !suppressedNotes.has(p)
-            );
-            
-            if (hasNewWrongNote) {
-              suppressedNotes.clear();
-            }
-
             const pitches = Array.from(activeMidiNotes).filter(p => {
               // If still suppressed, don't show wrong notes
               if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
@@ -341,6 +348,7 @@ export function renderStaff(outputDiv) {
         if (hasRealNote) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
+        Accidental.applyAccidentals(voices, 'C');
         const stave = system.addStave({ voices });
         if (m === 0) stave.addClef('treble').addTimeSignature('4/4');
       }
@@ -352,6 +360,7 @@ export function renderStaff(outputDiv) {
         if (hasRealNote) {
           voices.push(vf.Voice().setMode(2).addTickables(playedNotes));
         }
+        Accidental.applyAccidentals(voices, 'C');
         const stave = system.addStave({ voices });
         if (m === 0) stave.addClef('bass').addTimeSignature('4/4');
       }
@@ -439,6 +448,18 @@ export function initMIDI() {
 
   const onNoteOn = (e) => {
     activeMidiNotes.add(e.note.identifier);
+    
+    // Check if we should stop suppressing wrong notes
+    const measureIdx = Math.floor(currentBeatIndex / 4);
+    const beatInMeasure = currentBeatIndex % 4;
+    const measureData = musicData[measureIdx];
+    if (measureData) {
+      const targetPitches = [...measureData.trebleBeats[beatInMeasure], ...measureData.bassBeats[beatInMeasure]];
+      if (!targetPitches.includes(e.note.identifier)) {
+        suppressedNotes.clear();
+      }
+    }
+
     noteDisplayEl.textContent = Array.from(activeMidiNotes).join(', ');
     checkMatch();
     renderStaff();
@@ -506,29 +527,74 @@ export function initMIDI() {
   });
 }
 
-// Automatically initialize if we're in a browser environment.
-if (typeof document !== 'undefined') {
+/**
+ * Updates the min and max note selectors based on the current staff type.
+ */
+export function updateNoteSelectors() {
+  const staffType = document.getElementById('staff-type')?.value || 'grand';
   const minSelect = document.getElementById('min-note');
   const maxSelect = document.getElementById('max-note');
-  if (minSelect && maxSelect) {
-    ALL_PIANO_NOTES.forEach(note => {
-      const opt1 = document.createElement('option');
-      opt1.value = note;
-      opt1.textContent = note;
-      minSelect.appendChild(opt1);
-      
-      const opt2 = document.createElement('option');
-      opt2.value = note;
-      opt2.textContent = note;
-      maxSelect.appendChild(opt2);
+  if (!minSelect || !maxSelect) return;
+
+  const prevMin = minSelect.value;
+  const prevMax = maxSelect.value;
+
+  let filteredNotes = ALL_PIANO_NOTES;
+  let defaultMin = 'C2';
+  let defaultMax = 'C6';
+
+  if (staffType === 'treble') {
+    const minVal = getNoteValue('C3');
+    const maxVal = getNoteValue('C6');
+    filteredNotes = ALL_PIANO_NOTES.filter(n => {
+      const v = getNoteValue(n);
+      return v >= minVal && v <= maxVal;
     });
-    minSelect.value = 'C2';
-    maxSelect.value = 'C6';
+    defaultMin = 'C3';
+    defaultMax = 'C6';
+  } else if (staffType === 'bass') {
+    const minVal = getNoteValue('C1');
+    const maxVal = getNoteValue('C5');
+    filteredNotes = ALL_PIANO_NOTES.filter(n => {
+      const v = getNoteValue(n);
+      return v >= minVal && v <= maxVal;
+    });
+    defaultMin = 'C1';
+    defaultMax = 'C5';
   }
+
+  minSelect.innerHTML = '';
+  maxSelect.innerHTML = '';
+
+  filteredNotes.forEach(note => {
+    const opt1 = document.createElement('option');
+    opt1.value = note;
+    opt1.textContent = note;
+    minSelect.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = note;
+    opt2.textContent = note;
+    maxSelect.appendChild(opt2);
+  });
+
+  const isValueInRange = (val) => filteredNotes.some(n => n === val);
+  minSelect.value = isValueInRange(prevMin) ? prevMin : defaultMin;
+  maxSelect.value = isValueInRange(prevMax) ? prevMax : defaultMax;
+}
+
+// Automatically initialize if we're in a browser environment.
+if (typeof document !== 'undefined') {
+  updateNoteSelectors();
 
   const selectors = ['measures-per-line', 'notes-per-beat', 'lines', 'staff-type', 'min-note', 'max-note'];
   selectors.forEach(id => {
-    document.getElementById(id)?.addEventListener('change', () => regenerateAndRender());
+    document.getElementById(id)?.addEventListener('change', () => {
+      if (id === 'staff-type') {
+        updateNoteSelectors();
+      }
+      regenerateAndRender();
+    });
   });
   
   regenerateAndRender();
