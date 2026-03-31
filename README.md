@@ -1,3 +1,5 @@
+<img width="891" height="996" alt="image" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" />
+
 # MIDI Sight Reader
 
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
