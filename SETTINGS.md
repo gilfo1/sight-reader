@@ -21,7 +21,7 @@ All settings are located in the "Settings" accordion at the top of the page. Her
     - The available options adjust dynamically based on the selected Staff Type.
 - **Note Values**: Check the durations you want to practice. You can mix and match Whole, Half, Quarter, Eighth, and Sixteenth notes.
 - **Key Signatures**: Select one or more major keys. The app will randomly pick from your selections for each line.
-    - **Chromatic**: Enable this to add random accidentals outside of the selected key signature for a more difficult reading experience.
+    - **Chromatic**: Enable this to add random accidentals outside of the selected key signature for reading music rich in chromaticism like: bebop.
 
 ## MIDI & Feedback
 
