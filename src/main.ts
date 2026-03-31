@@ -55,17 +55,25 @@ function checkMatch(): void {
 }
 
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
+  document.title = 'sight-reader';
+
+  const init = async (): Promise<void> => {
     updateNoteSelectors();
     initKeySignatures(handleRegenerate);
     
     const config = getUIConfig();
     setMusicData(generateScoreData(config));
-    engineRenderScore(null, config, { musicData, currentStepIndex: currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
+    engineRenderScore(null, config, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
     
     engineInitMidiHandler(handleStateChange);
     setupEventListeners(handleRegenerate);
-  });
+  };
+
+  if (document.readyState === 'complete') {
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
 }
 
 export { 
