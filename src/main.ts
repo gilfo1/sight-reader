@@ -111,6 +111,7 @@ export {
   checkMatch,
   initKeySignatures, 
   updateNoteSelectors, 
+  getUIConfig,
   legacyGenerateMusicData as generateMusicData,
   getStepInfo,
   getTotalSteps

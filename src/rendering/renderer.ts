@@ -257,11 +257,18 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: Parti
       if (staffType === 'grand') {
         configureStave(system.addStave({ voices: addVoicesWithPlayed(true) }), true, m, keySig);
         configureStave(system.addStave({ voices: addVoicesWithPlayed(false) }), false, m, keySig);
-        if (m === 0) system.addConnector('brace');
+        if (m === 0) {
+          system.addConnector('brace');
+          system.addConnector('singleLeft');
+        }
         system.addConnector('singleRight');
       } else {
-        const isTreble = staffType === 'treble';
+        const isTreble: boolean = staffType === 'treble';
         configureStave(system.addStave({ voices: addVoicesWithPlayed(isTreble) }), isTreble, m, keySig);
+        if (m === 0) {
+          system.addConnector('singleLeft');
+        }
+        system.addConnector('singleRight');
       }
       
       if (measureIdx === musicData.length - 1) system.addConnector('boldDoubleRight');
