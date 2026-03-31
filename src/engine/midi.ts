@@ -117,19 +117,19 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     input.addListener('noteoff', onNoteOff);
   };
 
-  WebMidi.enable().then(() => {
+  WebMidi.enable().then((): void => {
     updateStatus();
     WebMidi.inputs.forEach(addInputListeners);
 
-    WebMidi.addListener('connected', (e: any) => {
+    WebMidi.addListener('connected', (e: any): void => {
       if (e.port.type === 'input') addInputListeners(e.port);
       updateStatus();
     });
 
-    WebMidi.addListener('disconnected', () => {
+    WebMidi.addListener('disconnected', (): void => {
       updateStatus();
     });
-  }).catch(err => {
+  }).catch((err: Error): void => {
     console.error('MIDI could not be enabled:', err);
     deviceNameEl.textContent = 'MIDI Error: ' + err.message;
   });

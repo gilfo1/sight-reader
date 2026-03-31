@@ -65,21 +65,29 @@ function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
   let minY = Infinity;
   let maxY = -Infinity;
 
-  currentNotes.forEach(note => {
-     if (!note.getTickContext()) return;
-     const x = note.getAbsoluteX();
-     minX = Math.min(minX, x - 15);
-     maxX = Math.max(maxX, x + 35);
-     
-     const bb = note.getBoundingBox();
-     if (bb) {
-       minY = Math.min(minY, bb.getY());
-       maxY = Math.max(maxY, bb.getY() + bb.getH());
-     }
+  currentNotes.forEach((note: StaveNote): void => {
+    if (!note.getTickContext()) return;
+    const x = note.getAbsoluteX();
+    const metrics = (note as any).getMetrics();
+    const modLeft = metrics?.modLeftPx || 0;
+    const modRight = metrics?.modRightPx || 0;
+    const noteWidth = metrics?.noteWidth || 12;
+
+    minX = Math.min(minX, x - modLeft - 5);
+    maxX = Math.max(maxX, x + noteWidth + modRight + 5);
+
+    const bb = note.getBoundingBox();
+    if (bb) {
+      minY = Math.min(minY, bb.getY() - 5);
+      maxY = Math.max(maxY, bb.getY() + bb.getH() + 5);
+    } else {
+      minY = Math.min(minY, 50);
+      maxY = Math.max(maxY, 150);
+    }
   });
 
-  const y = minY - 20;
-  const height = (maxY - minY) + 40;
+  const y = minY;
+  const height = maxY - minY;
   
   ctx.save();
   ctx.setFillStyle('rgba(173, 216, 230, 0.4)');
@@ -109,7 +117,7 @@ function getVoices(f: Factory, score: any, measureData: Measure, measureIdx: num
   return v;
 }
 
-export function renderStaff(outputDiv: HTMLElement | null = null, config?: AppConfig, state?: RenderState, selectors?: RenderSelectors): void {
+export function renderStaff(outputDiv: HTMLElement | null = null, config?: Partial<AppConfig>, state?: RenderState, selectors?: RenderSelectors): void {
   const div: HTMLElement | null = outputDiv || document.getElementById('output');
   if (!div) return;
   
@@ -121,7 +129,7 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: AppCo
     state = { musicData: [], currentBeatIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
   }
   if (!selectors) {
-    selectors = { getStepInfo: (_i: number) => null };
+    selectors = { getStepInfo: (_i: number): null => null };
   }
 
   const { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes } = state;
@@ -134,7 +142,7 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: AppCo
 
   const currentParams: string = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
   if (lastRenderParams !== currentParams) {
-    const colWidths: number[] = new Array(measuresPerLine).fill(150);
+    const colWidths: number[] = new Array(measuresPerLine).fill(200);
     const hiddenDiv: HTMLDivElement = document.createElement('div');
     hiddenDiv.id = 'temp-vf-' + Math.random().toString(36).substring(2, 9);
     hiddenDiv.style.display = 'none';
@@ -160,7 +168,7 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: AppCo
         }
         
         system.format();
-        colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width);
+        colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width + 30);
         tempVf.reset();
         hiddenDiv.innerHTML = '';
       }
@@ -261,8 +269,10 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: AppCo
   }
   vf.draw();
   
-  allTargetVoices.forEach(voice => {
-    Beam.generateBeams(voice.getTickables() as any).forEach(b => b.setContext(vf.getContext()).draw());
+  allTargetVoices.forEach((voice: Voice): void => {
+    Beam.generateBeams(voice.getTickables() as any).forEach((b: any): void => {
+      b.setContext(vf.getContext()).draw();
+    });
   });
 
   drawHighlight(vf, currentNotes);

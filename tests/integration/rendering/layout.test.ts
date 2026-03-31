@@ -158,4 +158,21 @@ describe('Staff Rendering and Layout Integration', () => {
     const notes = svg.querySelectorAll('.vf-stavenote');
     expect(notes.length).toBe(8);
   });
+
+  it('should have consistent measure widths in a grand staff line', () => {
+    setMusicData([
+      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [['C3']], staffType: 'grand', keySignature: 'C' },
+      { pattern: ['q'], trebleBeats: [['D4']], bassBeats: [['D3']], staffType: 'grand', keySignature: 'C' }
+    ]);
+    
+    (document.getElementById('measures-per-line') as HTMLSelectElement).value = '2';
+    renderStaff();
+    
+    // We can't easily check internal measure widths without spying, 
+    // but the overall SVG width should be sufficient for 2 measures
+    const svg = document.querySelector('#output svg')!;
+    const width = parseFloat(svg.getAttribute('width')!);
+    // 2 measures * 200px (min) + 100px padding
+    expect(width).toBeGreaterThanOrEqual(500);
+  });
 });
