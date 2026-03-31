@@ -1,4 +1,5 @@
 import { Factory, Accidental, Beam } from 'vexflow';
+import { KEY_SIGNATURES } from '../constants/music.js';
 
 let lastRenderParams = null;
 let cachedColWidths = null;
@@ -65,6 +66,10 @@ function drawHighlight(f, currentNotes) {
   ctx.restore();
 }
 
+function getValidKey(key) {
+  return KEY_SIGNATURES.includes(key) ? key : 'C';
+}
+
 export function renderStaff(outputDiv, config, state, selectors) {
   const div = outputDiv || document.getElementById('output');
   if (!div) return;
@@ -105,6 +110,7 @@ export function renderStaff(outputDiv, config, state, selectors) {
       for (let l = 0; l < linesCount; l++) {
         const measureIdx = (l * measuresPerLine) + m;
         const measureData = musicData[measureIdx] || { trebleBeats: [], bassBeats: [], pattern: [], keySignature: 'C' };
+        const keySig = getValidKey(measureData.keySignature);
 
         const system = tempVf.System({ x: 0, y: 0 });
         
@@ -114,13 +120,13 @@ export function renderStaff(outputDiv, config, state, selectors) {
           if (targetNotes.length > 0) {
             const voice = tempVf.Voice().setMode(2).addTickables(targetNotes);
             v.push(voice);
-            Accidental.applyAccidentals(v, measureData.keySignature || 'C');
+            Accidental.applyAccidentals(v, keySig);
           }
           const stave = system.addStave({ voices: v });
           if (m === 0) {
             stave.addClef('treble').addTimeSignature('4/4');
-            if (measureData.keySignature && measureData.keySignature !== 'C') {
-              stave.addKeySignature(measureData.keySignature);
+            if (keySig !== 'C') {
+              stave.addKeySignature(keySig);
             }
           }
         }
@@ -130,13 +136,13 @@ export function renderStaff(outputDiv, config, state, selectors) {
           if (targetNotes.length > 0) {
             const voice = tempVf.Voice().setMode(2).addTickables(targetNotes);
             v.push(voice);
-            Accidental.applyAccidentals(v, measureData.keySignature || 'C');
+            Accidental.applyAccidentals(v, keySig);
           }
           const stave = system.addStave({ voices: v });
           if (m === 0) {
             stave.addClef('bass').addTimeSignature('4/4');
-            if (measureData.keySignature && measureData.keySignature !== 'C') {
-              stave.addKeySignature(measureData.keySignature);
+            if (keySig !== 'C') {
+              stave.addKeySignature(keySig);
             }
           }
         }
@@ -177,6 +183,7 @@ export function renderStaff(outputDiv, config, state, selectors) {
     for (let m = 0; m < measuresPerLine; m++) {
       const measureIdx = (l * measuresPerLine) + m;
       const measureData = musicData[measureIdx] || { trebleBeats: [], bassBeats: [], pattern: [], keySignature: 'C' };
+      const keySig = getValidKey(measureData.keySignature);
 
       const width = colWidths[m];
       const x = currentX;
@@ -240,7 +247,7 @@ export function renderStaff(outputDiv, config, state, selectors) {
         if (targetNotes.length > 0) {
           const voice = vf.Voice().setMode(2).addTickables(targetNotes);
           v.push(voice);
-          Accidental.applyAccidentals(v, measureData.keySignature || 'C');
+          Accidental.applyAccidentals(v, keySig);
           allTargetVoices.push(voice);
         }
         const pmVoice = formatPlayedVoice(isTreble, targetNotes);
@@ -257,9 +264,9 @@ export function renderStaff(outputDiv, config, state, selectors) {
         if (m === 0) {
           st.addClef('treble');
           sb.addClef('bass');
-          if (measureData.keySignature && measureData.keySignature !== 'C') {
-            st.addKeySignature(measureData.keySignature);
-            sb.addKeySignature(measureData.keySignature);
+          if (keySig !== 'C') {
+            st.addKeySignature(keySig);
+            sb.addKeySignature(keySig);
           }
           system.addConnector('brace');
         }
@@ -270,8 +277,8 @@ export function renderStaff(outputDiv, config, state, selectors) {
         const stave = system.addStave({ voices: addVoicesToStave(isTreble, notes) });
         if (m === 0) {
           stave.addClef(isTreble ? 'treble' : 'bass');
-          if (measureData.keySignature && measureData.keySignature !== 'C') {
-            stave.addKeySignature(measureData.keySignature);
+          if (keySig !== 'C') {
+            stave.addKeySignature(keySig);
           }
         }
       }

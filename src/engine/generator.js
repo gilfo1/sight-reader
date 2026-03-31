@@ -1,4 +1,4 @@
-import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP } from '../constants/music.js';
+import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP, KEY_SIGNATURES } from '../constants/music.js';
 import { getNoteValue, getEnharmonic } from '../utils/music-theory.js';
 
 export function generateRhythmicPattern(selectedDurations) {
@@ -86,7 +86,7 @@ export function generateMusicData(config) {
     isChromatic
   } = config;
 
-  const actualKeys = selectedKeySignatures.filter(k => k !== 'Chromatic');
+  const actualKeys = (selectedKeySignatures || []).filter(k => KEY_SIGNATURES.includes(k));
   const availableKeys = actualKeys.length > 0 ? actualKeys : ['C'];
 
   const data = [];
