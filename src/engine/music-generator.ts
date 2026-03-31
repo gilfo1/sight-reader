@@ -1,5 +1,5 @@
 import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP, KEY_SIGNATURES } from '../constants/music';
-import { getNoteValue, getEnharmonic } from '../utils/music-theory';
+import { getNoteValue, getEnharmonic } from '../utils/theory';
 import { Measure } from './state';
 
 export function generateRhythmicPattern(selectedDurations: string[]): string[] {
@@ -39,7 +39,7 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
   let pool: string[] = isChromatic ? validNotes : validNotes.filter((n: string): boolean => {
     const match: RegExpMatchArray | null = n.match(/^[A-G][#b]*/);
     const name: string = match ? match[0] : '';
-    return scale.includes(name) || (ENHARMONIC_MAP[name] && scale.includes(ENHARMONIC_MAP[name]!));
+    return scale.includes(name) || (!!ENHARMONIC_MAP[name] && scale.includes(ENHARMONIC_MAP[name]!));
   });
   if (pool.length === 0) pool = validNotes;
 
@@ -71,11 +71,11 @@ export function computeMeasureCounts(staffType: string, notesPerStep: number, me
   return { trebleCounts: getCounts(true), bassCounts: getCounts(false) };
 }
 
-export interface AppConfig {
+export interface GeneratorConfig {
   measuresPerLine: number;
   linesCount: number;
   staffType: string;
-  notesPerBeat: number;
+  notesPerStep: number;
   minNote: string;
   maxNote: string;
   selectedNoteValues: string[];
@@ -83,12 +83,12 @@ export interface AppConfig {
   isChromatic: boolean;
 }
 
-export function generateMusicData(config: AppConfig): Measure[] {
+export function generateScoreData(config: GeneratorConfig): Measure[] {
   const {
     measuresPerLine,
     linesCount,
     staffType,
-    notesPerBeat,
+    notesPerStep,
     minNote,
     maxNote,
     selectedNoteValues,
@@ -105,15 +105,15 @@ export function generateMusicData(config: AppConfig): Measure[] {
     for (let m = 0; m < measuresPerLine; m++) {
       const globalMeasureIdx = (l * measuresPerLine) + m;
       const pattern = generateRhythmicPattern(selectedNoteValues);
-      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerBeat, globalMeasureIdx, pattern);
-      const trebleBeats: string[][] = [];
-      const bassBeats: string[][] = [];
+      const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerStep, globalMeasureIdx, pattern);
+      const trebleStepsInMeasure: string[][] = [];
+      const bassStepsInMeasure: string[][] = [];
 
       for (let b = 0; b < pattern.length; b++) {
-        trebleBeats.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
-        bassBeats.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
+        trebleStepsInMeasure.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
+        bassStepsInMeasure.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
       }
-      data.push({ trebleBeats, bassBeats, pattern, staffType, keySignature: lineKey });
+      data.push({ trebleSteps: trebleStepsInMeasure, bassSteps: bassStepsInMeasure, pattern, staffType, keySignature: lineKey });
     }
   }
   return data;

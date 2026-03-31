@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setMusicData, resetGameState, getStepInfo, getTotalSteps, currentBeatIndex, setCurrentBeatIndex } from '../../../src/engine/state';
+import { setMusicData, resetGameState, getStepInfo, getTotalSteps, currentStepIndex, setCurrentStepIndex } from '../../../src/engine/state';
 
 describe('App State Engine', () => {
   beforeEach(() => {
@@ -7,27 +7,27 @@ describe('App State Engine', () => {
   });
 
   it('should initialize with default state', () => {
-    expect(currentBeatIndex).toBe(0);
+    expect(currentStepIndex).toBe(0);
     expect(getTotalSteps()).toBe(0);
   });
 
-  it('should allow setting and getting current beat index', () => {
-    setCurrentBeatIndex(5);
-    expect(currentBeatIndex).toBe(5);
+  it('should allow setting and getting current step index', () => {
+    setCurrentStepIndex(5);
+    expect(currentStepIndex).toBe(5);
   });
 
   it('should reset game state correctly', () => {
-    setCurrentBeatIndex(10);
+    setCurrentStepIndex(10);
     resetGameState();
-    expect(currentBeatIndex).toBe(0);
+    expect(currentStepIndex).toBe(0);
   });
 
   describe('Step and Progress Mapping', () => {
     beforeEach(() => {
       setMusicData([
-        { pattern: ['q', 'q', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' }, // 4 steps
-        { pattern: ['h', 'h'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' },          // 2 steps
-        { pattern: ['8', '8', '8', '8', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' } // 6 steps
+        { pattern: ['q', 'q', 'q', 'q'], trebleSteps: [], bassSteps: [], staffType: 'grand', keySignature: 'C' }, // 4 steps
+        { pattern: ['h', 'h'], trebleSteps: [], bassSteps: [], staffType: 'grand', keySignature: 'C' },          // 2 steps
+        { pattern: ['8', '8', '8', '8', 'q', 'q'], trebleSteps: [], bassSteps: [], staffType: 'grand', keySignature: 'C' } // 6 steps
       ]);
     });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
-  renderStaff, 
+  renderScore, 
   setMusicData, 
   resetGameState,
   initKeySignatures
@@ -21,17 +21,17 @@ describe('Musical Rules Regression', () => {
   });
 
   it('Octave Rule: Accidental only applies to the specific octave it is written in', () => {
-    // C#4 in beat 0 should NOT affect C4 in beat 1
+    // C#4 in step 0 should NOT affect C4 in step 1
     setMusicData([{ 
       pattern: ['q', 'q', 'q', 'q'], 
-      trebleBeats: [['C#4'], ['C4'], ['C#5'], ['C5']], 
-      bassBeats: [[], [], [], []], 
+      trebleSteps: [['C#4'], ['C4'], ['C#5'], ['C5']],
+      bassSteps: [[], [], [], []],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
-    const svg = document.querySelector('#output svg');
+    renderScore();
+    const svg = document.querySelector('#output svg')!;
     // We expect 2 sharps (C#4 and C#5) and potentially naturals if VexFlow adds them
     // The key thing is that C4 and C5 are NOT sharped by the previous notes.
     const html = svg.innerHTML;
@@ -45,14 +45,14 @@ describe('Musical Rules Regression', () => {
     // C#4 in treble should NOT affect C4 in bass
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C#4']], 
-      bassBeats: [['C4']], 
+      trebleSteps: [['C#4']],
+      bassSteps: [['C4']],
       staffType: 'grand', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
-    const svg = document.querySelector('#output svg');
+    renderScore();
+    const svg = document.querySelector('#output svg')!;
     const html = svg.innerHTML;
     
     // Treble should have a sharp, Bass should NOT
@@ -61,17 +61,17 @@ describe('Musical Rules Regression', () => {
   });
 
   it('Duration: Accidental lasts for the entire measure', () => {
-    // C#4 in beat 0 should persist for C4 in beat 1 (visually hidden if redundant)
+    // C#4 in step 0 should persist for C4 in step 1 (visually hidden if redundant)
     setMusicData([{ 
       pattern: ['q', 'q'], 
-      trebleBeats: [['C#4'], ['C4']], 
-      bassBeats: [[], []], 
+      trebleSteps: [['C#4'], ['C4']],
+      bassSteps: [[], []],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
-    // If we play C4 (MIDI 60) on beat 1, it should NOT match because the measure has C#4 (MIDI 61)
+    renderScore();
+    // If we play C4 (MIDI 60) on step 1, it should NOT match because the measure has C#4 (MIDI 61)
     // Wait, the state logic should handle this.
     // In our engine, we store absolute pitches, so this is about whether the engine generates them correctly.
   });

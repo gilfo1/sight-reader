@@ -1,10 +1,10 @@
 import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '../constants/music';
-import { getNoteValue } from '../utils/music-theory';
-import { AppConfig } from '../engine/generator';
+import { getNoteValue } from '../utils/theory';
+import { GeneratorConfig } from '../engine/music-generator';
 
 const elements = {
   get measuresPerLine() { return document.getElementById('measures-per-line') as HTMLSelectElement; },
-  get notesPerBeat() { return document.getElementById('notes-per-beat') as HTMLSelectElement; },
+  get notesPerStep() { return document.getElementById('notes-per-step') as HTMLSelectElement; },
   get lines() { return document.getElementById('lines') as HTMLSelectElement; },
   get staffType() { return document.getElementById('staff-type') as HTMLSelectElement; },
   get minNote() { return document.getElementById('min-note') as HTMLSelectElement; },
@@ -78,7 +78,7 @@ export function updateNoteSelectors(): void {
   maxSelect.value = filtered.includes(prevMax) ? prevMax : (staffType === 'bass' ? 'C5' : 'C6');
 }
 
-export function getUIConfig(): AppConfig {
+export function getUIConfig(): GeneratorConfig {
   const noteValuesContainer = elements.noteValues;
   let selectedNoteValues: string[] = ['q'];
   if (noteValuesContainer) {
@@ -96,7 +96,7 @@ export function getUIConfig(): AppConfig {
   
   return {
     measuresPerLine: parseInt(elements.measuresPerLine?.value || '4'),
-    notesPerBeat: parseInt(elements.notesPerBeat?.value || '1'),
+    notesPerStep: parseInt(elements.notesPerStep?.value || '1'),
     linesCount: parseInt(elements.lines?.value || '1'),
     staffType: elements.staffType?.value || 'grand',
     minNote: elements.minNote?.value || 'C2',
@@ -113,7 +113,7 @@ export function setupEventListeners(onConfigChange: () => void): void {
     elements.measuresPerLine,
     elements.lines,
     staffTypeEl,
-    elements.notesPerBeat,
+    elements.notesPerStep,
     elements.minNote,
     elements.maxNote
   ].forEach(el => {

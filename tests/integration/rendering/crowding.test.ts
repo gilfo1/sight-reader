@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Factory } from 'vexflow';
-import { renderStaff, clearRenderCache } from '../../../src/rendering/renderer';
+import { renderScore, clearRenderCache } from '../../../src/rendering/score-renderer';
 import { Measure } from '../../../src/engine/state';
 
 describe('Measure Spacing and Crowding', (): void => {
@@ -12,13 +12,13 @@ describe('Measure Spacing and Crowding', (): void => {
   it('should provide enough space for measures with many notes and accidentals', (): void => {
     const musicData: Measure[] = [{
       pattern: ['16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16'],
-      trebleBeats: [
+      trebleSteps: [
         ['C#4'], ['D#4'], ['E#4'], ['F#4'], 
         ['G#4'], ['A#4'], ['B#4'], ['C#5'], 
         ['D#5'], ['E#5'], ['F#5'], ['G#5'], 
         ['A#5'], ['B#5'], ['C#6'], ['D#6']
       ],
-      bassBeats: Array(16).fill([]),
+      bassSteps: Array(16).fill([]),
       keySignature: 'C',
       staffType: 'treble'
     }];
@@ -26,13 +26,13 @@ describe('Measure Spacing and Crowding', (): void => {
     // Spy on Factory to see how wide the system is
     const systemSpy = vi.spyOn(Factory.prototype as any, 'System');
     
-    renderStaff(document.getElementById('output')!, { 
+    renderScore(document.getElementById('output')!, { 
       measuresPerLine: 1, 
       linesCount: 1, 
       staffType: 'treble' 
     }, {
       musicData,
-      currentBeatIndex: 0,
+      currentStepIndex: 0,
       activeMidiNotes: new Set(),
       suppressedNotes: new Set()
     }, {
@@ -40,7 +40,7 @@ describe('Measure Spacing and Crowding', (): void => {
     });
 
     expect(systemSpy).toHaveBeenCalled();
-    // The last call to System in renderStaff is for the actual rendering
+    // The last call to System in renderScore is for the actual rendering
     const systemInstance = systemSpy.mock.results.find(r => r.type === 'return')?.value;
     if (systemInstance) {
        // Check the width passed to System or calculated by it
@@ -54,15 +54,15 @@ describe('Measure Spacing and Crowding', (): void => {
   it('should provide at least 200px width for a simple measure', (): void => {
     const musicData: Measure[] = [{
       pattern: ['q'],
-      trebleBeats: [['C4']],
-      bassBeats: [[]],
+      trebleSteps: [['C4']],
+      bassSteps: [[]],
       keySignature: 'C',
       staffType: 'treble'
     }];
     const systemSpy = vi.spyOn(Factory.prototype as any, 'System');
-    renderStaff(document.getElementById('output')!, { staffType: 'treble' }, {
+    renderScore(document.getElementById('output')!, { staffType: 'treble' }, {
       musicData,
-      currentBeatIndex: 0,
+      currentStepIndex: 0,
       activeMidiNotes: new Set(),
       suppressedNotes: new Set()
     }, {

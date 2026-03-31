@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
-  renderStaff, 
+  renderScore, 
   setMusicData, 
   resetGameState,
   initKeySignatures,
@@ -28,14 +28,14 @@ describe('Staff Rendering and Layout Integration', () => {
   it('should render treble staff with notes', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [[]], 
+      trebleSteps: [['C4']],
+      bassSteps: [[]],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'treble';
-    renderStaff();
+    renderScore();
     
     const svg = document.querySelector('#output svg')!;
     expect(svg).not.toBeNull();
@@ -45,14 +45,14 @@ describe('Staff Rendering and Layout Integration', () => {
   it('should render grand staff with both staves', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [['C3']], 
+      trebleSteps: [['C4']],
+      bassSteps: [['C3']],
       staffType: 'grand', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff();
+    renderScore();
     
     const svg = document.querySelector('#output svg')!;
     // Check for multiple staves (paths)
@@ -61,14 +61,14 @@ describe('Staff Rendering and Layout Integration', () => {
 
   it('should render bold double right barline at the end', () => {
     setMusicData([
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' },
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
     ]);
     
     (document.getElementById('measures-per-line') as HTMLSelectElement).value = '1';
     (document.getElementById('lines') as HTMLSelectElement).value = '2';
     
-    renderStaff();
+    renderScore();
     const svg = document.querySelector('#output svg');
     // Just verify it renders without error for now as exact path matching is fragile
     expect(svg).not.toBeNull();
@@ -77,41 +77,41 @@ describe('Staff Rendering and Layout Integration', () => {
   it('should render beams for 8th and 16th notes', () => {
     setMusicData([{ 
       pattern: ['8', '8', '16', '16', '16', '16'], 
-      trebleBeats: [['C4'], ['D4'], ['E4'], ['F4'], ['G4'], ['A4']], 
-      bassBeats: [[], [], [], [], [], []], 
+      trebleSteps: [['C4'], ['D4'], ['E4'], ['F4'], ['G4'], ['A4']],
+      bassSteps: [[], [], [], [], [], []],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
+    renderScore();
     const svg = document.querySelector('#output svg');
-    expect(svg.querySelectorAll('.vf-beam').length).toBeGreaterThan(0);
+    expect(svg!.querySelectorAll('.vf-beam').length).toBeGreaterThan(0);
   });
 
   it('should apply measure widening for crowded measures', () => {
     // 16th notes with accidentals should be wider than a single quarter note
     setMusicData([{ 
       pattern: ['16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16', '16'], 
-      trebleBeats: [['C#4'], ['D#4'], ['E#4'], ['F#4'], ['G#4'], ['A#4'], ['B#4'], ['C#5'], ['D#5'], ['E#5'], ['F#5'], ['G#5'], ['A#5'], ['B#5'], ['C#6'], ['D#6']], 
-      bassBeats: Array(16).fill([]), 
+      trebleSteps: [['C#4'], ['D#4'], ['E#4'], ['F#4'], ['G#4'], ['A#4'], ['B#4'], ['C#5'], ['D#5'], ['E#5'], ['F#5'], ['G#5'], ['A#5'], ['B#5'], ['C#6'], ['D#6']],
+      bassSteps: Array(16).fill([]),
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
+    renderScore();
     const svg1 = document.querySelector('#output svg')!;
     const width1 = parseFloat(svg1.getAttribute('width')!);
     
     resetGameState();
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [[]], 
+      trebleSteps: [['C4']],
+      bassSteps: [[]],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
-    renderStaff();
+    renderScore();
     const svg2 = document.querySelector('#output svg')!;
     const width2 = parseFloat(svg2.getAttribute('width')!);
     
@@ -119,8 +119,8 @@ describe('Staff Rendering and Layout Integration', () => {
   });
   it('should handle multiple simultaneous wrong notes', () => {
     setMusicData([{
-      trebleBeats: [['C4']],
-      bassBeats: [[]],
+      trebleSteps: [['C4']],
+      bassSteps: [[]],
       pattern: ['q'],
       staffType: 'treble',
       keySignature: 'C'
@@ -132,7 +132,7 @@ describe('Staff Rendering and Layout Integration', () => {
     activeMidiNotes.add('D4');
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'treble';
-    renderStaff();
+    renderScore();
     const output = document.getElementById('output')!;
     // Should have 1 target note + 1 played chord = 2 notes (in Treble)
     // Actually, if it's treble staff, it should be 2.
@@ -140,17 +140,17 @@ describe('Staff Rendering and Layout Integration', () => {
     const notes = output.querySelectorAll('.vf-stavenote');
     expect(notes.length).toBe(2);
   });
-  it('should render 4 notes and 4 rests for a 4-beat grand staff measure with 1 note per beat', () => {
+  it('should render 4 notes and 4 rests for a 4-step grand staff measure with 1 note per step', () => {
     setMusicData([{ 
       pattern: ['q', 'q', 'q', 'q'], 
-      trebleBeats: [['C4'], [], ['E4'], []], 
-      bassBeats: [[], ['G3'], [], ['B3']], 
+      trebleSteps: [['C4'], [], ['E4'], []],
+      bassSteps: [[], ['G3'], [], ['B3']],
       staffType: 'grand', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff();
+    renderScore();
     
     const svg = document.querySelector('#output svg')!;
     // Stavenotes include both notes and rests in VexFlow 5 usually
@@ -164,12 +164,12 @@ describe('Staff Rendering and Layout Integration', () => {
 
   it('should have consistent measure widths in a grand staff line', () => {
     setMusicData([
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [['C3']], staffType: 'grand', keySignature: 'C' },
-      { pattern: ['q'], trebleBeats: [['D4']], bassBeats: [['D3']], staffType: 'grand', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [['C3']], staffType: 'grand', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['D4']], bassSteps: [['D3']], staffType: 'grand', keySignature: 'C' }
     ]);
     
     (document.getElementById('measures-per-line') as HTMLSelectElement).value = '2';
-    renderStaff();
+    renderScore();
     
     // We can't easily check internal measure widths without spying, 
     // but the overall SVG width should be sufficient for 2 measures

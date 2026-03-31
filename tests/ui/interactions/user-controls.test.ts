@@ -4,7 +4,7 @@ import {
   updateNoteSelectors, 
   initKeySignatures, 
   resetGameState,
-  initMIDI
+  initMidiHandler
 } from '../../../src/main';
 import { WebMidi } from 'webmidi';
 
@@ -70,7 +70,7 @@ describe('User Interactions and Dynamic Controls', () => {
     const mockInput = { name: 'Test Keyboard', addListener: vi.fn(), removeListener: vi.fn() };
     (WebMidi as any).inputs = [mockInput];
     
-    initMIDI();
+    initMidiHandler();
     await new Promise(resolve => setTimeout(resolve, 0));
     
     const indicator = document.getElementById('midi-indicator')!;

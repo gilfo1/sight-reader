@@ -19,12 +19,6 @@ export function getNoteValue(note: string): number {
   return (octave + 1 + octShift) * 12 + val;
 }
 
-export function isNoteInKey(noteName: string, keySignature: string, scales: Record<string, string[]>): boolean {
-  const scale: string[] | undefined = scales[keySignature];
-  if (!scale) return true;
-  return scale.includes(noteName);
-}
-
 export function getEnharmonic(note: string, keySignature: string, isChromatic: boolean): string {
   const base: string = note.slice(0, 2);
   const oct: string = note.slice(2);

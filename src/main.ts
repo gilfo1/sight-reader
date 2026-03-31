@@ -1,18 +1,18 @@
 import { 
   musicData,
-  currentBeatIndex,
+  currentStepIndex,
   activeMidiNotes,
   suppressedNotes,
   setMusicData, 
   resetGameState as engineResetGameState,
-  setCurrentBeatIndex,
+  setCurrentStepIndex,
   getStepInfo,
   getTotalSteps,
   Measure
 } from './engine/state';
-import { generateMusicData as engineGenerateMusicData, AppConfig } from './engine/generator';
-import { renderStaff as engineRenderStaff, clearRenderCache, RenderState, RenderSelectors } from './rendering/renderer';
-import { initMIDI as engineInitMIDI, MIDIInitFunction } from './engine/midi';
+import { generateScoreData as engineGenerateScoreData, GeneratorConfig } from './engine/music-generator';
+import { renderScore as engineRenderScore, clearRenderCache } from './rendering/score-renderer';
+import { initMidiHandler as engineInitMidiHandler } from './engine/midi-handler';
 import { 
   initKeySignatures, 
   updateNoteSelectors, 
@@ -25,49 +25,33 @@ function resetGameState(): void {
   clearRenderCache();
 }
 
-const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => void): void {
-  engineInitMIDI(onStateChange || handleStateChange);
-  initMIDI.checkMatch = engineInitMIDI.checkMatch;
-  initMIDI.updateStatus = engineInitMIDI.updateStatus;
-  initMIDI.onNoteOn = engineInitMIDI.onNoteOn;
-  initMIDI.onNoteOff = engineInitMIDI.onNoteOff;
-};
-
-function checkMatch(): void {
-  engineInitMIDI.checkMatch?.();
-}
-
-function getAppState(): RenderState {
-  return { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes };
-}
-
-function getAppSelectors(): RenderSelectors {
-  return { getStepInfo };
-}
-
 function handleStateChange(shouldRegenerate: boolean = false): void {
-  const config: AppConfig = getUIConfig();
+  const config: GeneratorConfig = getUIConfig();
   if (shouldRegenerate) {
     resetGameState();
-    setMusicData(engineGenerateMusicData(config));
+    setMusicData(engineGenerateScoreData(config));
   }
-  engineRenderStaff(null, config, getAppState(), getAppSelectors());
+  engineRenderScore(null, config, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
 }
 
 const handleRegenerate = (): void => handleStateChange(true);
 
-function generateMusicData(config?: AppConfig): Measure[] {
-  const data = engineGenerateMusicData(config || getUIConfig());
+function generateScoreData(config?: GeneratorConfig): Measure[] {
+  const data: Measure[] = engineGenerateScoreData(config || getUIConfig());
   setMusicData(data);
   return data;
 }
 
-function renderStaff(outputDiv: HTMLElement | null = null, config?: AppConfig): void {
-  const actualConfig = config || getUIConfig();
+function renderScore(outputDiv: HTMLElement | null = null, config?: GeneratorConfig): void {
+  const actualConfig: GeneratorConfig = config || getUIConfig();
   if (musicData.length === 0) {
-    setMusicData(engineGenerateMusicData(actualConfig));
+    setMusicData(engineGenerateScoreData(actualConfig));
   }
-  return engineRenderStaff(outputDiv, actualConfig, getAppState(), getAppSelectors());
+  engineRenderScore(outputDiv, actualConfig, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
+}
+
+function checkMatch(): void {
+  engineInitMidiHandler.checkMatch?.();
 }
 
 if (typeof document !== 'undefined') {
@@ -76,29 +60,29 @@ if (typeof document !== 'undefined') {
     initKeySignatures(handleRegenerate);
     
     const config = getUIConfig();
-    setMusicData(engineGenerateMusicData(config));
-    engineRenderStaff(null, config, getAppState(), getAppSelectors());
+    setMusicData(generateScoreData(config));
+    engineRenderScore(null, config, { musicData, currentStepIndex: currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
     
-    initMIDI(handleStateChange);
+    engineInitMidiHandler(handleStateChange);
     setupEventListeners(handleRegenerate);
   });
 }
 
 export { 
   musicData, 
-  currentBeatIndex, 
+  currentStepIndex,
   activeMidiNotes, 
   suppressedNotes,
   setMusicData, 
   resetGameState, 
-  setCurrentBeatIndex,
-  renderStaff, 
-  initMIDI, 
+  setCurrentStepIndex,
+  renderScore, 
+  engineInitMidiHandler as initMidiHandler, 
   checkMatch,
   initKeySignatures, 
   updateNoteSelectors, 
   getUIConfig,
-  generateMusicData,
+  generateScoreData,
   getStepInfo,
   getTotalSteps
 };

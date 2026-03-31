@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
-  renderStaff, 
+  renderScore, 
   setMusicData, 
   resetGameState,
   initKeySignatures,
@@ -28,14 +28,14 @@ describe('Staff Connectors', () => {
   it('should have a vertical line at the beginning of a grand staff line', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [['C3']], 
+      trebleSteps: [['C4']],
+      bassSteps: [['C3']],
       staffType: 'grand', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     const paths = Array.from(svg.querySelectorAll('path'));
@@ -68,14 +68,14 @@ describe('Staff Connectors', () => {
   it('should have a vertical line at the beginning of a treble staff line', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [[]], 
+      trebleSteps: [['C4']],
+      bassSteps: [[]],
       staffType: 'treble', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'treble';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     const paths = Array.from(svg.querySelectorAll('path'));
@@ -108,14 +108,14 @@ describe('Staff Connectors', () => {
   it('should render clefs and time signatures on the first measure', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['C4']], 
-      bassBeats: [['C3']], 
+      trebleSteps: [['C4']],
+      bassSteps: [['C3']],
       staffType: 'grand', 
       keySignature: 'C' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     // VexFlow 4 uses classes like .vf-clef and .vf-timesignature (or similar)
@@ -134,14 +134,14 @@ describe('Staff Connectors', () => {
   it('should render key signatures when not in C major', () => {
     setMusicData([{ 
       pattern: ['q'], 
-      trebleBeats: [['G4']], 
-      bassBeats: [['G3']], 
+      trebleSteps: [['G4']],
+      bassSteps: [['G3']],
       staffType: 'grand', 
       keySignature: 'G' 
     }]);
     
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     // Key signatures usually have .vf-keysignature class
@@ -153,13 +153,13 @@ describe('Staff Connectors', () => {
 
   it('should render single right barline for intermediate measures', () => {
     setMusicData([
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [['C3']], staffType: 'grand', keySignature: 'C' },
-      { pattern: ['q'], trebleBeats: [['D4']], bassBeats: [['D3']], staffType: 'grand', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [['C3']], staffType: 'grand', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['D4']], bassSteps: [['D3']], staffType: 'grand', keySignature: 'C' }
     ]);
     
     (document.getElementById('measures-per-line') as HTMLSelectElement).value = '2';
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'grand';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     const rects = Array.from(svg.querySelectorAll('rect'));
@@ -177,12 +177,12 @@ describe('Staff Connectors', () => {
 
   it('should render bold double right barline at the very end', () => {
     setMusicData([
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
     ]);
     
     (document.getElementById('measures-per-line') as HTMLSelectElement).value = '1';
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'treble';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     // Bold double right barline is usually several rects or paths.
@@ -201,14 +201,14 @@ describe('Staff Connectors', () => {
 
   it('should only render clefs and time signatures on the first measure of each line', () => {
     setMusicData([
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' },
-      { pattern: ['q'], trebleBeats: [['D4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['D4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
     ]);
     
     (document.getElementById('measures-per-line') as HTMLSelectElement).value = '2';
     (document.getElementById('lines') as HTMLSelectElement).value = '1';
     (document.getElementById('staff-type') as HTMLSelectElement).value = 'treble';
-    renderStaff(null, getUIConfig());
+    renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
     const clefs = svg.querySelectorAll('.vf-clef');

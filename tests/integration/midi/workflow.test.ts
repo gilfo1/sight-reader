@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initMIDI, checkMatch, activeMidiNotes, resetGameState, currentBeatIndex, setMusicData } from '../../../src/main';
+import { initMidiHandler, checkMatch, activeMidiNotes, resetGameState, currentStepIndex, setMusicData } from '../../../src/main';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi
@@ -42,7 +42,7 @@ describe('MIDI Workflow Integration', () => {
   });
 
   it('should initialize MIDI and update status when a device is connected', async () => {
-    initMIDI();
+    initMidiHandler();
     
     // Wait for WebMidi.enable()
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -69,7 +69,7 @@ describe('MIDI Workflow Integration', () => {
   });
 
   it('should handle note on and off events', async () => {
-    initMIDI();
+    initMidiHandler();
     await new Promise(resolve => setTimeout(resolve, 0));
 
     let noteOnCallback: any;
@@ -103,37 +103,37 @@ describe('MIDI Workflow Integration', () => {
     expect(activeMidiNotes.has('C4')).toBe(false);
   });
 
-  it('should advance the current beat when correct notes are played', () => {
+  it('should advance the current step when correct notes are played', () => {
     const data = [
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
     ];
     setMusicData(data);
     
     const onMatch = vi.fn();
-    initMIDI(onMatch);
+    initMidiHandler(onMatch);
     
     // Simulate correct note
     activeMidiNotes.add('C4');
     checkMatch();
     
-    expect(currentBeatIndex).toBe(1);
+    expect(currentStepIndex).toBe(1);
     expect(onMatch).toHaveBeenCalled();
   });
 
   it('should not advance if incorrect notes are played', () => {
     const data = [
-      { pattern: ['q'], trebleBeats: [['C4']], bassBeats: [[]], staffType: 'treble', keySignature: 'C' }
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
     ];
     setMusicData(data);
     
     const onMatch = vi.fn();
-    initMIDI(onMatch);
+    initMidiHandler(onMatch);
     
     // Simulate wrong note
     activeMidiNotes.add('D4');
     checkMatch();
     
-    expect(currentBeatIndex).toBe(0);
+    expect(currentStepIndex).toBe(0);
     expect(onMatch).not.toHaveBeenCalled();
   });
 });

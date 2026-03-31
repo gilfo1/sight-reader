@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateRhythmicPattern, getRandomPitches, computeMeasureCounts, generateMusicData } from '../../../src/engine/generator';
-import { getNoteValue } from '../../../src/utils/music-theory';
+import { generateRhythmicPattern, getRandomPitches, computeMeasureCounts, generateScoreData } from '../../../src/engine/music-generator';
+import { getNoteValue } from '../../../src/utils/theory';
 import { DURATION_WEIGHTS } from '../../../src/constants/music';
 
 describe('Music Generator Engine', () => {
@@ -24,7 +24,7 @@ describe('Music Generator Engine', () => {
     });
   });
 
-  it('should alternate notes in grand staff when 1 note per beat is selected', () => {
+  it('should alternate notes in grand staff when 1 note per step is selected', () => {
     const counts0 = computeMeasureCounts('grand', 1, 0, ['q']);
     expect(counts0.trebleCounts[0]).toBe(1);
     expect(counts0.bassCounts[0]).toBe(0);
@@ -45,7 +45,7 @@ describe('Music Generator Engine', () => {
       measuresPerLine: 4,
       linesCount: 1,
       staffType: 'grand',
-      notesPerBeat: 1,
+      notesPerStep: 1,
       minNote: 'C2',
       maxNote: 'C6',
       selectedNoteValues: ['q'],
@@ -53,7 +53,7 @@ describe('Music Generator Engine', () => {
       isChromatic: false
     };
     
-    const data = generateMusicData(config);
+    const data = generateScoreData(config);
     expect(data.length).toBe(4);
     expect(data[0].pattern.length).toBe(4); // 4 quarter notes
     expect(data[0].keySignature).toBe('C');
@@ -107,7 +107,7 @@ describe('Music Generator Engine', () => {
       measuresPerLine: 1,
       linesCount: 10,
       staffType: 'treble',
-      notesPerBeat: 1,
+      notesPerStep: 1,
       minNote: 'C4',
       maxNote: 'C5',
       selectedNoteValues: ['q'],
@@ -115,7 +115,7 @@ describe('Music Generator Engine', () => {
       isChromatic: false
     };
     
-    const data = generateMusicData(config);
+    const data = generateScoreData(config);
     const usedKeys = new Set(data.map(m => m.keySignature));
     
     // With 10 lines and 2 keys, probability of only picking one is (1/2)^9, very low.

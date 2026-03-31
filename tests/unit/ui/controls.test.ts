@@ -12,7 +12,7 @@ describe('UI Controls', () => {
       <select id="min-note"></select>
       <select id="max-note"></select>
       <select id="measures-per-line"><option value="4">4</option></select>
-      <select id="notes-per-beat"><option value="1">1</option></select>
+      <select id="notes-per-step"><option value="1">1</option></select>
       <select id="lines"><option value="1">1</option></select>
       <div id="note-values">
         <input type="checkbox" value="q" checked>

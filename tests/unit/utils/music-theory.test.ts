@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getNoteValue, isNoteInKey } from '../../../src/utils/music-theory';
-import { SCALES } from '../../../src/constants/music';
+import { getNoteValue } from '../../../src/utils/theory';
 
 describe('Music Theory Utilities', () => {
   it('should return correct note values', () => {
@@ -15,12 +14,5 @@ describe('Music Theory Utilities', () => {
   it('should handle enharmonics in getNoteValue', () => {
     expect(getNoteValue('B#3')).toBe(getNoteValue('C4'));
     expect(getNoteValue('Cb4')).toBe(getNoteValue('B3'));
-  });
-
-  it('should correctly identify notes in key', () => {
-    expect(isNoteInKey('C', 'C', SCALES)).toBe(true);
-    expect(isNoteInKey('C#', 'C', SCALES)).toBe(false);
-    expect(isNoteInKey('F#', 'G', SCALES)).toBe(true);
-    expect(isNoteInKey('Bb', 'F', SCALES)).toBe(true);
   });
 });

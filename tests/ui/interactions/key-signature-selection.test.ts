@@ -4,7 +4,7 @@ import {
   initKeySignatures, 
   getUIConfig
 } from '../../../src/ui/controls';
-import { generateMusicData } from '../../../src/engine/generator';
+import { generateScoreData } from '../../../src/engine/music-generator';
 
 describe('Key Signature Selection UI', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('Key Signature Selection UI', () => {
     expect(config.selectedKeySignatures).not.toContain('B');
     expect(config.isChromatic).toBe(true);
     
-    const data = generateMusicData(config);
+    const data = generateScoreData(config);
     data.forEach(m => {
         expect(m.keySignature).toBe('Bb');
     });
@@ -69,7 +69,7 @@ describe('Key Signature Selection UI', () => {
     expect(config.selectedKeySignatures).toContain('Chromatic');
     
     for (let i = 0; i < 50; i++) {
-        const data = generateMusicData(config);
+        const data = generateScoreData(config);
         data.forEach(m => {
             expect(['C', 'Bb']).toContain(m.keySignature);
         });

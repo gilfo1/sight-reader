@@ -1,15 +1,14 @@
 // Global state for music data and progress
 export interface Measure {
-  trebleBeats: string[][];
-  bassBeats: string[][];
+  trebleSteps: string[][];
+  bassSteps: string[][];
   pattern: string[];
   keySignature: string;
   staffType: string;
-  clef?: string;
 }
 
 export const musicData: Measure[] = [];
-export let currentBeatIndex: number = 0;
+export let currentStepIndex: number = 0;
 export const activeMidiNotes: Set<string> = new Set();
 export const suppressedNotes: Set<string> = new Set();
 
@@ -18,12 +17,12 @@ export function setMusicData(data: Measure[]): void {
   musicData.push(...data);
 }
 
-export function setCurrentBeatIndex(index: number): void {
-  currentBeatIndex = index;
+export function setCurrentStepIndex(index: number): void {
+  currentStepIndex = index;
 }
 
 export function resetGameState(): void {
-  currentBeatIndex = 0;
+  currentStepIndex = 0;
   suppressedNotes.clear();
   activeMidiNotes.clear();
   musicData.length = 0;

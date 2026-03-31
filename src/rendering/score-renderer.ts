@@ -1,11 +1,11 @@
-import { Factory, Accidental, StaveNote, Voice, Stave, Beam } from 'vexflow';
+import { Factory, Accidental, StaveNote, Voice, Stave, Beam, EasyScore, System } from 'vexflow';
 import { KEY_SIGNATURES } from '../constants/music';
 import { Measure } from '../engine/state';
-import { AppConfig } from '../engine/generator';
+import { GeneratorConfig } from '../engine/music-generator';
 
 export interface RenderState {
   musicData: Measure[];
-  currentBeatIndex: number;
+  currentStepIndex: number;
   activeMidiNotes: Set<string>;
   suppressedNotes: Set<string>;
 }
@@ -23,23 +23,23 @@ export function clearRenderCache(): void {
 }
 
 function getTargetNotes(
-  score: any, 
+  score: EasyScore, 
   measureData: Measure, 
   measureIdx: number, 
   isTreble: boolean, 
   currentNotesArray: StaveNote[] | null, 
-  currentBeatIndex: number, 
+  currentStepIndex: number, 
   getStepInfo: (index: number) => { measureIdx: number; stepIdx: number } | null
 ): StaveNote[] {
   if (!measureData) return [];
-  const beats = (isTreble ? measureData.trebleBeats : measureData.bassBeats) || [];
+  const steps = (isTreble ? measureData.trebleSteps : measureData.bassSteps) || [];
   const pattern = measureData.pattern || [];
   const clef = isTreble ? 'treble' : 'bass';
   const stem = isTreble ? 'up' : 'down';
 
-  return beats.map((pitches, bIdx) => {
+  return steps.map((pitches, bIdx) => {
     const duration = pattern[bIdx] || 'q';
-    const info = getStepInfo(currentBeatIndex);
+    const info = getStepInfo(currentStepIndex);
     const isCurrent = info?.measureIdx === measureIdx && info?.stepIdx === bIdx;
     
     const restPitch = isTreble ? 'B4' : 'D3';
@@ -67,13 +67,13 @@ function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
     if (!note || !note.getTickContext()) continue;
     
     const x = note.getAbsoluteX();
-    const metrics = (note as any).getMetrics();
+    const metrics = note.getMetrics();
     const modLeft = metrics?.modLeftPx || 0;
     const modRight = metrics?.modRightPx || 0;
-    const noteWidth = metrics?.noteWidth || 12;
+    const notePx = metrics?.notePx || 12;
 
     minX = Math.min(minX, x - modLeft - 5);
-    maxX = Math.max(maxX, x + noteWidth + modRight + 5);
+    maxX = Math.max(maxX, x + notePx + modRight + 5);
 
     const bb = note.getBoundingBox();
     if (bb) {
@@ -105,10 +105,10 @@ function configureStave(stave: Stave, isTreble: boolean, m: number, keySig: stri
   }
 }
 
-function getVoices(f: Factory, score: any, measureData: Measure, measureIdx: number, isTreble: boolean, currentNotes: StaveNote[] | null, state: RenderState, selectors: RenderSelectors): Voice[] {
-  const { currentBeatIndex } = state;
+function getVoices(f: Factory, score: EasyScore, measureData: Measure, measureIdx: number, isTreble: boolean, currentNotes: StaveNote[] | null, state: RenderState, selectors: RenderSelectors): Voice[] {
+  const { currentStepIndex } = state;
   const { getStepInfo } = selectors;
-  const targetNotes: StaveNote[] = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
+  const targetNotes: StaveNote[] = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentStepIndex, getStepInfo);
   if (targetNotes.length === 0) return [];
   
   const v: Voice[] = [f.Voice().setMode(2).addTickables(targetNotes)];
@@ -135,7 +135,7 @@ function calculateColumnWidths(
   document.body.appendChild(hiddenDiv);
 
   const tempVf = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
-  const tempScore: any = (tempVf as any).EasyScore();
+  const tempScore = tempVf.EasyScore();
 
   for (let m = 0; m < measuresPerLine; m++) {
     for (let l = 0; l < linesCount; l++) {
@@ -143,11 +143,11 @@ function calculateColumnWidths(
       const measureData = musicData[measureIdx] || { 
         keySignature: 'C', 
         pattern: [], 
-        trebleBeats: [], 
-        bassBeats: [], 
+        trebleSteps: [],
+        bassSteps: [],
         staffType: 'grand' 
       } as Measure;
-      const system: any = (tempVf as any).System({ x: 0, y: 0 });
+      const system: System = tempVf.System({ x: 0, y: 0 });
       const keySig = getValidKey(measureData.keySignature);
 
       if (staffType === 'treble' || staffType === 'grand') {
@@ -171,7 +171,7 @@ function calculateColumnWidths(
 
 function addVoicesWithPlayed(
   vf: Factory,
-  score: any,
+  score: EasyScore,
   measureData: Measure,
   measureIdx: number,
   isTreble: boolean,
@@ -180,10 +180,10 @@ function addVoicesWithPlayed(
   selectors: RenderSelectors,
   allTargetVoices: Voice[]
 ): Voice[] {
-  const { currentBeatIndex, activeMidiNotes, suppressedNotes } = state;
+  const { currentStepIndex, activeMidiNotes, suppressedNotes } = state;
   const { getStepInfo } = selectors;
   
-  const targetNotes = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
+  const targetNotes = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentStepIndex, getStepInfo);
   if (targetNotes.length === 0) return [];
   
   const targetVoice = vf.Voice().setMode(2).addTickables(targetNotes);
@@ -195,12 +195,12 @@ function addVoicesWithPlayed(
   }
   allTargetVoices.push(targetVoice);
 
-  const info = getStepInfo(currentBeatIndex);
+  const info = getStepInfo(currentStepIndex);
   if (info && info.measureIdx === measureIdx) {
     const b = info.stepIdx;
     const duration = (measureData.pattern || [])[b] || 'q';
-    const beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
-    const targetPitches = beats[b] || [];
+    const steps = isTreble ? (measureData.trebleSteps || []) : (measureData.bassSteps || []);
+    const targetPitches = steps[b] || [];
     
     const pitches = Array.from(activeMidiNotes).filter(p => {
       if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
@@ -242,7 +242,24 @@ function addVoicesWithPlayed(
   return voices;
 }
 
-export function renderStaff(outputDiv: HTMLElement | null = null, config?: Partial<AppConfig>, state?: RenderState, selectors?: RenderSelectors): void {
+function drawBeams(vf: Factory, voicesToBeam: Voice[]): void {
+  if (!Array.isArray(voicesToBeam)) return;
+  for (const v of voicesToBeam) {
+    if (!v) continue;
+    try {
+      const beams = Beam.generateBeams(v.getTickables() as StaveNote[]);
+      if (Array.isArray(beams)) {
+        for (const b of beams) {
+          if (b) b.setContext(vf.getContext()).draw();
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+}
+
+export function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>, state?: RenderState, selectors?: RenderSelectors): void {
   const currentNotes: StaveNote[] = [];
   const voicesToBeam: Voice[] = [];
   
@@ -253,7 +270,7 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: Parti
   const linesCount = config?.linesCount || 1;
   const staffType = config?.staffType || 'grand';
   
-  const actualState = state || { musicData: [], currentBeatIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
+  const actualState = state || { musicData: [], currentStepIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
   const actualSelectors = selectors || { getStepInfo: () => null };
 
   const { musicData } = actualState;
@@ -273,7 +290,7 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: Parti
   const totalHeight = (linesCount * heightPerLine) + 100;
 
   const vf = new Factory({ renderer: { elementId: div.id, width: totalWidth, height: totalHeight } });
-  const score: any = (vf as any).EasyScore();
+  const score = vf.EasyScore();
 
   for (let l = 0; l < linesCount; l++) {
     const y = 50 + (l * heightPerLine);
@@ -284,25 +301,24 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: Parti
       const measureData = musicData[measureIdx] || { 
         keySignature: 'C', 
         pattern: [], 
-        trebleBeats: [], 
-        bassBeats: [], 
+        trebleSteps: [],
+        bassSteps: [],
         staffType: 'grand' 
       } as Measure;
       const width = colWidths[m]!;
       const x = currentX;
       currentX += width;
 
-      const system: any = (vf as any).System({ x, y, width });
+      const system: System = vf.System({ x, y, width });
       const keySig = getValidKey(measureData.keySignature);
       
-      if (staffType === 'treble' || staffType === 'grand') {
-        const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, true, currentNotes, actualState, actualSelectors, voicesToBeam);
-        configureStave(system.addStave({ voices: v }), true, m, keySig);
-      }
-      if (staffType === 'bass' || staffType === 'grand') {
-        const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, false, currentNotes, actualState, actualSelectors, voicesToBeam);
-        configureStave(system.addStave({ voices: v }), false, m, keySig);
-      }
+      const renderClef = (isTreble: boolean): void => {
+        const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, isTreble, currentNotes, actualState, actualSelectors, voicesToBeam);
+        configureStave(system.addStave({ voices: v }), isTreble, m, keySig);
+      };
+
+      if (staffType === 'treble' || staffType === 'grand') renderClef(true);
+      if (staffType === 'bass' || staffType === 'grand') renderClef(false);
 
       if (m === 0) {
         if (staffType === 'grand') system.addConnector('brace');
@@ -314,26 +330,6 @@ export function renderStaff(outputDiv: HTMLElement | null = null, config?: Parti
     }
   }
   vf.draw();
-  
-  if (Array.isArray(voicesToBeam)) {
-    for (let i = 0; i < voicesToBeam.length; i++) {
-      const v = voicesToBeam[i];
-      if (!v) continue;
-      try {
-        const beams = Beam.generateBeams(v.getTickables() as any);
-        if (Array.isArray(beams)) {
-          for (let j = 0; j < beams.length; j++) {
-            const b = beams[j];
-            if (b) {
-              b.setContext(vf.getContext()).draw();
-            }
-          }
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }
-
+  drawBeams(vf, voicesToBeam);
   drawHighlight(vf, currentNotes);
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Factory } from 'vexflow';
-import { renderStaff } from '../../../src/rendering/renderer';
+import { renderScore } from '../../../src/rendering/score-renderer';
 import { Measure } from '../../../src/engine/state';
 
 describe('Highlighter Rendering', (): void => {
@@ -11,8 +11,8 @@ describe('Highlighter Rendering', (): void => {
   it('should draw highlight with reasonable width and position', (): void => {
     const musicData: Measure[] = [{
       pattern: ['q', 'q', 'q', 'q'],
-      trebleBeats: [['C4'], ['E4'], ['G4'], ['C5']],
-      bassBeats: [[], [], [], []],
+      trebleSteps: [['C4'], ['E4'], ['G4'], ['C5']],
+      bassSteps: [[], [], [], []],
       keySignature: 'C',
       staffType: 'treble'
     }];
@@ -37,7 +37,7 @@ describe('Highlighter Rendering', (): void => {
     };
 
     // We need to mock VexFlow Factory or at least the context it returns
-    // This is tricky because Factory is used inside renderStaff
+    // This is tricky because Factory is used inside renderScore
     // Maybe we can spy on the canvas context instead if VexFlow uses a real canvas?
     // In Vitest/JSDOM, it might be using a mock canvas.
 
@@ -46,13 +46,13 @@ describe('Highlighter Rendering', (): void => {
     Factory.prototype.getContext = () => mockContext as any;
 
     try {
-      renderStaff(document.getElementById('output')!, { 
+      renderScore(document.getElementById('output')!, { 
         measuresPerLine: 4, 
         linesCount: 1, 
         staffType: 'treble' 
       }, {
         musicData,
-        currentBeatIndex: 0,
+        currentStepIndex: 0,
         activeMidiNotes: new Set(),
         suppressedNotes: new Set()
       }, {
@@ -69,14 +69,14 @@ describe('Highlighter Rendering', (): void => {
       fillRectSpy.mockClear();
       const musicData2: Measure[] = [{
         pattern: ['q'],
-        trebleBeats: [['C#4']],
-        bassBeats: [[]],
+        trebleSteps: [['C#4']],
+        bassSteps: [[]],
         keySignature: 'C',
         staffType: 'treble'
       }];
-      renderStaff(document.getElementById('output')!, { staffType: 'treble' }, {
+      renderScore(document.getElementById('output')!, { staffType: 'treble' }, {
         musicData: musicData2,
-        currentBeatIndex: 0,
+        currentStepIndex: 0,
         activeMidiNotes: new Set(),
         suppressedNotes: new Set()
       }, {

@@ -2,13 +2,13 @@ import { WebMidi, NoteMessageEvent, Input, PortEvent } from 'webmidi';
 import { 
   activeMidiNotes, 
   suppressedNotes, 
-  currentBeatIndex, 
-  setCurrentBeatIndex,
+  currentStepIndex,
+  setCurrentStepIndex,
   musicData, 
   getStepInfo,
   getTotalSteps
 } from './state';
-import { getNoteValue } from '../utils/music-theory';
+import { getNoteValue } from '../utils/theory';
 
 export interface MIDIInitFunction {
   (onStateChange?: (reg?: boolean) => void): void;
@@ -18,7 +18,7 @@ export interface MIDIInitFunction {
   onNoteOff?: (e: NoteMessageEvent) => void;
 }
 
-export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => void): void {
+export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => void): void {
   const safeStateChange = (reg?: boolean): void => {
     if (typeof onStateChange === 'function') onStateChange(reg);
   };
@@ -48,20 +48,20 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
   };
 
   const checkMatch = (): void => {
-    const info = getStepInfo(currentBeatIndex);
+    const info = getStepInfo(currentStepIndex);
     const measureData = info ? musicData[info.measureIdx] : null;
     if (!measureData || !info) return;
 
     const targetNotes = Array.from(new Set([
-      ...(measureData.trebleBeats[info.stepIdx] || []), 
-      ...(measureData.bassBeats[info.stepIdx] || [])
+      ...(measureData.trebleSteps[info.stepIdx] || []),
+      ...(measureData.bassSteps[info.stepIdx] || [])
     ]));
     const targetVals = targetNotes.map(getNoteValue);
     const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
     if (activeVals.length === targetVals.length && targetVals.every(v => activeVals.includes(v))) {
-      const nextIndex = currentBeatIndex + 1;
-      setCurrentBeatIndex(nextIndex);
+      const nextIndex = currentStepIndex + 1;
+      setCurrentStepIndex(nextIndex);
       
       if (nextIndex >= getTotalSteps()) {
           ctx.onStateChange(true); 
@@ -75,12 +75,12 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
   const onNoteOn = (e: NoteMessageEvent): void => {
     activeMidiNotes.add(e.note.identifier);
     
-    const info = getStepInfo(currentBeatIndex);
+    const info = getStepInfo(currentStepIndex);
     const measureData = info ? musicData[info.measureIdx] : null;
     if (measureData && info) {
       const targetPitches = [
-        ...(measureData.trebleBeats[info.stepIdx] || []), 
-        ...(measureData.bassBeats[info.stepIdx] || [])
+        ...(measureData.trebleSteps[info.stepIdx] || []),
+        ...(measureData.bassSteps[info.stepIdx] || [])
       ];
       if (!targetPitches.includes(e.note.identifier)) {
         suppressedNotes.clear();
@@ -100,10 +100,10 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     ctx.onStateChange();
   };
 
-  initMIDI.checkMatch = checkMatch;
-  initMIDI.updateStatus = updateStatus;
-  initMIDI.onNoteOn = onNoteOn;
-  initMIDI.onNoteOff = onNoteOff;
+  initMidiHandler.checkMatch = checkMatch;
+  initMidiHandler.updateStatus = updateStatus;
+  initMidiHandler.onNoteOn = onNoteOn;
+  initMidiHandler.onNoteOff = onNoteOff;
 
   const addInputListeners = (input: Input): void => {
     input.removeListener('noteon');

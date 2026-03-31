@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
 
 describe('Initial DOM Structure', () => {
-  let doc;
+  let doc: Document;
 
   beforeEach(() => {
     const html = readFileSync('./index.html', 'utf-8');
@@ -18,8 +18,8 @@ describe('Initial DOM Structure', () => {
   });
 
   it('should have a Settings accordion', () => {
-    const details = doc.querySelector('details');
-    const summary = details.querySelector('summary');
+    const details = doc.querySelector('details')!;
+    const summary = details.querySelector('summary')!;
     expect(summary.textContent).toBe('Settings');
     expect(doc.getElementById('controls')).not.toBeNull();
   });
@@ -27,7 +27,7 @@ describe('Initial DOM Structure', () => {
   it('should have all musical configuration selectors', () => {
     const ids = [
       'measures-per-line', 'lines', 'staff-type', 
-      'notes-per-beat', 'min-note', 'max-note'
+      'notes-per-step', 'min-note', 'max-note'
     ];
     ids.forEach(id => {
       expect(doc.getElementById(id)).not.toBeNull();
@@ -35,7 +35,7 @@ describe('Initial DOM Structure', () => {
   });
 
   it('should have note value checkboxes', () => {
-    const container = doc.getElementById('note-values');
+    const container = doc.getElementById('note-values')!;
     const checkboxes = container.querySelectorAll('input[type="checkbox"]');
     expect(checkboxes.length).toBeGreaterThan(0);
   });

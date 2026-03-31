@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
-  renderStaff, 
-  generateMusicData,
+  renderScore, 
+  generateScoreData,
   resetGameState,
   initKeySignatures,
   setMusicData
@@ -14,7 +14,7 @@ describe('Performance and Stress Regression', () => {
       <div id="output"></div>
       <div id="controls">
         <select id="measures-per-line"><option value="8">8</option></select>
-        <select id="notes-per-beat"><option value="10">10</option></select>
+        <select id="notes-per-step"><option value="10">10</option></select>
         <select id="lines"><option value="10">10</option></select>
         <select id="staff-type"><option value="grand">Grand Staff</option></select>
         <select id="min-note"><option value="A0">A0</option></select>
@@ -32,7 +32,7 @@ describe('Performance and Stress Regression', () => {
       measuresPerLine: 10,
       linesCount: 10,
       staffType: 'grand',
-      notesPerBeat: 10,
+      notesPerStep: 10,
       minNote: 'A0',
       maxNote: 'C8',
       selectedNoteValues: ['q'],
@@ -40,8 +40,8 @@ describe('Performance and Stress Regression', () => {
       isChromatic: true
     };
     
-    setMusicData(generateMusicData(config));
-    expect(() => renderStaff()).not.toThrow();
+    setMusicData(generateScoreData(config));
+    expect(() => renderScore()).not.toThrow();
     const svg = document.querySelector('#output svg');
     expect(svg).not.toBeNull();
   });
@@ -50,8 +50,8 @@ describe('Performance and Stress Regression', () => {
     for (let i = 0; i < 20; i++) {
         const staffType = i % 2 === 0 ? 'treble' : 'grand';
         (document.getElementById('staff-type') as any).value = staffType;
-        generateMusicData();
-        renderStaff();
+        generateScoreData();
+        renderScore();
     }
     expect(document.querySelector('#output svg')).not.toBeNull();
   });
