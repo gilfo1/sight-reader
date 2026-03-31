@@ -2,8 +2,19 @@ import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '../constants/music';
 import { getNoteValue } from '../utils/music-theory';
 import { AppConfig } from '../engine/generator';
 
+const elements = {
+  get measuresPerLine() { return document.getElementById('measures-per-line') as HTMLSelectElement; },
+  get notesPerBeat() { return document.getElementById('notes-per-beat') as HTMLSelectElement; },
+  get lines() { return document.getElementById('lines') as HTMLSelectElement; },
+  get staffType() { return document.getElementById('staff-type') as HTMLSelectElement; },
+  get minNote() { return document.getElementById('min-note') as HTMLSelectElement; },
+  get maxNote() { return document.getElementById('max-note') as HTMLSelectElement; },
+  get noteValues() { return document.getElementById('note-values'); },
+  get keySignatures() { return document.getElementById('key-signatures'); }
+};
+
 export function initKeySignatures(onChange: (e: Event) => void): void {
-  const container: HTMLElement | null = document.getElementById('key-signatures');
+  const container = elements.keySignatures;
   if (!container) return;
   container.innerHTML = '';
 
@@ -32,9 +43,9 @@ export function initKeySignatures(onChange: (e: Event) => void): void {
 }
 
 export function updateNoteSelectors(): void {
-  const staffType: string = (document.getElementById('staff-type') as HTMLSelectElement)?.value || 'grand';
-  const minSelect: HTMLSelectElement | null = document.getElementById('min-note') as HTMLSelectElement;
-  const maxSelect: HTMLSelectElement | null = document.getElementById('max-note') as HTMLSelectElement;
+  const staffType: string = elements.staffType?.value || 'grand';
+  const minSelect = elements.minNote;
+  const maxSelect = elements.maxNote;
 
   if (!minSelect || !maxSelect) return;
 
@@ -63,22 +74,12 @@ export function updateNoteSelectors(): void {
     maxSelect.appendChild(optMax);
   });
 
-  if (filtered.some(n => n === prevMin)) minSelect.value = prevMin;
-  else minSelect.value = staffType === 'bass' ? 'C1' : (staffType === 'treble' ? 'C3' : 'C2');
-
-  if (filtered.some(n => n === prevMax)) maxSelect.value = prevMax;
-  else maxSelect.value = staffType === 'bass' ? 'C5' : (staffType === 'treble' ? 'C6' : 'C6');
+  minSelect.value = filtered.includes(prevMin) ? prevMin : (staffType === 'bass' ? 'C1' : (staffType === 'treble' ? 'C3' : 'C2'));
+  maxSelect.value = filtered.includes(prevMax) ? prevMax : (staffType === 'bass' ? 'C5' : 'C6');
 }
 
 export function getUIConfig(): AppConfig {
-  const measuresPerLine: number = parseInt((document.getElementById('measures-per-line') as HTMLSelectElement)?.value || '4');
-  const notesPerBeat: number = parseInt((document.getElementById('notes-per-beat') as HTMLSelectElement)?.value || '1');
-  const linesCount: number = parseInt((document.getElementById('lines') as HTMLSelectElement)?.value || '1');
-  const staffType: string = (document.getElementById('staff-type') as HTMLSelectElement)?.value || 'grand';
-  const minNote: string = (document.getElementById('min-note') as HTMLSelectElement)?.value || 'C2';
-  const maxNote: string = (document.getElementById('max-note') as HTMLSelectElement)?.value || 'C6';
-
-  const noteValuesContainer: HTMLElement | null = document.getElementById('note-values');
+  const noteValuesContainer = elements.noteValues;
   let selectedNoteValues: string[] = ['q'];
   if (noteValuesContainer) {
     const checked: string[] = Array.from(noteValuesContainer.querySelectorAll('input[type="checkbox"]:checked'))
@@ -86,39 +87,43 @@ export function getUIConfig(): AppConfig {
     if (checked.length > 0) selectedNoteValues = checked;
   }
 
-  const keyContainer: HTMLElement | null = document.getElementById('key-signatures');
+  const keyContainer = elements.keySignatures;
   let selectedKeys: string[] = [];
   if (keyContainer) {
     selectedKeys = Array.from(keyContainer.querySelectorAll('input[type="checkbox"]:checked'))
       .map(cb => (cb as HTMLInputElement).value);
   }
   
-  const isChromatic: boolean = selectedKeys.includes('Chromatic');
-
   return {
-    measuresPerLine,
-    notesPerBeat,
-    linesCount,
-    staffType,
-    minNote,
-    maxNote,
+    measuresPerLine: parseInt(elements.measuresPerLine?.value || '4'),
+    notesPerBeat: parseInt(elements.notesPerBeat?.value || '1'),
+    linesCount: parseInt(elements.lines?.value || '1'),
+    staffType: elements.staffType?.value || 'grand',
+    minNote: elements.minNote?.value || 'C2',
+    maxNote: elements.maxNote?.value || 'C6',
     selectedNoteValues,
     selectedKeySignatures: selectedKeys,
-    isChromatic
+    isChromatic: selectedKeys.includes('Chromatic')
   };
 }
 
 export function setupEventListeners(onConfigChange: () => void): void {
-  const ids: string[] = ['measures-per-line', 'lines', 'staff-type', 'notes-per-beat', 'min-note', 'max-note'];
-  ids.forEach(id => {
-    document.getElementById(id)?.addEventListener('change', () => {
-      if (id === 'staff-type') updateNoteSelectors();
+  const staffTypeEl = elements.staffType;
+  [
+    elements.measuresPerLine,
+    elements.lines,
+    staffTypeEl,
+    elements.notesPerBeat,
+    elements.minNote,
+    elements.maxNote
+  ].forEach(el => {
+    el?.addEventListener('change', () => {
+      if (el === staffTypeEl) updateNoteSelectors();
       onConfigChange();
     });
   });
 
-  const noteValuesContainer: HTMLElement | null = document.getElementById('note-values');
-  noteValuesContainer?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  elements.noteValues?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', onConfigChange);
   });
 }

@@ -13,7 +13,8 @@ describe('Highlighter Rendering', (): void => {
       pattern: ['q', 'q', 'q', 'q'],
       trebleBeats: [['C4'], ['E4'], ['G4'], ['C5']],
       bassBeats: [[], [], [], []],
-      keySignature: 'C'
+      keySignature: 'C',
+      staffType: 'treble'
     }];
 
     // Mock Factory to intercept fillRect
@@ -70,7 +71,8 @@ describe('Highlighter Rendering', (): void => {
         pattern: ['q'],
         trebleBeats: [['C#4']],
         bassBeats: [[]],
-        keySignature: 'C'
+        keySignature: 'C',
+        staffType: 'treble'
       }];
       renderStaff(document.getElementById('output')!, { staffType: 'treble' }, {
         musicData: musicData2,

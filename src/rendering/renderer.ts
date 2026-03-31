@@ -32,32 +32,29 @@ function getTargetNotes(
   getStepInfo: (index: number) => { measureIdx: number; stepIdx: number } | null
 ): StaveNote[] {
   if (!measureData) return [];
-  const beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
-  const pattern = measureData.pattern || beats.map(() => 'q');
+  const beats = (isTreble ? measureData.trebleBeats : measureData.bassBeats) || [];
+  const pattern = measureData.pattern || [];
   const clef = isTreble ? 'treble' : 'bass';
   const stem = isTreble ? 'up' : 'down';
 
   return beats.map((pitches, bIdx) => {
     const duration = pattern[bIdx] || 'q';
-    const info = (typeof getStepInfo === 'function') ? getStepInfo(currentBeatIndex) : null;
-    const isCurrent = (info && info.measureIdx === measureIdx && info.stepIdx === bIdx);
+    const info = getStepInfo(currentBeatIndex);
+    const isCurrent = info?.measureIdx === measureIdx && info?.stepIdx === bIdx;
     
-    let note: StaveNote;
-    if (pitches.length === 0) {
-      const restPitch = isTreble ? 'B4' : 'D3';
-      note = score.notes(`${restPitch}/${duration}/r`, { clef })[0] as StaveNote;
-    } else {
-      const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
-      note = score.notes(noteStr, { stem, clef })[0] as StaveNote;
-    }
+    const restPitch = isTreble ? 'B4' : 'D3';
+    const noteStr = (pitches?.length || 0) === 0 
+      ? `${restPitch}/${duration}/r` 
+      : (pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`);
     
+    const note = score.notes(noteStr, { stem, clef })[0] as StaveNote;
     if (isCurrent && currentNotesArray) currentNotesArray.push(note);
     return note;
   });
 }
 
 function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
-  if (currentNotes.length === 0) return;
+  if (!currentNotes || !Array.isArray(currentNotes) || currentNotes.length === 0) return;
   const ctx = f.getContext();
   
   let minX = Infinity;
@@ -65,8 +62,10 @@ function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
   let minY = Infinity;
   let maxY = -Infinity;
 
-  currentNotes.forEach((note: StaveNote): void => {
-    if (!note.getTickContext()) return;
+  for (let i = 0; i < currentNotes.length; i++) {
+    const note = currentNotes[i];
+    if (!note || !note.getTickContext()) continue;
+    
     const x = note.getAbsoluteX();
     const metrics = (note as any).getMetrics();
     const modLeft = metrics?.modLeftPx || 0;
@@ -84,7 +83,7 @@ function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
       minY = Math.min(minY, 50);
       maxY = Math.max(maxY, 150);
     }
-  });
+  }
 
   const y = minY;
   const height = maxY - minY;
@@ -113,174 +112,228 @@ function getVoices(f: Factory, score: any, measureData: Measure, measureIdx: num
   if (targetNotes.length === 0) return [];
   
   const v: Voice[] = [f.Voice().setMode(2).addTickables(targetNotes)];
-  Accidental.applyAccidentals(v, getValidKey(measureData.keySignature));
+  try {
+    Accidental.applyAccidentals(v, getValidKey(measureData.keySignature));
+  } catch (e) {
+    // Ignore accidental errors in weird environments
+  }
   return v;
 }
 
-export function renderStaff(outputDiv: HTMLElement | null = null, config?: Partial<AppConfig>, state?: RenderState, selectors?: RenderSelectors): void {
-  const div: HTMLElement | null = outputDiv || document.getElementById('output');
-  if (!div) return;
-  
-  const measuresPerLine: number = config?.measuresPerLine || 4;
-  const linesCount: number = config?.linesCount || 1;
-  const staffType: string = config?.staffType || 'grand';
-  
-  if (!state) {
-    state = { musicData: [], currentBeatIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
-  }
-  if (!selectors) {
-    selectors = { getStepInfo: (_i: number): null => null };
-  }
+function calculateColumnWidths(
+  measuresPerLine: number,
+  linesCount: number,
+  staffType: string,
+  state: RenderState,
+  selectors: RenderSelectors
+): number[] {
+  const { musicData } = state;
+  const colWidths: number[] = new Array(measuresPerLine).fill(200);
+  const hiddenDiv: HTMLDivElement = document.createElement('div');
+  hiddenDiv.id = 'temp-vf-' + Math.random().toString(36).substring(2, 9);
+  hiddenDiv.style.display = 'none';
+  document.body.appendChild(hiddenDiv);
 
-  const { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes } = state;
+  const tempVf = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
+  const tempScore: any = (tempVf as any).EasyScore();
+
+  for (let m = 0; m < measuresPerLine; m++) {
+    for (let l = 0; l < linesCount; l++) {
+      const measureIdx = (l * measuresPerLine) + m;
+      const measureData = musicData[measureIdx] || { 
+        keySignature: 'C', 
+        pattern: [], 
+        trebleBeats: [], 
+        bassBeats: [], 
+        staffType: 'grand' 
+      } as Measure;
+      const system: any = (tempVf as any).System({ x: 0, y: 0 });
+      const keySig = getValidKey(measureData.keySignature);
+
+      if (staffType === 'treble' || staffType === 'grand') {
+        const v = getVoices(tempVf, tempScore, measureData, measureIdx, true, null, state, selectors);
+        configureStave(system.addStave({ voices: v }), true, m, keySig);
+      }
+      if (staffType === 'bass' || staffType === 'grand') {
+        const v = getVoices(tempVf, tempScore, measureData, measureIdx, false, null, state, selectors);
+        configureStave(system.addStave({ voices: v }), false, m, keySig);
+      }
+      
+      system.format();
+      colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width + 30);
+      tempVf.reset();
+      hiddenDiv.innerHTML = '';
+    }
+  }
+  document.body.removeChild(hiddenDiv);
+  return colWidths;
+}
+
+function addVoicesWithPlayed(
+  vf: Factory,
+  score: any,
+  measureData: Measure,
+  measureIdx: number,
+  isTreble: boolean,
+  currentNotes: StaveNote[],
+  state: RenderState,
+  selectors: RenderSelectors,
+  allTargetVoices: Voice[]
+): Voice[] {
+  const { currentBeatIndex, activeMidiNotes, suppressedNotes } = state;
   const { getStepInfo } = selectors;
-
-  div.innerHTML = '';
-  if (!div.id) {
-    div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
+  
+  const targetNotes = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
+  if (targetNotes.length === 0) return [];
+  
+  const targetVoice = vf.Voice().setMode(2).addTickables(targetNotes);
+  const voices: Voice[] = [targetVoice];
+  try {
+    Accidental.applyAccidentals(voices, getValidKey(measureData.keySignature));
+  } catch (e) {
+    // Ignore
   }
+  allTargetVoices.push(targetVoice);
 
-  const currentParams: string = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
-  if (lastRenderParams !== currentParams) {
-    const colWidths: number[] = new Array(measuresPerLine).fill(200);
-    const hiddenDiv: HTMLDivElement = document.createElement('div');
-    hiddenDiv.id = 'temp-vf-' + Math.random().toString(36).substring(2, 9);
-    hiddenDiv.style.display = 'none';
-    document.body.appendChild(hiddenDiv);
+  const info = getStepInfo(currentBeatIndex);
+  if (info && info.measureIdx === measureIdx) {
+    const b = info.stepIdx;
+    const duration = (measureData.pattern || [])[b] || 'q';
+    const beats = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
+    const targetPitches = beats[b] || [];
+    
+    const pitches = Array.from(activeMidiNotes).filter(p => {
+      if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
+      const match = p.match(/(-?\d+)$/);
+      const octave = match ? parseInt(match[1]!) : 4;
+      return (measureData.staffType || 'grand') === 'grand' ? (isTreble ? octave >= 4 : octave < 4) : true;
+    });
 
-    const tempVf: Factory = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
-    const tempScore: any = (tempVf as any).EasyScore();
-
-    for (let m = 0; m < measuresPerLine; m++) {
-      for (let l = 0; l < linesCount; l++) {
-        const measureIdx: number = (l * measuresPerLine) + m;
-        const measureData: Measure = musicData[measureIdx] || { keySignature: 'C' };
-        const system: any = (tempVf as any).System({ x: 0, y: 0 });
-        const keySig: string = getValidKey(measureData.keySignature);
-
-        if (staffType === 'treble' || staffType === 'grand') {
-          const v: Voice[] = getVoices(tempVf, tempScore, measureData, measureIdx, true, null, state, selectors);
-          configureStave(system.addStave({ voices: v }), true, m, keySig);
+    if (pitches.length > 0) {
+      const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
+      const pNotes = score.notes(noteStr, { stem: isTreble ? 'up' : 'down', clef: isTreble ? 'treble' : 'bass' }) as StaveNote[];
+      
+      if (pNotes && Array.isArray(pNotes)) {
+        for (let i = 0; i < pNotes.length; i++) {
+          const note = pNotes[i]!;
+          for (let j = 0; j < pitches.length; j++) {
+            const p = pitches[j]!;
+            if (!targetPitches.includes(p)) {
+              note.setKeyStyle(j, { fillStyle: 'rgba(128, 128, 128, 0.4)', strokeStyle: 'rgba(128, 128, 128, 0.4)' });
+            }
+          }
+          const tNote = targetNotes[b];
+          if (tNote) {
+            const originalDraw = (note.draw as any).bind(note);
+            note.draw = function(): void {
+              if (tNote.getTickContext() && note.getTickContext()) {
+                note.setXShift(tNote.getAbsoluteX() - note.getAbsoluteX());
+              }
+              originalDraw();
+            };
+          }
         }
-        if (staffType === 'bass' || staffType === 'grand') {
-          const v: Voice[] = getVoices(tempVf, tempScore, measureData, measureIdx, false, null, state, selectors);
-          configureStave(system.addStave({ voices: v }), false, m, keySig);
-        }
-        
-        system.format();
-        colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width + 30);
-        tempVf.reset();
-        hiddenDiv.innerHTML = '';
+        const pVoice = vf.Voice().setMode(2).addTickables(pNotes);
+        (pVoice as any).getWidth = (): number => 0;
+        voices.push(pVoice);
       }
     }
-    document.body.removeChild(hiddenDiv);
-    cachedColWidths = colWidths;
+  }
+  return voices;
+}
+
+export function renderStaff(outputDiv: HTMLElement | null = null, config?: Partial<AppConfig>, state?: RenderState, selectors?: RenderSelectors): void {
+  const currentNotes: StaveNote[] = [];
+  const voicesToBeam: Voice[] = [];
+  
+  const div = outputDiv || document.getElementById('output');
+  if (!div) return;
+  
+  const measuresPerLine = config?.measuresPerLine || 4;
+  const linesCount = config?.linesCount || 1;
+  const staffType = config?.staffType || 'grand';
+  
+  const actualState = state || { musicData: [], currentBeatIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
+  const actualSelectors = selectors || { getStepInfo: () => null };
+
+  const { musicData } = actualState;
+
+  div.innerHTML = '';
+  if (!div.id) div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
+
+  const currentParams = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
+  if (lastRenderParams !== currentParams) {
+    cachedColWidths = calculateColumnWidths(measuresPerLine, linesCount, staffType, actualState, actualSelectors);
     lastRenderParams = currentParams;
   }
 
-  const colWidths: number[] = cachedColWidths || new Array(measuresPerLine).fill(150);
-  const totalWidth: number = colWidths.reduce((a: number, b: number) => a + b, 0) + 100;
-  const heightPerLine: number = staffType === 'grand' ? 250 : 150;
-  const totalHeight: number = (linesCount * heightPerLine) + 100;
+  const colWidths = cachedColWidths || new Array(measuresPerLine).fill(150);
+  const totalWidth = colWidths.reduce((a, b) => a + b, 0) + 100;
+  const heightPerLine = staffType === 'grand' ? 250 : 150;
+  const totalHeight = (linesCount * heightPerLine) + 100;
 
-  const vf: Factory = new Factory({ renderer: { elementId: div.id, width: totalWidth, height: totalHeight } });
+  const vf = new Factory({ renderer: { elementId: div.id, width: totalWidth, height: totalHeight } });
   const score: any = (vf as any).EasyScore();
-  const currentNotes: StaveNote[] = [];
-  const allTargetVoices: Voice[] = [];
 
   for (let l = 0; l < linesCount; l++) {
-    const y: number = 50 + (l * heightPerLine);
-    let currentX: number = 50;
+    const y = 50 + (l * heightPerLine);
+    let currentX = 50;
     
     for (let m = 0; m < measuresPerLine; m++) {
-      const measureIdx: number = (l * measuresPerLine) + m;
-      const measureData: Measure = musicData[measureIdx] || { keySignature: 'C' };
-      const keySig: string = getValidKey(measureData.keySignature);
-      const width: number = colWidths[m]!;
-      const x: number = currentX;
+      const measureIdx = (l * measuresPerLine) + m;
+      const measureData = musicData[measureIdx] || { 
+        keySignature: 'C', 
+        pattern: [], 
+        trebleBeats: [], 
+        bassBeats: [], 
+        staffType: 'grand' 
+      } as Measure;
+      const width = colWidths[m]!;
+      const x = currentX;
       currentX += width;
 
       const system: any = (vf as any).System({ x, y, width });
+      const keySig = getValidKey(measureData.keySignature);
       
-      const addVoicesWithPlayed = (isTreble: boolean): Voice[] => {
-        const targetNotes: StaveNote[] = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
-        if (targetNotes.length === 0) return [];
-        
-        const targetVoice: Voice = vf.Voice().setMode(2).addTickables(targetNotes);
-        const voices: Voice[] = [targetVoice];
-        Accidental.applyAccidentals(voices, keySig);
-        allTargetVoices.push(targetVoice);
-
-        const info = getStepInfo(currentBeatIndex);
-        if (info && info.measureIdx === measureIdx) {
-          const b: number = info.stepIdx;
-          const duration: string = (measureData.pattern || [])[b] || 'q';
-          const beats: string[][] = isTreble ? (measureData.trebleBeats || []) : (measureData.bassBeats || []);
-          const targetPitches: string[] = beats[b] || [];
-          
-          const pitches: string[] = Array.from(activeMidiNotes as Set<string>).filter(p => {
-            if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
-            const match = p.match(/(-?\d+)$/);
-            const octave: number = match ? parseInt(match[1]!) : 4;
-            return staffType === 'grand' ? (isTreble ? octave >= 4 : octave < 4) : true;
-          });
-
-          if (pitches.length > 0) {
-            const noteStr: string = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
-            const pNotes: StaveNote[] = score.notes(noteStr, { stem: isTreble ? 'up' : 'down', clef: isTreble ? 'treble' : 'bass' }) as StaveNote[];
-            
-            pNotes.forEach(note => {
-              pitches.forEach((p, idx) => {
-                if (!targetPitches.includes(p)) {
-                  note.setKeyStyle(idx, { fillStyle: 'rgba(128, 128, 128, 0.4)', strokeStyle: 'rgba(128, 128, 128, 0.4)' });
-                }
-              });
-              const tNote: StaveNote = targetNotes[b]!;
-              if (tNote) {
-                const originalDraw: () => void = (note.draw as any).bind(note);
-                note.draw = function(): void {
-                  if (tNote.getTickContext() && note.getTickContext()) {
-                    note.setXShift(tNote.getAbsoluteX() - note.getAbsoluteX());
-                  }
-                  originalDraw();
-                };
-              }
-            });
-            const pVoice: Voice = vf.Voice().setMode(2).addTickables(pNotes);
-            (pVoice as any).getWidth = (): number => 0;
-            voices.push(pVoice);
-          }
-        }
-        return voices;
-      };
-
-      if (staffType === 'grand') {
-        configureStave(system.addStave({ voices: addVoicesWithPlayed(true) }), true, m, keySig);
-        configureStave(system.addStave({ voices: addVoicesWithPlayed(false) }), false, m, keySig);
-        if (m === 0) {
-          system.addConnector('brace');
-          system.addConnector('singleLeft');
-        }
-        system.addConnector('singleRight');
-      } else {
-        const isTreble: boolean = staffType === 'treble';
-        configureStave(system.addStave({ voices: addVoicesWithPlayed(isTreble) }), isTreble, m, keySig);
-        if (m === 0) {
-          system.addConnector('singleLeft');
-        }
-        system.addConnector('singleRight');
+      if (staffType === 'treble' || staffType === 'grand') {
+        const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, true, currentNotes, actualState, actualSelectors, voicesToBeam);
+        configureStave(system.addStave({ voices: v }), true, m, keySig);
       }
-      
+      if (staffType === 'bass' || staffType === 'grand') {
+        const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, false, currentNotes, actualState, actualSelectors, voicesToBeam);
+        configureStave(system.addStave({ voices: v }), false, m, keySig);
+      }
+
+      if (m === 0) {
+        if (staffType === 'grand') system.addConnector('brace');
+        system.addConnector('singleLeft');
+      }
+      system.addConnector('singleRight');
       if (measureIdx === musicData.length - 1) system.addConnector('boldDoubleRight');
+      system.format();
     }
   }
   vf.draw();
   
-  allTargetVoices.forEach((voice: Voice): void => {
-    Beam.generateBeams(voice.getTickables() as any).forEach((b: any): void => {
-      b.setContext(vf.getContext()).draw();
-    });
-  });
+  if (Array.isArray(voicesToBeam)) {
+    for (let i = 0; i < voicesToBeam.length; i++) {
+      const v = voicesToBeam[i];
+      if (!v) continue;
+      try {
+        const beams = Beam.generateBeams(v.getTickables() as any);
+        if (Array.isArray(beams)) {
+          for (let j = 0; j < beams.length; j++) {
+            const b = beams[j];
+            if (b) {
+              b.setContext(vf.getContext()).draw();
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
 
   drawHighlight(vf, currentNotes);
 }

@@ -1,4 +1,4 @@
-import { WebMidi, NoteMessageEvent } from 'webmidi';
+import { WebMidi, NoteMessageEvent, Input, PortEvent } from 'webmidi';
 import { 
   activeMidiNotes, 
   suppressedNotes, 
@@ -27,9 +27,9 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     onStateChange: safeStateChange
   };
 
-  const deviceNameEl: HTMLElement | null = document.getElementById('midi-device-name');
-  const indicatorEl: HTMLElement | null = document.getElementById('midi-indicator');
-  const noteDisplayEl: HTMLElement | null = document.getElementById('current-note');
+  const deviceNameEl = document.getElementById('midi-device-name');
+  const indicatorEl = document.getElementById('midi-indicator');
+  const noteDisplayEl = document.getElementById('current-note');
 
   if (!deviceNameEl || !indicatorEl || !noteDisplayEl) return;
 
@@ -52,15 +52,15 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     const measureData = info ? musicData[info.measureIdx] : null;
     if (!measureData || !info) return;
 
-    const targetNotes: string[] = Array.from(new Set([
+    const targetNotes = Array.from(new Set([
       ...(measureData.trebleBeats[info.stepIdx] || []), 
       ...(measureData.bassBeats[info.stepIdx] || [])
     ]));
-    const targetVals: number[] = targetNotes.map(getNoteValue);
-    const activeVals: number[] = Array.from(activeMidiNotes).map(getNoteValue);
+    const targetVals = targetNotes.map(getNoteValue);
+    const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
     if (activeVals.length === targetVals.length && targetVals.every(v => activeVals.includes(v))) {
-      const nextIndex: number = currentBeatIndex + 1;
+      const nextIndex = currentBeatIndex + 1;
       setCurrentBeatIndex(nextIndex);
       
       if (nextIndex >= getTotalSteps()) {
@@ -78,7 +78,7 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     const info = getStepInfo(currentBeatIndex);
     const measureData = info ? musicData[info.measureIdx] : null;
     if (measureData && info) {
-      const targetPitches: string[] = [
+      const targetPitches = [
         ...(measureData.trebleBeats[info.stepIdx] || []), 
         ...(measureData.bassBeats[info.stepIdx] || [])
       ];
@@ -95,22 +95,17 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
   const onNoteOff = (e: NoteMessageEvent): void => {
     activeMidiNotes.delete(e.note.identifier);
     suppressedNotes.delete(e.note.identifier);
-    if (activeMidiNotes.size === 0) {
-      noteDisplayEl.textContent = '-';
-    } else {
-      noteDisplayEl.textContent = Array.from(activeMidiNotes).join(', ');
-    }
+    noteDisplayEl.textContent = activeMidiNotes.size === 0 ? '-' : Array.from(activeMidiNotes).join(', ');
     checkMatch();
     ctx.onStateChange();
   };
 
-  // Export internal logic for legacy test access
   initMIDI.checkMatch = checkMatch;
   initMIDI.updateStatus = updateStatus;
   initMIDI.onNoteOn = onNoteOn;
   initMIDI.onNoteOff = onNoteOff;
 
-  const addInputListeners = (input: any): void => {
+  const addInputListeners = (input: Input): void => {
     input.removeListener('noteon');
     input.removeListener('noteoff');
     input.addListener('noteon', onNoteOn);
@@ -121,8 +116,8 @@ export const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolea
     updateStatus();
     WebMidi.inputs.forEach(addInputListeners);
 
-    WebMidi.addListener('connected', (e: any): void => {
-      if (e.port.type === 'input') addInputListeners(e.port);
+    WebMidi.addListener('connected', (e: PortEvent): void => {
+      if (e.port.type === 'input') addInputListeners(e.port as Input);
       updateStatus();
     });
 

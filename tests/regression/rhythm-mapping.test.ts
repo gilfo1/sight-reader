@@ -19,9 +19,9 @@ describe('Rhythm and Pattern Mapping Regression', () => {
 
   it('should correctly map global steps to measure and beat info with variable rhythms', () => {
     setMusicData([
-      { pattern: ['q', 'q', 'q', 'q'] }, // 4 steps
-      { pattern: ['h', 'h'] },          // 2 steps
-      { pattern: ['8', '8', '8', '8', 'q', 'q'] } // 6 steps
+      { pattern: ['q', 'q', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' }, // 4 steps
+      { pattern: ['h', 'h'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' },          // 2 steps
+      { pattern: ['8', '8', '8', '8', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' } // 6 steps
     ]);
     
     expect(getTotalSteps()).toBe(12);
@@ -36,7 +36,7 @@ describe('Rhythm and Pattern Mapping Regression', () => {
   });
 
   it('should return null for out-of-bounds mapping indices', () => {
-    setMusicData([{ pattern: ['q', 'q', 'q', 'q'] }]);
+    setMusicData([{ pattern: ['q', 'q', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' }]);
     expect(getStepInfo(4)).toBeNull();
     expect(getStepInfo(-1)).toBeNull();
   });

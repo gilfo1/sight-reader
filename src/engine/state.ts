@@ -1,12 +1,11 @@
 // Global state for music data and progress
 export interface Measure {
-  trebleBeats?: string[][];
-  bassBeats?: string[][];
-  pattern?: string[];
-  keySignature?: string;
+  trebleBeats: string[][];
+  bassBeats: string[][];
+  pattern: string[];
+  keySignature: string;
+  staffType: string;
   clef?: string;
-  staffType?: string;
-  steps?: { treblePitches?: string[], bassPitches?: string[], duration?: string }[]; // legacy
 }
 
 export const musicData: Measure[] = [];
@@ -15,25 +14,8 @@ export const activeMidiNotes: Set<string> = new Set();
 export const suppressedNotes: Set<string> = new Set();
 
 export function setMusicData(data: Measure[]): void {
-  const processedData: Measure[] = data.map(m => {
-    // If it's the legacy steps structure, convert it
-    if (m.steps && !m.trebleBeats) {
-      return {
-        ...m,
-        trebleBeats: m.steps.map((s) => s.treblePitches || []),
-        bassBeats: m.steps.map((s) => s.bassPitches || []),
-        pattern: m.steps.map((s) => s.duration || 'q')
-      } as Measure;
-    }
-    // Ensure pattern is always present
-    if (!m.pattern && m.trebleBeats) {
-      return { ...m, pattern: m.trebleBeats.map(() => 'q') } as Measure;
-    }
-    return m;
-  });
-  
   musicData.length = 0;
-  musicData.push(...processedData);
+  musicData.push(...data);
 }
 
 export function setCurrentBeatIndex(index: number): void {

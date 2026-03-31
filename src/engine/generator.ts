@@ -22,7 +22,7 @@ export function generateRhythmicPattern(selectedDurations: string[]): string[] {
   return pattern;
 }
 
-export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, _staffType: string, keySignature: string, isChromatic: boolean): string[] {
+export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, keySignature: string, isChromatic: boolean): string[] {
   const minVal: number = getNoteValue(minNote);
   const maxVal: number = getNoteValue(maxNote);
   const midC: number = getNoteValue('C4');
@@ -110,8 +110,8 @@ export function generateMusicData(config: AppConfig): Measure[] {
       const bassBeats: string[][] = [];
 
       for (let b = 0; b < pattern.length; b++) {
-        trebleBeats.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, staffType, lineKey, isChromatic) : []);
-        bassBeats.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, staffType, lineKey, isChromatic) : []);
+        trebleBeats.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
+        bassBeats.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic) : []);
       }
       data.push({ trebleBeats, bassBeats, pattern, staffType, keySignature: lineKey });
     }

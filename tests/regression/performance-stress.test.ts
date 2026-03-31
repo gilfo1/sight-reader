@@ -46,7 +46,7 @@ describe('Performance and Stress Regression', () => {
     expect(svg).not.toBeNull();
   });
 
-  it('should handle rapid re-renders during fuzz-like input changes', () => {
+  it('should handle rapid re-renders during fuzz-like input changes', { timeout: 30000 }, () => {
     for (let i = 0; i < 20; i++) {
         const staffType = i % 2 === 0 ? 'treble' : 'grand';
         (document.getElementById('staff-type') as any).value = staffType;

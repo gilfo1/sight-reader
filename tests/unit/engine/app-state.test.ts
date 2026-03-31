@@ -25,9 +25,9 @@ describe('App State Engine', () => {
   describe('Step and Progress Mapping', () => {
     beforeEach(() => {
       setMusicData([
-        { pattern: ['q', 'q', 'q', 'q'] }, // 4 steps
-        { pattern: ['h', 'h'] },          // 2 steps
-        { pattern: ['8', '8', '8', '8', 'q', 'q'] } // 6 steps
+        { pattern: ['q', 'q', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' }, // 4 steps
+        { pattern: ['h', 'h'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' },          // 2 steps
+        { pattern: ['8', '8', '8', '8', 'q', 'q'], trebleBeats: [], bassBeats: [], staffType: 'grand', keySignature: 'C' } // 6 steps
       ]);
     });
 

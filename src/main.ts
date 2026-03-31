@@ -10,9 +10,15 @@ import {
   getTotalSteps,
   Measure
 } from './engine/state';
-import { generateMusicData, AppConfig } from './engine/generator';
-import { renderStaff, clearRenderCache } from './rendering/renderer';
+import { generateMusicData as engineGenerateMusicData, AppConfig } from './engine/generator';
+import { renderStaff as engineRenderStaff, clearRenderCache, RenderState, RenderSelectors } from './rendering/renderer';
 import { initMIDI as engineInitMIDI, MIDIInitFunction } from './engine/midi';
+import { 
+  initKeySignatures, 
+  updateNoteSelectors, 
+  getUIConfig, 
+  setupEventListeners 
+} from './ui/controls';
 
 function resetGameState(): void {
   engineResetGameState();
@@ -21,7 +27,6 @@ function resetGameState(): void {
 
 const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => void): void {
   engineInitMIDI(onStateChange || handleStateChange);
-  // Re-attach internal logic to the wrapper for legacy test access
   initMIDI.checkMatch = engineInitMIDI.checkMatch;
   initMIDI.updateStatus = engineInitMIDI.updateStatus;
   initMIDI.onNoteOn = engineInitMIDI.onNoteOn;
@@ -29,16 +34,8 @@ const initMIDI: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => v
 };
 
 function checkMatch(): void {
-  if (typeof engineInitMIDI.checkMatch === 'function') engineInitMIDI.checkMatch();
+  engineInitMIDI.checkMatch?.();
 }
-
-import { 
-  initKeySignatures, 
-  updateNoteSelectors, 
-  getUIConfig, 
-  setupEventListeners 
-} from './ui/controls';
-import { RenderState, RenderSelectors } from './rendering/renderer';
 
 function getAppState(): RenderState {
   return { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes };
@@ -51,68 +48,57 @@ function getAppSelectors(): RenderSelectors {
 function handleStateChange(shouldRegenerate: boolean = false): void {
   const config: AppConfig = getUIConfig();
   if (shouldRegenerate) {
-    const data: Measure[] = generateMusicData(config);
     resetGameState();
-    setMusicData(data);
+    setMusicData(engineGenerateMusicData(config));
   }
-  renderStaff(null, config, getAppState(), getAppSelectors());
+  engineRenderStaff(null, config, getAppState(), getAppSelectors());
 }
 
 const handleRegenerate = (): void => handleStateChange(true);
 
-// Initialize application
-function legacyGenerateMusicData(config?: AppConfig): Measure[] {
-  const actualConfig: AppConfig = config || getUIConfig();
-  const data: Measure[] = generateMusicData(actualConfig);
+function generateMusicData(config?: AppConfig): Measure[] {
+  const data = engineGenerateMusicData(config || getUIConfig());
   setMusicData(data);
   return data;
 }
 
-function legacyRenderStaff(outputDiv: HTMLElement | null = null, config?: AppConfig): void {
-  // Legacy compatibility: if musicData is empty, generate it based on config
+function renderStaff(outputDiv: HTMLElement | null = null, config?: AppConfig): void {
+  const actualConfig = config || getUIConfig();
   if (musicData.length === 0) {
-    const data: Measure[] = generateMusicData(config || getUIConfig());
-    setMusicData(data);
+    setMusicData(engineGenerateMusicData(actualConfig));
   }
-  return renderStaff(outputDiv, config, getAppState(), getAppSelectors());
+  return engineRenderStaff(outputDiv, actualConfig, getAppState(), getAppSelectors());
 }
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
-  updateNoteSelectors();
-  initKeySignatures(handleRegenerate);
-  
-  // Initial music generation
-  const config = getUIConfig();
-  const data = generateMusicData(config);
-  setMusicData(data);
-  
-  renderStaff(null, config, getAppState(), getAppSelectors());
-  
+    updateNoteSelectors();
+    initKeySignatures(handleRegenerate);
+    
+    const config = getUIConfig();
+    setMusicData(engineGenerateMusicData(config));
+    engineRenderStaff(null, config, getAppState(), getAppSelectors());
+    
     initMIDI(handleStateChange);
     setupEventListeners(handleRegenerate);
   });
 }
 
-// Re-export state as live bindings
 export { 
   musicData, 
   currentBeatIndex, 
   activeMidiNotes, 
-  suppressedNotes 
-} from './engine/state';
-
-export { 
+  suppressedNotes,
   setMusicData, 
   resetGameState, 
   setCurrentBeatIndex,
-  legacyRenderStaff as renderStaff, 
+  renderStaff, 
   initMIDI, 
   checkMatch,
   initKeySignatures, 
   updateNoteSelectors, 
   getUIConfig,
-  legacyGenerateMusicData as generateMusicData,
+  generateMusicData,
   getStepInfo,
   getTotalSteps
 };

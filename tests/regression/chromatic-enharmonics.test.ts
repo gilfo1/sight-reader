@@ -17,7 +17,7 @@ describe('Chromatic and Enharmonic Regression', () => {
     const c8 = getNoteValue('C8');
     
     for (let i = 0; i < 100; i++) {
-        const pitches = getRandomPitches('treble', 1, 'A0', 'C8', 'treble', 'C', true);
+        const pitches = getRandomPitches('treble', 1, 'A0', 'C8', 'C', true);
         const val = getNoteValue(pitches[0]);
         expect(val).toBeGreaterThanOrEqual(a0);
         expect(val).toBeLessThanOrEqual(c8);
@@ -29,7 +29,7 @@ describe('Chromatic and Enharmonic Regression', () => {
     let sharps = 0;
     let flats = 0;
     for (let i = 0; i < 100; i++) {
-        const p = getRandomPitches('treble', 1, 'C3', 'C6', 'treble', 'G', true)[0];
+        const p = getRandomPitches('treble', 1, 'C3', 'C6', 'G', true)[0];
         if (p.includes('#')) sharps++;
         if (p.includes('b')) flats++;
     }
@@ -39,7 +39,7 @@ describe('Chromatic and Enharmonic Regression', () => {
     sharps = 0;
     flats = 0;
     for (let i = 0; i < 100; i++) {
-        const p = getRandomPitches('treble', 1, 'C3', 'C6', 'treble', 'F', true)[0];
+        const p = getRandomPitches('treble', 1, 'C3', 'C6', 'F', true)[0];
         if (p.includes('#')) sharps++;
         if (p.includes('b')) flats++;
     }

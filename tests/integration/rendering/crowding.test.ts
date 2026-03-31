@@ -19,7 +19,8 @@ describe('Measure Spacing and Crowding', (): void => {
         ['A#5'], ['B#5'], ['C#6'], ['D#6']
       ],
       bassBeats: Array(16).fill([]),
-      keySignature: 'C'
+      keySignature: 'C',
+      staffType: 'treble'
     }];
 
     // Spy on Factory to see how wide the system is
@@ -55,7 +56,8 @@ describe('Measure Spacing and Crowding', (): void => {
       pattern: ['q'],
       trebleBeats: [['C4']],
       bassBeats: [[]],
-      keySignature: 'C'
+      keySignature: 'C',
+      staffType: 'treble'
     }];
     const systemSpy = vi.spyOn(Factory.prototype as any, 'System');
     renderStaff(document.getElementById('output')!, { staffType: 'treble' }, {

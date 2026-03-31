@@ -13,7 +13,7 @@ describe('Music Generator Engine', () => {
   });
 
   it('should generate pitches within selected range', () => {
-    const pitches = getRandomPitches('treble', 4, 'C4', 'C5', 'treble', 'C', false);
+    const pitches = getRandomPitches('treble', 4, 'C4', 'C5', 'C', false);
     const minVal = getNoteValue('C4');
     const maxVal = getNoteValue('C5');
     
@@ -77,8 +77,8 @@ describe('Music Generator Engine', () => {
   });
 
   it('should respect staff split for Grand Staff', () => {
-    const treble = getRandomPitches('treble', 1, 'C2', 'C6', 'grand', 'C', false);
-    const bass = getRandomPitches('bass', 1, 'C2', 'C6', 'grand', 'C', false);
+    const treble = getRandomPitches('treble', 1, 'C2', 'C6', 'C', false);
+    const bass = getRandomPitches('bass', 1, 'C2', 'C6', 'C', false);
     expect(getNoteValue(treble[0]!)).toBeGreaterThanOrEqual(getNoteValue('C4'));
     expect(getNoteValue(bass[0]!)).toBeLessThan(getNoteValue('C4'));
   });
@@ -87,7 +87,7 @@ describe('Music Generator Engine', () => {
     let sharps = 0;
     let flats = 0;
     for (let i = 0; i < 100; i++) {
-      const p = getRandomPitches('treble', 1, 'C3', 'C6', 'treble', 'G', true)[0];
+      const p = getRandomPitches('treble', 1, 'C3', 'C6', 'G', true)[0];
       if (p.includes('#')) sharps++;
       if (p.includes('b')) flats++;
     }
@@ -96,7 +96,7 @@ describe('Music Generator Engine', () => {
     sharps = 0;
     flats = 0;
     for (let i = 0; i < 100; i++) {
-      const p = getRandomPitches('treble', 1, 'C3', 'C6', 'treble', 'F', true)[0];
+      const p = getRandomPitches('treble', 1, 'C3', 'C6', 'F', true)[0];
       if (p.includes('#')) sharps++;
       if (p.includes('b')) flats++;
     }
