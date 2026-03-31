@@ -1,4 +1,4 @@
-import { ENHARMONIC_MAP } from '../constants/music.js';
+import { ENHARMONIC_MAP, SHARP_KEYS, FLAT_KEYS } from '../constants/music.js';
 
 export function getNoteValue(note) {
   const match = note.match(/^([A-G][#b]*)(-?\d+)$/);
@@ -29,11 +29,10 @@ export function getEnharmonic(note, keySignature, isChromatic) {
   const base = note.slice(0, 2);
   const oct = note.slice(2);
   const enh = ENHARMONIC_MAP[base];
-  
   if (!enh) return note;
 
-  const hasSharps = keySignature.includes('#') || ['G', 'D', 'A', 'E', 'B'].includes(keySignature);
-  const hasFlats = keySignature.includes('b') || ['F'].includes(keySignature);
+  const hasSharps = SHARP_KEYS.includes(keySignature);
+  const hasFlats = FLAT_KEYS.includes(keySignature);
 
   if (isChromatic) {
     const r = Math.random();
@@ -41,6 +40,5 @@ export function getEnharmonic(note, keySignature, isChromatic) {
     return useFlat ? enh + oct : note;
   }
   
-  // Diatonic: match key signature style
   return hasFlats ? enh + oct : note;
 }

@@ -20,6 +20,9 @@ export const KEY_SIGNATURES = [
   'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'
 ];
 
+export const SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
+export const FLAT_KEYS = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
+
 export const SCALES = {
   'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
   'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],

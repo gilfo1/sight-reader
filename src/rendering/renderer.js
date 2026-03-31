@@ -70,11 +70,28 @@ function getValidKey(key) {
   return KEY_SIGNATURES.includes(key) ? key : 'C';
 }
 
+function configureStave(stave, isTreble, m, keySig) {
+  if (m === 0) {
+    stave.addClef(isTreble ? 'treble' : 'bass').addTimeSignature('4/4');
+    if (keySig !== 'C') stave.addKeySignature(keySig);
+  }
+}
+
+function getVoices(f, score, measureData, measureIdx, isTreble, currentNotes, state, selectors) {
+  const { currentBeatIndex } = state;
+  const { getStepInfo } = selectors;
+  const targetNotes = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
+  if (targetNotes.length === 0) return [];
+  
+  const v = [f.Voice().setMode(2).addTickables(targetNotes)];
+  Accidental.applyAccidentals(v, getValidKey(measureData.keySignature));
+  return v;
+}
+
 export function renderStaff(outputDiv, config, state, selectors) {
   const div = outputDiv || document.getElementById('output');
   if (!div) return;
   
-  // Use provided config or default to standard settings
   const measuresPerLine = config?.measuresPerLine || 4;
   const linesCount = config?.linesCount || 1;
   const staffType = config?.staffType || 'grand';
@@ -90,7 +107,6 @@ export function renderStaff(outputDiv, config, state, selectors) {
   const { getStepInfo } = selectors;
 
   div.innerHTML = '';
-  
   if (!div.id) {
     div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
   }
@@ -109,42 +125,17 @@ export function renderStaff(outputDiv, config, state, selectors) {
     for (let m = 0; m < measuresPerLine; m++) {
       for (let l = 0; l < linesCount; l++) {
         const measureIdx = (l * measuresPerLine) + m;
-        const measureData = musicData[measureIdx] || { trebleBeats: [], bassBeats: [], pattern: [], keySignature: 'C' };
+        const measureData = musicData[measureIdx] || { keySignature: 'C' };
+        const system = tempVf.System({ x: 0, y: 0 });
         const keySig = getValidKey(measureData.keySignature);
 
-        const system = tempVf.System({ x: 0, y: 0 });
-        
         if (staffType === 'treble' || staffType === 'grand') {
-          const targetNotes = getTargetNotes(tempScore, measureData, measureIdx, true, null, currentBeatIndex, getStepInfo);
-          const v = [];
-          if (targetNotes.length > 0) {
-            const voice = tempVf.Voice().setMode(2).addTickables(targetNotes);
-            v.push(voice);
-            Accidental.applyAccidentals(v, keySig);
-          }
-          const stave = system.addStave({ voices: v });
-          if (m === 0) {
-            stave.addClef('treble').addTimeSignature('4/4');
-            if (keySig !== 'C') {
-              stave.addKeySignature(keySig);
-            }
-          }
+          const v = getVoices(tempVf, tempScore, measureData, measureIdx, true, null, state, selectors);
+          configureStave(system.addStave({ voices: v }), true, m, keySig);
         }
         if (staffType === 'bass' || staffType === 'grand') {
-          const targetNotes = getTargetNotes(tempScore, measureData, measureIdx, false, null, currentBeatIndex, getStepInfo);
-          const v = [];
-          if (targetNotes.length > 0) {
-            const voice = tempVf.Voice().setMode(2).addTickables(targetNotes);
-            v.push(voice);
-            Accidental.applyAccidentals(v, keySig);
-          }
-          const stave = system.addStave({ voices: v });
-          if (m === 0) {
-            stave.addClef('bass').addTimeSignature('4/4');
-            if (keySig !== 'C') {
-              stave.addKeySignature(keySig);
-            }
-          }
+          const v = getVoices(tempVf, tempScore, measureData, measureIdx, false, null, state, selectors);
+          configureStave(system.addStave({ voices: v }), false, m, keySig);
         }
         
         system.format();
@@ -159,19 +150,11 @@ export function renderStaff(outputDiv, config, state, selectors) {
   }
 
   const colWidths = cachedColWidths || new Array(measuresPerLine).fill(150);
-  const padding = 100;
-  const totalWidth = colWidths.reduce((a, b) => a + b, 0) + padding;
+  const totalWidth = colWidths.reduce((a, b) => a + b, 0) + 100;
   const heightPerLine = staffType === 'grand' ? 250 : 150;
   const totalHeight = (linesCount * heightPerLine) + 100;
 
-  const vf = new Factory({ 
-    renderer: { 
-      elementId: div.id, 
-      width: totalWidth, 
-      height: totalHeight 
-    } 
-  });
-  
+  const vf = new Factory({ renderer: { elementId: div.id, width: totalWidth, height: totalHeight } });
   const score = vf.EasyScore();
   const currentNotes = [];
   const allTargetVoices = [];
@@ -182,120 +165,81 @@ export function renderStaff(outputDiv, config, state, selectors) {
     
     for (let m = 0; m < measuresPerLine; m++) {
       const measureIdx = (l * measuresPerLine) + m;
-      const measureData = musicData[measureIdx] || { trebleBeats: [], bassBeats: [], pattern: [], keySignature: 'C' };
+      const measureData = musicData[measureIdx] || { keySignature: 'C' };
       const keySig = getValidKey(measureData.keySignature);
-
       const width = colWidths[m];
       const x = currentX;
       currentX += width;
 
       const system = vf.System({ x, y, width });
       
-      const formatTargetVoice = (isTreble) => {
-        return getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
-      };
+      const addVoicesWithPlayed = (isTreble) => {
+        const targetNotes = getTargetNotes(score, measureData, measureIdx, isTreble, currentNotes, currentBeatIndex, getStepInfo);
+        if (targetNotes.length === 0) return [];
+        
+        const targetVoice = vf.Voice().setMode(2).addTickables(targetNotes);
+        const voices = [targetVoice];
+        Accidental.applyAccidentals(voices, keySig);
+        allTargetVoices.push(targetVoice);
 
-      const formatPlayedVoice = (isTreble, targetNotesForStave) => {
         const info = getStepInfo(currentBeatIndex);
         if (info && info.measureIdx === measureIdx) {
-            const b = info.stepIdx;
-            const duration = (measureData.pattern || [])[b] || 'q';
-            const targetPitches = isTreble ? (measureData.trebleBeats[b] || []) : (measureData.bassBeats[b] || []);
+          const b = info.stepIdx;
+          const duration = (measureData.pattern || [])[b] || 'q';
+          const targetPitches = isTreble ? (measureData.trebleBeats[b] || []) : (measureData.bassBeats[b] || []);
+          
+          const pitches = Array.from(activeMidiNotes).filter(p => {
+            if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
+            const octave = parseInt(p.slice(-1));
+            return staffType === 'grand' ? (isTreble ? octave >= 4 : octave < 4) : true;
+          });
+
+          if (pitches.length > 0) {
+            const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
+            const pNotes = score.notes(noteStr, { stem: isTreble ? 'up' : 'down', clef: isTreble ? 'treble' : 'bass' });
             
-            const pitches = Array.from(activeMidiNotes).filter(p => {
-              if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
-              const octave = parseInt(p.slice(-1));
-              if (staffType === 'treble') return isTreble;
-              if (staffType === 'bass') return !isTreble;
-              return isTreble ? octave >= 4 : octave < 4;
-            });
-
-            if (pitches.length > 0) {
-              const noteStr = pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`;
-              const notes = score.notes(noteStr, { 
-                stem: isTreble ? 'up' : 'down',
-                clef: isTreble ? 'treble' : 'bass'
+            pNotes.forEach(note => {
+              pitches.forEach((p, idx) => {
+                if (!targetPitches.includes(p)) {
+                  note.setKeyStyle(idx, { fillStyle: 'rgba(128, 128, 128, 0.4)', strokeStyle: 'rgba(128, 128, 128, 0.4)' });
+                }
               });
-              
-              notes.forEach(note => {
-                  pitches.forEach((p, idx) => {
-                      if (!targetPitches.includes(p)) {
-                          note.setKeyStyle(idx, { fillStyle: 'rgba(128, 128, 128, 0.4)', strokeStyle: 'rgba(128, 128, 128, 0.4)' });
-                      }
-                  });
-                  const targetNote = targetNotesForStave[b];
-                  if (targetNote) {
-                    const originalDraw = note.draw.bind(note);
-                    note.draw = function() {
-                        if (targetNote.getTickContext() && note.getTickContext()) {
-                          note.setXShift(targetNote.getAbsoluteX() - note.getAbsoluteX());
-                        }
-                        originalDraw();
-                    };
+              const tNote = targetNotes[b];
+              if (tNote) {
+                const originalDraw = note.draw.bind(note);
+                note.draw = function() {
+                  if (tNote.getTickContext() && note.getTickContext()) {
+                    note.setXShift(tNote.getAbsoluteX() - note.getAbsoluteX());
                   }
-              });
-              const voice = vf.Voice().setMode(2).addTickables(notes);
-              voice.getWidth = () => 0;
-              return voice;
-            }
+                  originalDraw();
+                };
+              }
+            });
+            const pVoice = vf.Voice().setMode(2).addTickables(pNotes);
+            pVoice.getWidth = () => 0;
+            voices.push(pVoice);
+          }
         }
-        return null;
-      };
-
-      const addVoicesToStave = (isTreble, targetNotes) => {
-        const v = [];
-        if (targetNotes.length > 0) {
-          const voice = vf.Voice().setMode(2).addTickables(targetNotes);
-          v.push(voice);
-          Accidental.applyAccidentals(v, keySig);
-          allTargetVoices.push(voice);
-        }
-        const pmVoice = formatPlayedVoice(isTreble, targetNotes);
-        if (pmVoice) v.push(pmVoice);
-        return v;
+        return voices;
       };
 
       if (staffType === 'grand') {
-        const tNotes = formatTargetVoice(true);
-        const bNotes = formatTargetVoice(false);
-        const st = system.addStave({ voices: addVoicesToStave(true, tNotes) });
-        const sb = system.addStave({ voices: addVoicesToStave(false, bNotes) });
-
-        if (m === 0) {
-          st.addClef('treble');
-          sb.addClef('bass');
-          if (keySig !== 'C') {
-            st.addKeySignature(keySig);
-            sb.addKeySignature(keySig);
-          }
-          system.addConnector('brace');
-        }
+        configureStave(system.addStave({ voices: addVoicesWithPlayed(true) }), true, m, keySig);
+        configureStave(system.addStave({ voices: addVoicesWithPlayed(false) }), false, m, keySig);
+        if (m === 0) system.addConnector('brace');
         system.addConnector('singleRight');
       } else {
         const isTreble = staffType === 'treble';
-        const notes = formatTargetVoice(isTreble);
-        const stave = system.addStave({ voices: addVoicesToStave(isTreble, notes) });
-        if (m === 0) {
-          stave.addClef(isTreble ? 'treble' : 'bass');
-          if (keySig !== 'C') {
-            stave.addKeySignature(keySig);
-          }
-        }
+        configureStave(system.addStave({ voices: addVoicesWithPlayed(isTreble) }), isTreble, m, keySig);
       }
       
-      if (measureIdx === musicData.length - 1) {
-          system.addConnector('boldDoubleRight');
-      }
+      if (measureIdx === musicData.length - 1) system.addConnector('boldDoubleRight');
     }
   }
   vf.draw();
   
-  // Render beams AFTER vf.draw() because it clears the renderer element
   allTargetVoices.forEach(voice => {
-    const beams = Beam.generateBeams(voice.getTickables());
-    beams.forEach(b => {
-      b.setContext(vf.getContext()).draw();
-    });
+    Beam.generateBeams(voice.getTickables()).forEach(b => b.setContext(vf.getContext()).draw());
   });
 
   drawHighlight(vf, currentNotes);

@@ -26,14 +26,10 @@ export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySi
   const maxVal = getNoteValue(maxNote);
   const midC = getNoteValue('C4');
   
-  let validNotes = ALL_PIANO_NOTES.filter(n => {
+  const validNotes = ALL_PIANO_NOTES.filter(n => {
     const v = getNoteValue(n);
     if (v < minVal || v > maxVal) return false;
-    
-    if (staffType === 'grand') {
-      return clef === 'bass' ? v < midC : v >= midC;
-    }
-    return staffType === 'bass' ? v < midC : v >= midC;
+    return clef === 'bass' ? v < midC : v >= midC;
   });
 
   if (validNotes.length === 0) return [];
@@ -58,19 +54,19 @@ export function getRandomPitches(clef, count, minNote, maxNote, staffType, keySi
   return selected.sort((a, b) => getNoteValue(a) - getNoteValue(b));
 }
 
-export function computeMeasureCounts(staffType, notesPerStep, measureIndex = 0, pattern = ['q', 'q', 'q', 'q']) {
-  return {
-    trebleCounts: pattern.map((_, b) => {
-      if (staffType === 'treble') return notesPerStep;
-      if (staffType === 'bass') return 0;
-      return notesPerStep === 1 ? ((b + measureIndex) % 2 === 0 ? 1 : 0) : Math.ceil(notesPerStep / 2);
-    }),
-    bassCounts: pattern.map((_, b) => {
-      if (staffType === 'bass') return notesPerStep;
-      if (staffType === 'treble') return 0;
-      return notesPerStep === 1 ? ((b + measureIndex) % 2 === 0 ? 0 : 1) : Math.floor(notesPerStep / 2);
-    })
-  };
+export function computeMeasureCounts(staffType, notesPerStep, measureIdx = 0, pattern = ['q', 'q', 'q', 'q']) {
+  const getCounts = (isTreble) => pattern.map((_, b) => {
+    if (staffType === (isTreble ? 'bass' : 'treble')) return 0;
+    if (staffType !== 'grand') return notesPerStep;
+    
+    if (notesPerStep === 1) {
+      const isMyTurn = (b + measureIdx) % 2 === (isTreble ? 0 : 1);
+      return isMyTurn ? 1 : 0;
+    }
+    return isTreble ? Math.ceil(notesPerStep / 2) : Math.floor(notesPerStep / 2);
+  });
+
+  return { trebleCounts: getCounts(true), bassCounts: getCounts(false) };
 }
 
 export function generateMusicData(config) {

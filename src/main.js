@@ -9,7 +9,7 @@ import {
   getStepInfo,
   getTotalSteps
 } from './engine/state.js';
-import { generateMusicData, getRandomPitches, generateRhythmicPattern } from './engine/generator.js';
+import { generateMusicData } from './engine/generator.js';
 import { renderStaff, clearRenderCache } from './rendering/renderer.js';
 
 function resetGameState() {
@@ -37,8 +37,6 @@ import {
   getUIConfig, 
   setupEventListeners 
 } from './ui/controls.js';
-import { getNoteValue } from './utils/music-theory.js';
-import { SCALES } from './constants/music.js';
 
 function getAppState() {
   return { musicData, currentBeatIndex, activeMidiNotes, suppressedNotes };
@@ -46,14 +44,6 @@ function getAppState() {
 
 function getAppSelectors() {
   return { getStepInfo };
-}
-
-function handleRegenerate() {
-  const config = getUIConfig();
-  const data = generateMusicData(config);
-  resetGameState();
-  setMusicData(data);
-  renderStaff(null, config, getAppState(), getAppSelectors());
 }
 
 function handleStateChange(shouldRegenerate = false) {
@@ -65,6 +55,8 @@ function handleStateChange(shouldRegenerate = false) {
   }
   renderStaff(null, config, getAppState(), getAppSelectors());
 }
+
+const handleRegenerate = () => handleStateChange(true);
 
 // Initialize application
 function legacyGenerateMusicData() {
@@ -118,10 +110,6 @@ export {
   initKeySignatures, 
   updateNoteSelectors, 
   legacyGenerateMusicData as generateMusicData,
-  getRandomPitches,
   getStepInfo,
-  getTotalSteps,
-  generateRhythmicPattern,
-  getNoteValue,
-  SCALES
+  getTotalSteps
 };

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateRhythmicPattern, getStepInfo, getTotalSteps, setMusicData } from '../../src/main.js';
+import { generateRhythmicPattern } from '../../src/engine/generator.js';
+import { getStepInfo, getTotalSteps, setMusicData } from '../../src/engine/state.js';
 
 describe('Rhythm and Pattern Mapping Regression', () => {
   it('should generate valid 4/4 rhythmic patterns for various selections', () => {
