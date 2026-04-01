@@ -29,4 +29,10 @@ describe('Desktop App Configuration', () => {
     expect(pkg.build.win).toBeDefined();
     expect(pkg.build.linux).toBeDefined();
   });
+
+  it('should ignore dist-electron directory in .gitignore', () => {
+    const gitignorePath = path.resolve(process.cwd(), '.gitignore');
+    const gitignore = fs.readFileSync(gitignorePath, 'utf8');
+    expect(gitignore).toContain('/dist-electron/');
+  });
 });

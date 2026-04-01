@@ -1,5 +1,6 @@
 /target
 /node_modules/
 /dist/
+/dist-electron/
 /.idea/sight-reader.iml
 /release/
