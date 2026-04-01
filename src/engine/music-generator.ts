@@ -22,7 +22,7 @@ export function generateRhythmicPattern(selectedDurations: string[]): string[] {
   return pattern;
 }
 
-export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, keySignature: string, isChromatic: boolean, isAdaptive: boolean = false): string[] {
+export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, keySignature: string, isChromatic: boolean, isAdaptive: boolean = false, maxReach: number = 12): string[] {
   const minVal: number = getNoteValue(minNote);
   const maxVal: number = getNoteValue(maxNote);
   const midC: number = getNoteValue('C4');
@@ -47,10 +47,26 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
   const selected: string[] = [];
 
   for (let i = 0; i < Math.min(count, pool.length); i++) {
+    let currentPool = tempPool;
+    if (selected.length > 0) {
+      const minS = Math.min(...selected.map(getNoteValue));
+      const maxS = Math.max(...selected.map(getNoteValue));
+      const reachLimit = maxReach;
+      
+      currentPool = tempPool.filter(n => {
+        const v = getNoteValue(n);
+        const newMin = Math.min(minS, v);
+        const newMax = Math.max(maxS, v);
+        return (newMax - newMin) <= reachLimit;
+      });
+    }
+
+    if (currentPool.length === 0) break;
+
     let idx: number;
     if (isAdaptive) {
       // Weighted random selection
-      const weights = tempPool.map(note => {
+      const weights = currentPool.map(note => {
         const noteWeight = (stats.troubleNotes[note] || 0) * 3;
         const octMatch = note.match(/\d+/);
         const octWeight = octMatch ? (stats.troubleOctaves[octMatch[0]] || 0) : 0;
@@ -64,9 +80,12 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
         idx++;
       }
     } else {
-      idx = Math.floor(Math.random() * tempPool.length);
+      idx = Math.floor(Math.random() * currentPool.length);
     }
-    const note = tempPool.splice(idx, 1)[0]!;
+    const note = currentPool[idx]!;
+    const tempIdx = tempPool.indexOf(note);
+    if (tempIdx > -1) tempPool.splice(tempIdx, 1);
+    
     selected.push(getEnharmonic(note, keySignature, isChromatic));
   }
   
@@ -95,6 +114,7 @@ export interface GeneratorConfig {
   notesPerStep: number;
   minNote: string;
   maxNote: string;
+  maxReach: number;
   selectedNoteValues: string[];
   selectedKeySignatures: string[];
   isChromatic: boolean;
@@ -109,6 +129,7 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
     notesPerStep,
     minNote,
     maxNote,
+    maxReach,
     selectedNoteValues,
     selectedKeySignatures,
     isChromatic,
@@ -144,8 +165,8 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
       const bassStepsInMeasure: string[][] = [];
 
       for (let b = 0; b < pattern.length; b++) {
-        trebleStepsInMeasure.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive) : []);
-        bassStepsInMeasure.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive) : []);
+        trebleStepsInMeasure.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
+        bassStepsInMeasure.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
       }
       data.push({ trebleSteps: trebleStepsInMeasure, bassSteps: bassStepsInMeasure, pattern, staffType, keySignature: lineKey });
     }

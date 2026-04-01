@@ -9,6 +9,7 @@ const elements = {
   get staffType() { return document.getElementById('staff-type') as HTMLSelectElement; },
   get minNote() { return document.getElementById('min-note') as HTMLSelectElement; },
   get maxNote() { return document.getElementById('max-note') as HTMLSelectElement; },
+  get maxReach() { return document.getElementById('max-reach') as HTMLSelectElement; },
   get noteValues() { return document.getElementById('note-values'); },
   get keySignatures() { return document.getElementById('key-signatures'); },
   get adaptiveLearning() { return document.getElementById('adaptive-learning') as HTMLInputElement; }
@@ -102,6 +103,7 @@ export function getUIConfig(): GeneratorConfig {
     staffType: elements.staffType?.value || 'grand',
     minNote: elements.minNote?.value || 'C2',
     maxNote: elements.maxNote?.value || 'C6',
+    maxReach: parseInt(elements.maxReach?.value || '12'),
     selectedNoteValues,
     selectedKeySignatures: selectedKeys,
     isChromatic: selectedKeys.includes('Chromatic'),
@@ -118,6 +120,7 @@ export function setupEventListeners(onConfigChange: () => void): void {
     elements.notesPerStep,
     elements.minNote,
     elements.maxNote,
+    elements.maxReach,
     elements.adaptiveLearning
   ].forEach(el => {
     el?.addEventListener('change', () => {

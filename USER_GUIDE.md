@@ -76,6 +76,7 @@ You'll never run out of practice material. Every time you finish a piece, a new 
 ### Generation Controls
 - **Notes per Beat**: Controls how many notes are stacked (1 = melody, 2+ = chords).
 - **Min/Max Note**: Defines the pitch range. Options adjust dynamically based on your Staff Type.
+- **Max Hand Reach**: Sets the maximum interval distance relative to an Octave (e.g., -1 for 11 half steps, +1 for 13 half steps) between the lowest and highest note in a chord or interval, ensuring the music is playable for your hand size. Options range from -7 (5 half steps) to +7 (19 half steps) around the Octave (12 half steps).
 - **Note Values**: Check the durations you want to practice (Whole to 16th).
 - **Key Signatures**: Select one or more major keys. The app will rotate through your selections.
 - **Chromatic Mode**: Toggle this for music rich in accidentals and chromaticism.

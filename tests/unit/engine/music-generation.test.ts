@@ -48,9 +48,11 @@ describe('Music Generator Engine', () => {
       notesPerStep: 1,
       minNote: 'C2',
       maxNote: 'C6',
+      maxReach: 6,
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['C'],
-      isChromatic: false
+      isChromatic: false,
+      isAdaptive: false
     };
     
     const data = generateScoreData(config);
@@ -110,9 +112,11 @@ describe('Music Generator Engine', () => {
       notesPerStep: 1,
       minNote: 'C4',
       maxNote: 'C5',
+      maxReach: 6,
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['G', 'F'],
-      isChromatic: false
+      isChromatic: false,
+      isAdaptive: false
     };
     
     const data = generateScoreData(config);

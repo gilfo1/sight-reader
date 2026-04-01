@@ -14,6 +14,23 @@ describe('UI Controls', () => {
       <select id="measures-per-line"><option value="4">4</option></select>
       <select id="notes-per-step"><option value="1">1</option></select>
       <select id="lines"><option value="1">1</option></select>
+      <select id="max-reach">
+        <option value="5">-7 (5 half steps)</option>
+        <option value="6">-6 (6 half steps)</option>
+        <option value="7">-5 (7 half steps)</option>
+        <option value="8">-4 (8 half steps)</option>
+        <option value="9">-3 (9 half steps)</option>
+        <option value="10">-2 (10 half steps)</option>
+        <option value="11">-1 (11 half steps)</option>
+        <option value="12" selected>0 (Octave / 12 half steps)</option>
+        <option value="13">+1 (13 half steps)</option>
+        <option value="14">+2 (14 half steps)</option>
+        <option value="15">+3 (15 half steps)</option>
+        <option value="16">+4 (16 half steps)</option>
+        <option value="17">+5 (17 half steps)</option>
+        <option value="18">+6 (18 half steps)</option>
+        <option value="19">+7 (19 half steps)</option>
+      </select>
       <div id="note-values">
         <input type="checkbox" value="q" checked>
       </div>
@@ -71,8 +88,18 @@ describe('UI Controls', () => {
     expect(config.staffType).toBe('grand');
     expect(config.selectedNoteValues).toContain('q');
     expect(config.selectedKeySignatures).toContain('C');
+    expect(config.maxReach).toBe(12);
     expect(config.isChromatic).toBe(false);
     expect(config.isAdaptive).toBe(false);
+  });
+
+  it('should have all expected max reach options in the UI', () => {
+    const maxReachSelect = document.getElementById('max-reach') as HTMLSelectElement;
+    const values = Array.from(maxReachSelect.options).map(opt => opt.value);
+    const expectedValues = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'];
+    expect(values).toEqual(expectedValues);
+    
+    expect(maxReachSelect.value).toBe('12'); // Default
   });
 
   it('should extract adaptive learning setting correctly', () => {

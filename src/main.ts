@@ -56,26 +56,26 @@ function checkMatch(): void {
   engineInitMidiHandler.checkMatch?.();
 }
 
+export async function initApp(): Promise<void> {
+  updateNoteSelectors();
+  initKeySignatures(handleRegenerate);
+  initStatsUI();
+  
+  const config = getUIConfig();
+  setMusicData(engineGenerateScoreData(config));
+  engineRenderScore(null, config, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
+  
+  engineInitMidiHandler(handleStateChange);
+  setupEventListeners(handleRegenerate);
+}
+
 if (typeof document !== 'undefined') {
   document.title = 'sight-reader';
 
-  const init = async (): Promise<void> => {
-    updateNoteSelectors();
-    initKeySignatures(handleRegenerate);
-    initStatsUI();
-    
-    const config = getUIConfig();
-    setMusicData(generateScoreData(config));
-    engineRenderScore(null, config, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
-    
-    engineInitMidiHandler(handleStateChange);
-    setupEventListeners(handleRegenerate);
-  };
-
   if (document.readyState === 'complete') {
-    init();
+    initApp();
   } else {
-    window.addEventListener('load', init);
+    window.addEventListener('load', initApp);
   }
 }
 
