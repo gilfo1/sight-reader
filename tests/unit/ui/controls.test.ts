@@ -37,6 +37,31 @@ describe('UI Controls', () => {
     // Treble range is restricted
     expect(minSelect.value).toBe('C3');
     expect(maxSelect.value).toBe('C6');
+
+    (document.getElementById('staff-type') as any).value = 'bass';
+    updateNoteSelectors();
+    // It should preserve C3 because C3 is in bass range (C1-C5)
+    expect(minSelect.value).toBe('C3');
+
+    // Now set something out of range for bass, then switch to bass
+    (document.getElementById('staff-type') as any).value = 'treble';
+    updateNoteSelectors();
+    minSelect.value = 'C6'; // C6 is in treble, not in bass
+    (document.getElementById('staff-type') as any).value = 'bass';
+    updateNoteSelectors();
+    expect(minSelect.value).toBe('C1');
+  });
+
+  it('should preserve selected note if it is still within range when staff type changes', () => {
+    (document.getElementById('staff-type') as any).value = 'grand';
+    updateNoteSelectors();
+    const minSelect: any = document.getElementById('min-note');
+    minSelect.value = 'E2';
+    
+    (document.getElementById('staff-type') as any).value = 'bass';
+    updateNoteSelectors();
+    // E2 is valid in bass (C1-C5), so it should be preserved
+    expect(minSelect.value).toBe('E2');
   });
 
   it('should extract config from UI correctly', () => {
@@ -45,5 +70,24 @@ describe('UI Controls', () => {
     expect(config.staffType).toBe('grand');
     expect(config.selectedNoteValues).toContain('q');
     expect(config.selectedKeySignatures).toContain('C');
+    expect(config.isChromatic).toBe(false);
+  });
+
+  it('should handle chromatic checkbox in getUIConfig', () => {
+    (document.getElementById('key-signatures') as any).innerHTML = `
+      <input type="checkbox" value="C">
+      <input type="checkbox" value="Chromatic" checked>
+    `;
+    const config = getUIConfig();
+    expect(config.isChromatic).toBe(true);
+    expect(config.selectedKeySignatures).toContain('Chromatic');
+  });
+
+  it('should fallback to default note values if none are checked', () => {
+    const checkboxes = document.querySelectorAll('#note-values input[type="checkbox"]');
+    checkboxes.forEach(cb => (cb as HTMLInputElement).checked = false);
+    
+    const config = getUIConfig();
+    expect(config.selectedNoteValues).toEqual(['q']);
   });
 });

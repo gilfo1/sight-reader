@@ -2,21 +2,24 @@ import { ENHARMONIC_MAP, SHARP_KEYS, FLAT_KEYS } from '../constants/music';
 
 export function getNoteValue(note: string): number {
   const match: RegExpMatchArray | null = note.match(/^([A-G][#b]*)(-?\d+)$/);
-  if (!match) return -1;
+  if (!match) return NaN;
   const name: string = match[1]!;
   const octave: number = parseInt(match[2]!);
   
-  const offsets: Record<string, number> = {
-    'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11,
-    'B#': 0, 'Cb': 11, 'Fb': 4, 'E#': 5
+  const baseOffsets: Record<string, number> = {
+    'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11
   };
   
-  let val: number = offsets[name]!;
-  let octShift: number = 0;
-  if (name === 'B#') octShift = 1;
-  if (name === 'Cb') octShift = -1;
+  const base: string = name[0]!;
+  let val: number = baseOffsets[base]!;
   
-  return (octave + 1 + octShift) * 12 + val;
+  // Handle accidentals
+  for (let i = 1; i < name.length; i++) {
+    if (name[i] === '#') val++;
+    else if (name[i] === 'b') val--;
+  }
+  
+  return (octave + 1) * 12 + val;
 }
 
 export function getEnharmonic(note: string, keySignature: string, isChromatic: boolean): string {

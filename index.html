@@ -7,101 +7,128 @@
   </head>
   <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px;">
     <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center;">
-      <details style="margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content;">
-        <summary style="cursor: pointer; font-weight: bold; color: #444; text-align: center;">Settings</summary>
-        <div id="controls" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px; align-items: flex-start;">
-        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-          <div>
-            <label for="measures-per-line">Measures per Line:</label>
-            <select id="measures-per-line">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4" selected>4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-            </select>
+      <div style="display: flex; gap: 10px; justify-content: center; align-items: flex-start; flex-wrap: wrap; width: 100%; margin-bottom: 20px;">
+        <details id="settings-details" style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content;">
+          <summary style="cursor: pointer; font-weight: bold; color: #444; text-align: center;">Settings</summary>
+          <div id="controls" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px; align-items: flex-start;">
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div>
+              <label for="measures-per-line">Measures per Line:</label>
+              <select id="measures-per-line">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4" selected>4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+              </select>
+            </div>
+            <div>
+              <label for="lines">Lines:</label>
+              <select id="lines">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div>
+              <label for="staff-type">Staff Type:</label>
+              <select id="staff-type">
+                <option value="grand" selected>Grand Staff</option>
+                <option value="treble">Treble Clef</option>
+                <option value="bass">Bass Clef</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label for="lines">Lines:</label>
-            <select id="lines">
-              <option value="1" selected>1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-            </select>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div>
+              <label for="notes-per-step">Notes per Step:</label>
+              <select id="notes-per-step">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div>
+              <label for="min-note">Min Note:</label>
+              <select id="min-note"></select>
+            </div>
+            <div>
+              <label for="max-note">Max Note:</label>
+              <select id="max-note"></select>
+            </div>
           </div>
-          <div>
-            <label for="staff-type">Staff Type:</label>
-            <select id="staff-type">
-              <option value="grand" selected>Grand Staff</option>
-              <option value="treble">Treble Clef</option>
-              <option value="bass">Bass Clef</option>
-            </select>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label>Note Values:</label>
+            <div id="note-values" style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <label><input type="checkbox" value="w"> Whole</label>
+              <label><input type="checkbox" value="h"> Half</label>
+              <label><input type="checkbox" value="q" checked> Quarter</label>
+              <label><input type="checkbox" value="8"> Eighth</label>
+              <label><input type="checkbox" value="16"> Sixteenth</label>
+            </div>
           </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label>Key Signatures:</label>
+            <div id="key-signatures" style="display: flex; gap: 10px; flex-wrap: wrap; max-width: 800px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+              <!-- Checkboxes will be inserted here -->
+            </div>
+          </div>
+          <hr style="width: 100%; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+          <div id="midi-status" style="padding: 10px; border: 1px solid #ccc; display: inline-block;">
+            MIDI: <span id="midi-device-name">No device connected</span>
+            <div id="midi-indicator" style="width: 15px; height: 15px; background-color: red; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
+          </div>
+          <details id="midi-notes-details" style="margin-bottom: 10px;">
+            <summary style="cursor: pointer; color: #666;">Show MIDI Notes</summary>
+            <div id="note-display" style="margin-top: 10px; font-size: 24px; font-weight: bold;">
+              Note: <span id="current-note">-</span>
+            </div>
+          </details>
         </div>
-        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-          <div>
-            <label for="notes-per-step">Notes per Step:</label>
-            <select id="notes-per-step">
-              <option value="1" selected>1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-            </select>
-          </div>
-          <div>
-            <label for="min-note">Min Note:</label>
-            <select id="min-note"></select>
-          </div>
-          <div>
-            <label for="max-note">Max Note:</label>
-            <select id="max-note"></select>
-          </div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label>Note Values:</label>
-          <div id="note-values" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <label><input type="checkbox" value="w"> Whole</label>
-            <label><input type="checkbox" value="h"> Half</label>
-            <label><input type="checkbox" value="q" checked> Quarter</label>
-            <label><input type="checkbox" value="8"> Eighth</label>
-            <label><input type="checkbox" value="16"> Sixteenth</label>
-          </div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label>Key Signatures:</label>
-          <div id="key-signatures" style="display: flex; gap: 10px; flex-wrap: wrap; max-width: 800px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            <!-- Checkboxes will be inserted here -->
-          </div>
-        </div>
-        <hr style="width: 100%; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-        <div id="midi-status" style="padding: 10px; border: 1px solid #ccc; display: inline-block;">
-          MIDI: <span id="midi-device-name">No device connected</span>
-          <div id="midi-indicator" style="width: 15px; height: 15px; background-color: red; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
-        </div>
-        <details id="midi-notes-details" style="margin-bottom: 10px;">
-          <summary style="cursor: pointer; color: #666;">Show MIDI Notes</summary>
-          <div id="note-display" style="margin-top: 10px; font-size: 24px; font-weight: bold;">
-            Note: <span id="current-note">-</span>
+        </details>
+
+        <details id="stats-details" style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content; color: #777;">
+          <summary style="cursor: pointer; font-weight: bold; text-align: center;">Stats</summary>
+          <div id="stats-content" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; min-width: 150px;">
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Notes Played:</span> <span id="stats-played" style="font-weight: bold;">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Correct:</span> <span id="stats-correct" style="font-weight: bold; color: green;">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Wrong:</span> <span id="stats-wrong" style="font-weight: bold; color: #c00;">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Accuracy:</span> <span id="stats-accuracy" style="font-weight: bold;">0%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Current Streak:</span> <span id="stats-streak" style="font-weight: bold; color: green;">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+              <span>Best Streak:</span> <span id="stats-max-streak" style="font-weight: bold;">0</span>
+            </div>
+            <button id="reset-stats" style="margin-top: 10px; cursor: pointer; padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">Reset Stats</button>
           </div>
         </details>
       </div>
-      </details>
     </div>
     <div id="output" style="width: 100%; display: flex; justify-content: center;"></div>
     <script type="module" src="/src/main.ts"></script>

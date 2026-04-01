@@ -19,6 +19,7 @@ import {
   getUIConfig, 
   setupEventListeners 
 } from './ui/controls';
+import { initStatsUI, updateStatsUI } from './ui/stats';
 
 function resetGameState(): void {
   engineResetGameState();
@@ -32,6 +33,7 @@ function handleStateChange(shouldRegenerate: boolean = false): void {
     setMusicData(engineGenerateScoreData(config));
   }
   engineRenderScore(null, config, { musicData, currentStepIndex, activeMidiNotes, suppressedNotes }, { getStepInfo });
+  updateStatsUI();
 }
 
 const handleRegenerate = (): void => handleStateChange(true);
@@ -60,6 +62,7 @@ if (typeof document !== 'undefined') {
   const init = async (): Promise<void> => {
     updateNoteSelectors();
     initKeySignatures(handleRegenerate);
+    initStatsUI();
     
     const config = getUIConfig();
     setMusicData(generateScoreData(config));

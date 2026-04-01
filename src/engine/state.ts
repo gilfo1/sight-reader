@@ -12,6 +12,30 @@ export let currentStepIndex: number = 0;
 export const activeMidiNotes: Set<string> = new Set();
 export const suppressedNotes: Set<string> = new Set();
 
+export interface AppStats {
+  notesPlayed: number;
+  correctNotes: number;
+  wrongNotes: number;
+  currentStreak: number;
+  maxStreak: number;
+}
+
+export const stats: AppStats = {
+  notesPlayed: 0,
+  correctNotes: 0,
+  wrongNotes: 0,
+  currentStreak: 0,
+  maxStreak: 0,
+};
+
+export function resetStats(): void {
+  stats.notesPlayed = 0;
+  stats.correctNotes = 0;
+  stats.wrongNotes = 0;
+  stats.currentStreak = 0;
+  stats.maxStreak = 0;
+}
+
 export function setMusicData(data: Measure[]): void {
   musicData.length = 0;
   musicData.push(...data);

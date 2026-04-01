@@ -6,7 +6,8 @@ import {
   setCurrentStepIndex,
   musicData, 
   getStepInfo,
-  getTotalSteps
+  getTotalSteps,
+  stats
 } from './state';
 import { getNoteValue } from '../utils/theory';
 
@@ -74,6 +75,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
 
   const onNoteOn = (e: NoteMessageEvent): void => {
     activeMidiNotes.add(e.note.identifier);
+    stats.notesPlayed++;
     
     const info = getStepInfo(currentStepIndex);
     const measureData = info ? musicData[info.measureIdx] : null;
@@ -82,7 +84,15 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
         ...(measureData.trebleSteps[info.stepIdx] || []),
         ...(measureData.bassSteps[info.stepIdx] || [])
       ];
-      if (!targetPitches.includes(e.note.identifier)) {
+      if (targetPitches.includes(e.note.identifier)) {
+        stats.correctNotes++;
+        stats.currentStreak++;
+        if (stats.currentStreak > stats.maxStreak) {
+          stats.maxStreak = stats.currentStreak;
+        }
+      } else {
+        stats.wrongNotes++;
+        stats.currentStreak = 0;
         suppressedNotes.clear();
       }
     }
