@@ -35,6 +35,11 @@ Uses the professional-grade **VexFlow** library to render beautiful musical scor
 - **Smart Accidental Handling**: Follows standard musical rules (measure duration, octave rule, and staff independence).
 - **Measure Widening**: Automatically widens measures with many accidentals to prevent crowding, ensuring a clean and consistent layout across all lines.
 
+### <img width="25" alt="image" src="https://github.com/user-attachments/assets/c66cb47e-1953-4797-ad8a-7f6afd40ac94" /> Stats Feature
+- **Resettable Statistics**: Keep Track of Your Progress
+- The accordion dropdown shows resettable stats on your performance as you practice, as well as a high score for correct notes in a row.
+<img width="308" height="288" alt="image" src="https://github.com/user-attachments/assets/c18b5a0f-e69e-43dd-965c-0b84bb8dbdfd" />
+
 ---
 
 [Home](./README.md) | [Settings](./SETTINGS.md)
