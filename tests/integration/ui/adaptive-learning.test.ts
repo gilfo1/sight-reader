@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { initMidiHandler } from '@/engine/midi-handler';
-import { stats, resetStats, setMusicData, setCurrentStepIndex } from '../../../src/engine/state';
+import { stats, resetStats, setMusicData, setCurrentStepIndex } from '@/engine/state';
 import { generateScoreData } from '@/engine/music-generator';
 import { getUIConfig } from '@/ui/controls';
 

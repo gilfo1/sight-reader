@@ -11,7 +11,7 @@ import {
   recordCorrectNote,
   recordWrongNote
 } from './state';
-import { getNoteValue } from '../utils/theory';
+import { getNoteValue } from '@/utils/theory';
 
 export interface MIDIInitFunction {
   (onStateChange?: (reg?: boolean) => void): void;

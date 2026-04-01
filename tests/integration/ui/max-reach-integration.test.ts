@@ -4,7 +4,7 @@ import {
   resetGameState,
   initApp,
   getUIConfig
-} from '../../../src/main';
+} from '@/main';
 
 describe('Max Hand Reach UI Integration', () => {
   beforeEach(() => {

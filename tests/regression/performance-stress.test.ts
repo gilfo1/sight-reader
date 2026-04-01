@@ -1,11 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { 
-  renderScore, 
-  generateScoreData,
-  resetGameState,
-  initKeySignatures,
-  setMusicData
-} from '../../src/main';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {generateScoreData, initKeySignatures, renderScore, resetGameState, setMusicData} from '@/main';
 
 describe('Performance and Stress Regression', () => {
   beforeEach(() => {
@@ -50,8 +44,7 @@ describe('Performance and Stress Regression', () => {
 
   it('should handle rapid re-renders during fuzz-like input changes', { timeout: 30000 }, () => {
     for (let i = 0; i < 20; i++) {
-        const staffType = i % 2 === 0 ? 'treble' : 'grand';
-        (document.getElementById('staff-type') as any).value = staffType;
+      (document.getElementById('staff-type') as any).value = i % 2 === 0 ? 'treble' : 'grand';
         generateScoreData();
         renderScore();
     }

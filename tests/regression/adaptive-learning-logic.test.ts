@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { stats, resetStats, setMusicData, setCurrentStepIndex } from '../../src/engine/state';
+import { stats, resetStats, setMusicData, setCurrentStepIndex } from '@/engine/state';
 import { initMidiHandler } from '@/engine/midi-handler';
 
 // Mock WebMidi to avoid real MIDI initialization
