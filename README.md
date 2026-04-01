@@ -1,4 +1,6 @@
-<img width="891" height="996" alt="image" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" />
+<div style="text-align: center;">
+  <img width="891" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" alt="MIDI Sight Reader" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
+</div>
 
 # MIDI Sight Reader
 
@@ -21,7 +23,7 @@ https://github.com/0xfe/vexflow/wiki
 - **Full Piano Range Support**: Configure note ranges from A0 to C8 (88 keys).
 - **Key Signature & Chromatic Support**: Practice in any major key or with random chromaticism.
 
-For a detailed list of features, see [FEATURES.md](./FEATURES.md).
+For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
 ## Getting Started
 
@@ -78,7 +80,7 @@ The project includes a comprehensive test suite.
 
 ## User Guide
 
-To understand how to configure the application, check out the [SETTINGS.md](./SETTINGS.md) guide.
+To understand how to configure the application and explore its full feature set, check out the [USER_GUIDE.md](./USER_GUIDE.md).
 
 ---
 
