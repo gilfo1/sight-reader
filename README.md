@@ -46,6 +46,22 @@ To run the project locally on your machine, ensure you have [Node.js](https://no
     ```
 4.  **Open your browser** at the address provided by Vite (usually `http://localhost:5173`).
 
+### Desktop Application
+
+The project can be run as a cross-platform desktop application using Electron.
+
+- **Run in Desktop Mode**:
+    ```bash
+    npm run dev
+    ```
+    (This starts the Vite server and opens the Electron window automatically)
+
+- **Build Desktop Executables**:
+    ```bash
+    npm run build
+    ```
+    The packaged application will be available in the `release/` directory for your current platform.
+
 ### Running on a Server (Production)
 
 To deploy the application to a server, you need to build the optimized assets first.
