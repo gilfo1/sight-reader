@@ -43,6 +43,8 @@ Uses the professional-grade **VexFlow** library to render beautiful musical scor
 ### 🧠 Adaptive Learning
 The "Adaptive Learning" toggle in settings enables an intelligent practice system that analyzes your performance in real-time.
 
+<img width="855" height="446" alt="image" src="https://github.com/user-attachments/assets/8e7eae6f-37bc-4ed5-b1c6-13cf57aec6df" />
+
 - **Smart Error Tracking**: The system monitors notes, octaves, and key signatures where you make mistakes.
 - **Weighted Generation**: New music is generated with a bias towards your "trouble areas," ensuring you get more exposure to the notes and keys you find challenging.
 - **Natural Decay**: As you improve and play the correct notes, the "trouble" weight decreases. Once you consistently get a note right, it returns to its normal frequency.
