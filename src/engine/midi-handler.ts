@@ -4,10 +4,12 @@ import {
   suppressedNotes, 
   currentStepIndex,
   setCurrentStepIndex,
-  musicData, 
+  musicData,
   getStepInfo,
+  getTargetNotesAtStep,
   getTotalSteps,
-  stats
+  recordCorrectNote,
+  recordWrongNote
 } from './state';
 import { getNoteValue } from '../utils/theory';
 
@@ -49,14 +51,9 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
   };
 
   const checkMatch = (): void => {
-    const info = getStepInfo(currentStepIndex);
-    const measureData = info ? musicData[info.measureIdx] : null;
-    if (!measureData || !info) return;
+    const targetNotes = getTargetNotesAtStep(currentStepIndex);
+    if (targetNotes.length === 0) return;
 
-    const targetNotes = Array.from(new Set([
-      ...(measureData.trebleSteps[info.stepIdx] || []),
-      ...(measureData.bassSteps[info.stepIdx] || [])
-    ]));
     const targetVals = targetNotes.map(getNoteValue);
     const activeVals = Array.from(activeMidiNotes).map(getNoteValue);
     
@@ -75,55 +72,17 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
 
   const onNoteOn = (e: NoteMessageEvent): void => {
     activeMidiNotes.add(e.note.identifier);
-    stats.notesPlayed++;
     
-    const info = getStepInfo(currentStepIndex);
-    const measureData = info ? musicData[info.measureIdx] : null;
-    if (measureData && info) {
-      const targetPitches = [
-        ...(measureData.trebleSteps[info.stepIdx] || []),
-        ...(measureData.bassSteps[info.stepIdx] || [])
-      ];
+    const targetPitches = getTargetNotesAtStep(currentStepIndex);
+    if (targetPitches.length > 0) {
+      const info = getStepInfo(currentStepIndex)!;
+      const measureData = musicData[info.measureIdx]!;
+
       if (targetPitches.includes(e.note.identifier)) {
-        stats.correctNotes++;
-        stats.currentStreak++;
-        if (stats.currentStreak > stats.maxStreak) {
-          stats.maxStreak = stats.currentStreak;
-        }
-
-        // Decay trouble areas
-        if ((stats.troubleNotes[e.note.identifier] || 0) > 0) {
-          stats.troubleNotes[e.note.identifier]!--;
-        }
-        const match = e.note.identifier.match(/\d+/);
-        if (match) {
-          const octave = match[0]!;
-          if ((stats.troubleOctaves[octave] || 0) > 0) {
-            stats.troubleOctaves[octave]!--;
-          }
-        }
-        if ((stats.troubleKeys[measureData.keySignature] || 0) > 0) {
-          stats.troubleKeys[measureData.keySignature]!--;
-        }
+        recordCorrectNote(e.note.identifier, measureData.keySignature);
       } else {
-        stats.wrongNotes++;
-        stats.currentStreak = 0;
+        recordWrongNote(targetPitches, measureData.keySignature);
         suppressedNotes.clear();
-
-        // Record trouble areas
-        let keyIncremented = false;
-        targetPitches.forEach(p => {
-          stats.troubleNotes[p] = (stats.troubleNotes[p] || 0) + 1;
-          const match = p.match(/\d+/);
-          if (match) {
-            const octave = match[0]!;
-            stats.troubleOctaves[octave] = (stats.troubleOctaves[octave] || 0) + 1;
-            if (!keyIncremented) {
-              stats.troubleKeys[measureData.keySignature] = (stats.troubleKeys[measureData.keySignature] || 0) + 1;
-              keyIncremented = true;
-            }
-          }
-        });
       }
     }
 

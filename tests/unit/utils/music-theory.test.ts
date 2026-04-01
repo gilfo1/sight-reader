@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getNoteValue } from '../../../src/utils/theory';
+import { getNoteValue, getEnharmonic } from '@/utils/theory';
 
 describe('Music Theory Utilities', () => {
   it('should return correct note values', () => {
@@ -33,9 +33,40 @@ describe('Music Theory Utilities', () => {
   });
 
   it('should return NaN for invalid notes', () => {
-    // Current implementation might return NaN or error depending on how it's written
-    // Let's check theory.ts
     expect(getNoteValue('invalid')).toBeNaN();
     expect(getNoteValue('Z4')).toBeNaN();
+  });
+
+  describe('getEnharmonic', () => {
+    it('should return the same note if no enharmonic exists', () => {
+      expect(getEnharmonic('C4', 'C', false)).toBe('C4');
+      expect(getEnharmonic('E4', 'C', false)).toBe('E4');
+    });
+
+    it('should return flat enharmonic in flat keys', () => {
+      expect(getEnharmonic('C#4', 'F', false)).toBe('Db4');
+      expect(getEnharmonic('F#4', 'Bb', false)).toBe('Gb4');
+    });
+
+    it('should return original note in sharp keys', () => {
+      expect(getEnharmonic('C#4', 'G', false)).toBe('C#4');
+      expect(getEnharmonic('F#4', 'D', false)).toBe('F#4');
+    });
+
+    it('should handle chromatic mode with randomization', () => {
+      // In F (flat key), should prefer flat 80% of the time
+      let flats = 0;
+      for (let i = 0; i < 100; i++) {
+        if (getEnharmonic('C#4', 'F', true) === 'Db4') flats++;
+      }
+      expect(flats).toBeGreaterThan(50);
+
+      // In G (sharp key), should prefer sharp (original) 80% of the time (flat 20%)
+      let original = 0;
+      for (let i = 0; i < 100; i++) {
+        if (getEnharmonic('C#4', 'G', true) === 'C#4') original++;
+      }
+      expect(original).toBeGreaterThan(50);
+    });
   });
 });

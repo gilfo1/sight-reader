@@ -1,6 +1,7 @@
-import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP, KEY_SIGNATURES } from '../constants/music';
-import { getNoteValue, getEnharmonic } from '../utils/theory';
+import { DURATION_WEIGHTS, ALL_PIANO_NOTES, SCALES, ENHARMONIC_MAP, KEY_SIGNATURES } from '@/constants/music';
+import { getNoteValue, getEnharmonic } from '@/utils/theory';
 import { Measure, stats } from './state';
+import { weightedRandom } from '@/utils/random';
 
 export function generateRhythmicPattern(selectedDurations: string[]): string[] {
   const pattern: string[] = [];
@@ -63,26 +64,18 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
 
     if (currentPool.length === 0) break;
 
-    let idx: number;
+    let note: string;
     if (isAdaptive) {
-      // Weighted random selection
-      const weights = currentPool.map(note => {
-        const noteWeight = (stats.troubleNotes[note] || 0) * 3;
-        const octMatch = note.match(/\d+/);
+      const weights = currentPool.map(n => {
+        const noteWeight = (stats.troubleNotes[n] || 0) * 3;
+        const octMatch = n.match(/\d+/);
         const octWeight = octMatch ? (stats.troubleOctaves[octMatch[0]] || 0) : 0;
         return 1 + noteWeight + octWeight;
       });
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
-      let r = Math.random() * totalWeight;
-      idx = 0;
-      while (r > weights[idx]!) {
-        r -= weights[idx]!;
-        idx++;
-      }
+      note = weightedRandom(currentPool, weights);
     } else {
-      idx = Math.floor(Math.random() * currentPool.length);
+      note = currentPool[Math.floor(Math.random() * currentPool.length)]!;
     }
-    const note = currentPool[idx]!;
     const tempIdx = tempPool.indexOf(note);
     if (tempIdx > -1) tempPool.splice(tempIdx, 1);
     
@@ -143,16 +136,8 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
   for (let l = 0; l < linesCount; l++) {
     let lineKey: string;
     if (isAdaptive && availableKeys.length > 1) {
-      // Weighted random key selection
       const weights = availableKeys.map(k => 1 + (stats.troubleKeys[k] || 0) * 5);
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
-      let r = Math.random() * totalWeight;
-      let idx = 0;
-      while (r > weights[idx]!) {
-        r -= weights[idx]!;
-        idx++;
-      }
-      lineKey = availableKeys[idx]!;
+      lineKey = weightedRandom(availableKeys, weights);
     } else {
       lineKey = availableKeys[Math.floor(Math.random() * availableKeys.length)]!;
     }

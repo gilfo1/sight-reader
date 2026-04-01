@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateScoreData } from '../../src/engine/music-generator';
+import { generateScoreData } from '@/engine/music-generator';
 
 describe('Key Signature Selection Regression', () => {
   it('should only choose key signatures that are checked off', () => {
@@ -12,7 +12,9 @@ describe('Key Signature Selection Regression', () => {
       maxNote: 'C6',
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['C', 'Bb', 'Chromatic'],
-      isChromatic: true
+      isChromatic: true,
+      maxReach: 12,
+      isAdaptive: false
     };
 
     const data = generateScoreData(config);
@@ -33,7 +35,9 @@ describe('Key Signature Selection Regression', () => {
       maxNote: 'C6',
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['C', 'Bb', 'Chromatic'],
-      isChromatic: true
+      isChromatic: true,
+      maxReach: 12,
+      isAdaptive: false
     };
 
     for (let i = 0; i < 10; i++) { // 10 trials * 100 measures = 1000 checks

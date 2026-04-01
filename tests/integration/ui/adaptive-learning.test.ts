@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initMidiHandler } from '../../../src/engine/midi-handler';
-import { stats, resetStats, setMusicData, setCurrentStepIndex, musicData } from '../../../src/engine/state';
-import { generateScoreData } from '../../../src/engine/music-generator';
-import { getUIConfig, setupEventListeners } from '../../../src/ui/controls';
-import { ALL_PIANO_NOTES } from '../../../src/constants/music';
+import { initMidiHandler } from '@/engine/midi-handler';
+import { stats, resetStats, setMusicData, setCurrentStepIndex } from '../../../src/engine/state';
+import { generateScoreData } from '@/engine/music-generator';
+import { getUIConfig } from '@/ui/controls';
 
 // Mock WebMidi
 vi.mock('webmidi', () => ({

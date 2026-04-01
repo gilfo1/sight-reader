@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as main from '../../../src/main';
 import * as controls from '../../../src/ui/controls';
 
 describe('Settings Workflow Integration', () => {

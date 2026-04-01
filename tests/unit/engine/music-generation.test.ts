@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateRhythmicPattern, getRandomPitches, computeMeasureCounts, generateScoreData } from '../../../src/engine/music-generator';
-import { getNoteValue } from '../../../src/utils/theory';
-import { DURATION_WEIGHTS } from '../../../src/constants/music';
+import { generateRhythmicPattern, getRandomPitches, computeMeasureCounts, generateScoreData } from '@/engine/music-generator';
+import { getNoteValue } from '@/utils/theory';
+import { DURATION_WEIGHTS } from '@/constants/music';
 
 describe('Music Generator Engine', () => {
   it('should generate valid rhythmic patterns', () => {
@@ -48,7 +48,7 @@ describe('Music Generator Engine', () => {
       notesPerStep: 1,
       minNote: 'C2',
       maxNote: 'C6',
-      maxReach: 6,
+      maxReach: 12,
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['C'],
       isChromatic: false,
@@ -112,7 +112,7 @@ describe('Music Generator Engine', () => {
       notesPerStep: 1,
       minNote: 'C4',
       maxNote: 'C5',
-      maxReach: 6,
+      maxReach: 12,
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['G', 'F'],
       isChromatic: false,
@@ -125,5 +125,37 @@ describe('Music Generator Engine', () => {
     // With 10 lines and 2 keys, probability of only picking one is (1/2)^9, very low.
     expect(usedKeys.has('G')).toBe(true);
     expect(usedKeys.has('F')).toBe(true);
+  });
+
+  it('should handle maxNote < minNote gracefully', () => {
+    const pitches = getRandomPitches('treble', 1, 'C5', 'C4', 'C', false);
+    expect(pitches).toEqual([]);
+  });
+
+  it('should handle empty selectedNoteValues', () => {
+    const pattern = generateRhythmicPattern([]);
+    expect(pattern).toEqual(['w']);
+  });
+
+  it('should handle notesPerStep > 1 for single staff', () => {
+    const counts = computeMeasureCounts('treble', 3, 0, ['q']);
+    expect(counts.trebleCounts[0]).toBe(3);
+    expect(counts.bassCounts[0]).toBe(0);
+  });
+
+  it('should respect maxReach in getRandomPitches', () => {
+    // Range C4 to C6, but maxReach 2 semitones
+    const pitches = getRandomPitches('treble', 3, 'C4', 'C6', 'C', false, false, 2);
+    if (pitches.length > 1) {
+      const minV = getNoteValue(pitches[0]);
+      const maxV = getNoteValue(pitches[pitches.length - 1]);
+      expect(maxV - minV).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('should return empty if no valid notes in range for clef', () => {
+    // Bass clef, range C4-C5 (all >= midC)
+    const pitches = getRandomPitches('bass', 1, 'C4', 'C5', 'C', false);
+    expect(pitches).toEqual([]);
   });
 });

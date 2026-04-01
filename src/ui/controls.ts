@@ -1,22 +1,26 @@
-import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '../constants/music';
-import { getNoteValue } from '../utils/theory';
-import { GeneratorConfig } from '../engine/music-generator';
+import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '@/constants/music';
+import { getNoteValue } from '@/utils/theory';
+import { GeneratorConfig } from '@/engine/music-generator';
 
-const elements = {
-  get measuresPerLine() { return document.getElementById('measures-per-line') as HTMLSelectElement; },
-  get notesPerStep() { return document.getElementById('notes-per-step') as HTMLSelectElement; },
-  get lines() { return document.getElementById('lines') as HTMLSelectElement; },
-  get staffType() { return document.getElementById('staff-type') as HTMLSelectElement; },
-  get minNote() { return document.getElementById('min-note') as HTMLSelectElement; },
-  get maxNote() { return document.getElementById('max-note') as HTMLSelectElement; },
-  get maxReach() { return document.getElementById('max-reach') as HTMLSelectElement; },
-  get noteValues() { return document.getElementById('note-values'); },
-  get keySignatures() { return document.getElementById('key-signatures'); },
-  get adaptiveLearning() { return document.getElementById('adaptive-learning') as HTMLInputElement; }
+function getEl<T extends HTMLElement>(id: string): T {
+  return document.getElementById(id) as T;
+}
+
+const ui = {
+  get measuresPerLine() { return getEl<HTMLSelectElement>('measures-per-line'); },
+  get notesPerStep() { return getEl<HTMLSelectElement>('notes-per-step'); },
+  get lines() { return getEl<HTMLSelectElement>('lines'); },
+  get staffType() { return getEl<HTMLSelectElement>('staff-type'); },
+  get minNote() { return getEl<HTMLSelectElement>('min-note'); },
+  get maxNote() { return getEl<HTMLSelectElement>('max-note'); },
+  get maxReach() { return getEl<HTMLSelectElement>('max-reach'); },
+  get noteValues() { return getEl<HTMLElement>('note-values'); },
+  get keySignatures() { return getEl<HTMLElement>('key-signatures'); },
+  get adaptiveLearning() { return getEl<HTMLInputElement>('adaptive-learning'); }
 };
 
 export function initKeySignatures(onChange: (e: Event) => void): void {
-  const container = elements.keySignatures;
+  const container = ui.keySignatures;
   if (!container) return;
   container.innerHTML = '';
 
@@ -45,9 +49,9 @@ export function initKeySignatures(onChange: (e: Event) => void): void {
 }
 
 export function updateNoteSelectors(): void {
-  const staffType: string = elements.staffType?.value || 'grand';
-  const minSelect = elements.minNote;
-  const maxSelect = elements.maxNote;
+  const staffType: string = ui.staffType?.value || 'grand';
+  const minSelect = ui.minNote;
+  const maxSelect = ui.maxNote;
 
   if (!minSelect || !maxSelect) return;
 
@@ -81,7 +85,7 @@ export function updateNoteSelectors(): void {
 }
 
 export function getUIConfig(): GeneratorConfig {
-  const noteValuesContainer = elements.noteValues;
+  const noteValuesContainer = ui.noteValues;
   let selectedNoteValues: string[] = ['q'];
   if (noteValuesContainer) {
     const checked: string[] = Array.from(noteValuesContainer.querySelectorAll('input[type="checkbox"]:checked'))
@@ -89,7 +93,7 @@ export function getUIConfig(): GeneratorConfig {
     if (checked.length > 0) selectedNoteValues = checked;
   }
 
-  const keyContainer = elements.keySignatures;
+  const keyContainer = ui.keySignatures;
   let selectedKeys: string[] = [];
   if (keyContainer) {
     selectedKeys = Array.from(keyContainer.querySelectorAll('input[type="checkbox"]:checked'))
@@ -97,31 +101,31 @@ export function getUIConfig(): GeneratorConfig {
   }
   
   return {
-    measuresPerLine: parseInt(elements.measuresPerLine?.value || '4'),
-    notesPerStep: parseInt(elements.notesPerStep?.value || '1'),
-    linesCount: parseInt(elements.lines?.value || '1'),
-    staffType: elements.staffType?.value || 'grand',
-    minNote: elements.minNote?.value || 'C2',
-    maxNote: elements.maxNote?.value || 'C6',
-    maxReach: parseInt(elements.maxReach?.value || '12'),
+    measuresPerLine: parseInt(ui.measuresPerLine?.value || '4'),
+    notesPerStep: parseInt(ui.notesPerStep?.value || '1'),
+    linesCount: parseInt(ui.lines?.value || '1'),
+    staffType: ui.staffType?.value || 'grand',
+    minNote: ui.minNote?.value || 'C2',
+    maxNote: ui.maxNote?.value || 'C6',
+    maxReach: parseInt(ui.maxReach?.value || '12'),
     selectedNoteValues,
     selectedKeySignatures: selectedKeys,
     isChromatic: selectedKeys.includes('Chromatic'),
-    isAdaptive: elements.adaptiveLearning?.checked || false
+    isAdaptive: ui.adaptiveLearning?.checked || false
   };
 }
 
 export function setupEventListeners(onConfigChange: () => void): void {
-  const staffTypeEl = elements.staffType;
+  const staffTypeEl = ui.staffType;
   [
-    elements.measuresPerLine,
-    elements.lines,
+    ui.measuresPerLine,
+    ui.lines,
     staffTypeEl,
-    elements.notesPerStep,
-    elements.minNote,
-    elements.maxNote,
-    elements.maxReach,
-    elements.adaptiveLearning
+    ui.notesPerStep,
+    ui.minNote,
+    ui.maxNote,
+    ui.maxReach,
+    ui.adaptiveLearning
   ].forEach(el => {
     el?.addEventListener('change', () => {
       if (el === staffTypeEl) updateNoteSelectors();
@@ -129,7 +133,7 @@ export function setupEventListeners(onConfigChange: () => void): void {
     });
   });
 
-  elements.noteValues?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  ui.noteValues?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', onConfigChange);
   });
 }

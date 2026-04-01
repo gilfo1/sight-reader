@@ -1,33 +1,37 @@
-import { stats, resetStats } from '../engine/state';
+import { stats, resetStats } from '@/engine/state';
 
-const elements = {
-  get played() { return document.getElementById('stats-played'); },
-  get correct() { return document.getElementById('stats-correct'); },
-  get wrong() { return document.getElementById('stats-wrong'); },
-  get accuracy() { return document.getElementById('stats-accuracy'); },
-  get streak() { return document.getElementById('stats-streak'); },
-  get maxStreak() { return document.getElementById('stats-max-streak'); },
-  get resetButton() { return document.getElementById('reset-stats'); }
+function getEl<T extends HTMLElement>(id: string): T {
+  return document.getElementById(id) as T;
+}
+
+const ui = {
+  get played() { return getEl<HTMLElement>('stats-played'); },
+  get correct() { return getEl<HTMLElement>('stats-correct'); },
+  get wrong() { return getEl<HTMLElement>('stats-wrong'); },
+  get accuracy() { return getEl<HTMLElement>('stats-accuracy'); },
+  get streak() { return getEl<HTMLElement>('stats-streak'); },
+  get maxStreak() { return getEl<HTMLElement>('stats-max-streak'); },
+  get resetButton() { return getEl<HTMLElement>('reset-stats'); }
 };
 
 export function updateStatsUI(): void {
-  if (elements.played) elements.played.textContent = stats.notesPlayed.toString();
-  if (elements.correct) elements.correct.textContent = stats.correctNotes.toString();
-  if (elements.wrong) elements.wrong.textContent = stats.wrongNotes.toString();
+  if (ui.played) ui.played.textContent = stats.notesPlayed.toString();
+  if (ui.correct) ui.correct.textContent = stats.correctNotes.toString();
+  if (ui.wrong) ui.wrong.textContent = stats.wrongNotes.toString();
   
-  if (elements.accuracy) {
+  if (ui.accuracy) {
     const accuracy = stats.notesPlayed === 0 
       ? 0 
       : Math.round((stats.correctNotes / stats.notesPlayed) * 100);
-    elements.accuracy.textContent = accuracy + '%';
+    ui.accuracy.textContent = accuracy + '%';
   }
   
-  if (elements.streak) elements.streak.textContent = stats.currentStreak.toString();
-  if (elements.maxStreak) elements.maxStreak.textContent = stats.maxStreak.toString();
+  if (ui.streak) ui.streak.textContent = stats.currentStreak.toString();
+  if (ui.maxStreak) ui.maxStreak.textContent = stats.maxStreak.toString();
 }
 
 export function initStatsUI(): void {
-  elements.resetButton?.addEventListener('click', () => {
+  ui.resetButton?.addEventListener('click', () => {
     resetStats();
     updateStatsUI();
   });

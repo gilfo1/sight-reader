@@ -37,7 +37,9 @@ describe('Performance and Stress Regression', () => {
       maxNote: 'C8',
       selectedNoteValues: ['q'],
       selectedKeySignatures: ['C'],
-      isChromatic: true
+      isChromatic: true,
+      maxReach: 12,
+      isAdaptive: false
     };
     
     setMusicData(generateScoreData(config));

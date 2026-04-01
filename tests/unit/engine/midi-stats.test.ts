@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initMidiHandler } from '../../../src/engine/midi-handler';
-import { stats, resetStats, setMusicData, setCurrentStepIndex, activeMidiNotes } from '../../../src/engine/state';
+import { initMidiHandler } from '@/engine/midi-handler';
+import { stats, resetStats, setMusicData, setCurrentStepIndex, activeMidiNotes } from '@/engine/state';
 
 // Mock WebMidi
 vi.mock('webmidi', () => ({
@@ -128,5 +128,40 @@ describe('MIDI Stats Logic', () => {
     // Should not go below 0
     initMidiHandler.onNoteOn!({ note: { identifier: 'C4' } } as any);
     expect(stats.troubleNotes['C4']).toBe(0);
+  });
+
+  it('should handle chord performance correctly in stats', () => {
+    // Set up a 3-note chord as the current target
+    setMusicData([
+      { 
+        pattern: ['q'], 
+        trebleSteps: [['C4', 'E4', 'G4']], 
+        bassSteps: [[]], 
+        staffType: 'treble', 
+        keySignature: 'C' 
+      }
+    ]);
+    setCurrentStepIndex(0);
+
+    // Play 3 notes correctly
+    initMidiHandler.onNoteOn!({ note: { identifier: 'C4' } } as any);
+    initMidiHandler.onNoteOn!({ note: { identifier: 'E4' } } as any);
+    initMidiHandler.onNoteOn!({ note: { identifier: 'G4' } } as any);
+
+    expect(stats.notesPlayed).toBe(3);
+    expect(stats.correctNotes).toBe(3);
+    expect(stats.currentStreak).toBe(3);
+
+    // Now play a wrong note for a chord target
+    resetStats();
+    setCurrentStepIndex(0);
+    initMidiHandler.onNoteOn!({ note: { identifier: 'D4' } } as any); // Wrong note
+    
+    expect(stats.notesPlayed).toBe(1);
+    expect(stats.wrongNotes).toBe(1);
+    expect(stats.troubleNotes['C4']).toBe(1);
+    expect(stats.troubleNotes['E4']).toBe(1);
+    expect(stats.troubleNotes['G4']).toBe(1);
+    expect(stats.troubleKeys['C']).toBe(1);
   });
 });

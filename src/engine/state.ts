@@ -45,6 +45,49 @@ export function resetStats(): void {
   stats.troubleKeys = {};
 }
 
+export function recordCorrectNote(noteIdentifier: string, keySignature: string): void {
+  stats.notesPlayed++;
+  stats.correctNotes++;
+  stats.currentStreak++;
+  if (stats.currentStreak > stats.maxStreak) {
+    stats.maxStreak = stats.currentStreak;
+  }
+
+  if ((stats.troubleNotes[noteIdentifier] || 0) > 0) {
+    stats.troubleNotes[noteIdentifier]!--;
+  }
+  const match = noteIdentifier.match(/\d+/);
+  if (match) {
+    const octave = match[0]!;
+    if ((stats.troubleOctaves[octave] || 0) > 0) {
+      stats.troubleOctaves[octave]!--;
+    }
+  }
+  if ((stats.troubleKeys[keySignature] || 0) > 0) {
+    stats.troubleKeys[keySignature]!--;
+  }
+}
+
+export function recordWrongNote(targetPitches: string[], keySignature: string): void {
+  stats.notesPlayed++;
+  stats.wrongNotes++;
+  stats.currentStreak = 0;
+  
+  let keyIncremented = false;
+  targetPitches.forEach(p => {
+    stats.troubleNotes[p] = (stats.troubleNotes[p] || 0) + 1;
+    const match = p.match(/\d+/);
+    if (match) {
+      const octave = match[0]!;
+      stats.troubleOctaves[octave] = (stats.troubleOctaves[octave] || 0) + 1;
+      if (!keyIncremented) {
+        stats.troubleKeys[keySignature] = (stats.troubleKeys[keySignature] || 0) + 1;
+        keyIncremented = true;
+      }
+    }
+  });
+}
+
 export function setMusicData(data: Measure[]): void {
   musicData.length = 0;
   musicData.push(...data);
@@ -79,6 +122,16 @@ export function getStepInfo(index: number): { measureIdx: number; stepIdx: numbe
     count += stepsInMeasure;
   }
   return null;
+}
+
+export function getTargetNotesAtStep(index: number): string[] {
+  const info = getStepInfo(index);
+  if (!info) return [];
+  const measure = musicData[info.measureIdx]!;
+  return Array.from(new Set([
+    ...(measure.trebleSteps[info.stepIdx] || []),
+    ...(measure.bassSteps[info.stepIdx] || [])
+  ]));
 }
 
 /**

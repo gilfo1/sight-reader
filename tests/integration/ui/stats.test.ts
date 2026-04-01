@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initStatsUI, updateStatsUI } from '../../../src/ui/stats';
-import { stats, resetStats } from '../../../src/engine/state';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { initStatsUI, updateStatsUI } from '@/ui/stats';
+import { stats, resetStats } from '@/engine/state';
 
 describe('Stats UI Integration', () => {
   beforeEach(() => {

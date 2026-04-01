@@ -17,14 +17,15 @@ describe('Adaptive Learning Music Generation', () => {
         maxNote: 'G4',
         keySignature: 'C',
         isChromatic: false,
-        isAdaptive: true
+        isAdaptive: true,
+        maxReach: 12
       };
 
       // Run multiple times to check bias
       let c4Count = 0;
       const iterations = 100;
       for (let i = 0; i < iterations; i++) {
-        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive);
+        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive, config.maxReach);
         if (pitches.includes('C4')) c4Count++;
       }
 
@@ -45,13 +46,14 @@ describe('Adaptive Learning Music Generation', () => {
         maxNote: 'C6',
         keySignature: 'C',
         isChromatic: false,
-        isAdaptive: true
+        isAdaptive: true,
+        maxReach: 12
       };
 
       let octave5Count = 0;
       const iterations = 100;
       for (let i = 0; i < iterations; i++) {
-        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive);
+        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive, config.maxReach);
         if (pitches[0]?.includes('5')) octave5Count++;
       }
 
@@ -71,13 +73,14 @@ describe('Adaptive Learning Music Generation', () => {
         maxNote: 'G4',
         keySignature: 'C',
         isChromatic: false,
-        isAdaptive: false
+        isAdaptive: false,
+        maxReach: 12
       };
 
       let c4Count = 0;
       const iterations = 100;
       for (let i = 0; i < iterations; i++) {
-        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive);
+        const pitches = getRandomPitches('treble', 1, config.minNote, config.maxNote, config.keySignature, config.isChromatic, config.isAdaptive, config.maxReach);
         if (pitches.includes('C4')) c4Count++;
       }
 
@@ -100,7 +103,8 @@ describe('Adaptive Learning Music Generation', () => {
         selectedNoteValues: ['q'],
         selectedKeySignatures: ['C', 'G', 'F'],
         isChromatic: false,
-        isAdaptive: true
+        isAdaptive: true,
+        maxReach: 12
       };
 
       const data = generateScoreData(config);

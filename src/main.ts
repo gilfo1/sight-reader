@@ -38,14 +38,15 @@ function handleStateChange(shouldRegenerate: boolean = false): void {
 
 const handleRegenerate = (): void => handleStateChange(true);
 
-function generateScoreData(config?: GeneratorConfig): Measure[] {
-  const data: Measure[] = engineGenerateScoreData(config || getUIConfig());
+function generateScoreData(config?: Partial<GeneratorConfig>): Measure[] {
+  const actualConfig: GeneratorConfig = { ...getUIConfig(), ...config };
+  const data: Measure[] = engineGenerateScoreData(actualConfig);
   setMusicData(data);
   return data;
 }
 
-function renderScore(outputDiv: HTMLElement | null = null, config?: GeneratorConfig): void {
-  const actualConfig: GeneratorConfig = config || getUIConfig();
+function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>): void {
+  const actualConfig: GeneratorConfig = { ...getUIConfig(), ...config };
   if (musicData.length === 0) {
     setMusicData(engineGenerateScoreData(actualConfig));
   }
@@ -80,7 +81,7 @@ if (typeof document !== 'undefined') {
 }
 
 export { 
-  musicData, 
+  musicData,
   currentStepIndex,
   activeMidiNotes, 
   suppressedNotes,
