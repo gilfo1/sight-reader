@@ -91,8 +91,9 @@ export function computeMeasureCounts(staffType: string, notesPerStep: number, me
     if (staffType !== 'grand') return notesPerStep;
     
     if (notesPerStep === 1) {
-      const isMyTurn: boolean = (b + measureIdx) % 2 === (isTreble ? 0 : 1);
-      return isMyTurn ? 1 : 0;
+      const isTrebleTurn: boolean = (b + measureIdx) % 2 === 0;
+      if (isTreble) return isTrebleTurn ? 1 : 0;
+      return isTrebleTurn ? 0 : 1;
     }
     return isTreble ? Math.ceil(notesPerStep / 2) : Math.floor(notesPerStep / 2);
   });
@@ -150,8 +151,30 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
       const bassStepsInMeasure: string[][] = [];
 
       for (let b = 0; b < pattern.length; b++) {
-        trebleStepsInMeasure.push((trebleCounts[b] || 0) > 0 ? getRandomPitches('treble', trebleCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
-        bassStepsInMeasure.push((bassCounts[b] || 0) > 0 ? getRandomPitches('bass', bassCounts[b]!, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
+        let trebleCount = trebleCounts[b] || 0;
+        let bassCount = bassCounts[b] || 0;
+
+        if (staffType === 'grand' && notesPerStep === 1) {
+          const trebleNotes = getRandomPitches('treble', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach);
+          const bassNotes = getRandomPitches('bass', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach);
+
+          if (trebleCount > 0 && trebleNotes.length === 0 && bassNotes.length > 0) {
+            // Treble turn but no treble notes, and bass notes are available. Switch to bass.
+            trebleStepsInMeasure.push([]);
+            bassStepsInMeasure.push(bassNotes);
+          } else if (bassCount > 0 && bassNotes.length === 0 && trebleNotes.length > 0) {
+            // Bass turn but no bass notes, and treble notes are available. Switch to treble.
+            trebleStepsInMeasure.push(trebleNotes);
+            bassStepsInMeasure.push([]);
+          } else {
+            // Normal case or both empty or both available but we stick to original turn
+            trebleStepsInMeasure.push(trebleCount > 0 ? trebleNotes : []);
+            bassStepsInMeasure.push(bassCount > 0 ? bassNotes : []);
+          }
+        } else {
+          trebleStepsInMeasure.push(trebleCount > 0 ? getRandomPitches('treble', trebleCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
+          bassStepsInMeasure.push(bassCount > 0 ? getRandomPitches('bass', bassCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
+        }
       }
       data.push({ trebleSteps: trebleStepsInMeasure, bassSteps: bassStepsInMeasure, pattern, staffType, keySignature: lineKey });
     }
