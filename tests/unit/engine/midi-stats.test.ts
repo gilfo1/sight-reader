@@ -94,4 +94,39 @@ describe('MIDI Stats Logic', () => {
     expect(stats.currentStreak).toBe(3);
     expect(stats.maxStreak).toBe(3);
   });
+
+  it('should record trouble areas on wrong note and decay on correct note', () => {
+    // Current target is C4 in key C
+    initMidiHandler.onNoteOn!({ note: { identifier: 'D4' } } as any);
+    
+    expect(stats.troubleNotes['C4']).toBe(1);
+    expect(stats.troubleOctaves['4']).toBe(1);
+    expect(stats.troubleKeys['C']).toBe(1);
+
+    // Play another wrong note for the same target
+    initMidiHandler.onNoteOn!({ note: { identifier: 'E4' } } as any);
+    expect(stats.troubleNotes['C4']).toBe(2);
+    expect(stats.troubleOctaves['4']).toBe(2);
+    // Key should only increment once per wrong event (chord/note) if handled correctly.
+    // In my new implementation, key incremented is tracked.
+    expect(stats.troubleKeys['C']).toBe(2); // Wait, I used `keyIncremented` per `onNoteOn` call? 
+    // If multiple calls to `onNoteOn` happen for the SAME step, it will still increment. 
+    // That's probably fine, as the user is mashing keys.
+
+    // Now play the correct note
+    initMidiHandler.onNoteOn!({ note: { identifier: 'C4' } } as any);
+    expect(stats.troubleNotes['C4']).toBe(1);
+    expect(stats.troubleOctaves['4']).toBe(1);
+    expect(stats.troubleKeys['C']).toBe(1);
+
+    // Play correct note again
+    initMidiHandler.onNoteOn!({ note: { identifier: 'C4' } } as any);
+    expect(stats.troubleNotes['C4']).toBe(0);
+    expect(stats.troubleOctaves['4']).toBe(0);
+    expect(stats.troubleKeys['C']).toBe(0);
+    
+    // Should not go below 0
+    initMidiHandler.onNoteOn!({ note: { identifier: 'C4' } } as any);
+    expect(stats.troubleNotes['C4']).toBe(0);
+  });
 });

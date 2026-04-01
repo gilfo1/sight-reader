@@ -10,7 +10,8 @@ const elements = {
   get minNote() { return document.getElementById('min-note') as HTMLSelectElement; },
   get maxNote() { return document.getElementById('max-note') as HTMLSelectElement; },
   get noteValues() { return document.getElementById('note-values'); },
-  get keySignatures() { return document.getElementById('key-signatures'); }
+  get keySignatures() { return document.getElementById('key-signatures'); },
+  get adaptiveLearning() { return document.getElementById('adaptive-learning') as HTMLInputElement; }
 };
 
 export function initKeySignatures(onChange: (e: Event) => void): void {
@@ -103,7 +104,8 @@ export function getUIConfig(): GeneratorConfig {
     maxNote: elements.maxNote?.value || 'C6',
     selectedNoteValues,
     selectedKeySignatures: selectedKeys,
-    isChromatic: selectedKeys.includes('Chromatic')
+    isChromatic: selectedKeys.includes('Chromatic'),
+    isAdaptive: elements.adaptiveLearning?.checked || false
   };
 }
 
@@ -115,7 +117,8 @@ export function setupEventListeners(onConfigChange: () => void): void {
     staffTypeEl,
     elements.notesPerStep,
     elements.minNote,
-    elements.maxNote
+    elements.maxNote,
+    elements.adaptiveLearning
   ].forEach(el => {
     el?.addEventListener('change', () => {
       if (el === staffTypeEl) updateNoteSelectors();

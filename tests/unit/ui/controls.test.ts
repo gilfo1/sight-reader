@@ -20,6 +20,7 @@ describe('UI Controls', () => {
       <div id="key-signatures">
         <input type="checkbox" value="C" checked>
       </div>
+      <input type="checkbox" id="adaptive-learning">
     `;
   });
 
@@ -71,6 +72,14 @@ describe('UI Controls', () => {
     expect(config.selectedNoteValues).toContain('q');
     expect(config.selectedKeySignatures).toContain('C');
     expect(config.isChromatic).toBe(false);
+    expect(config.isAdaptive).toBe(false);
+  });
+
+  it('should extract adaptive learning setting correctly', () => {
+    const cb = document.getElementById('adaptive-learning') as HTMLInputElement;
+    cb.checked = true;
+    const config = getUIConfig();
+    expect(config.isAdaptive).toBe(true);
   });
 
   it('should handle chromatic checkbox in getUIConfig', () => {

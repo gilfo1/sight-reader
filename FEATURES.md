@@ -40,6 +40,14 @@ Uses the professional-grade **VexFlow** library to render beautiful musical scor
 - The accordion dropdown shows resettable stats on your performance as you practice, as well as a high score for correct notes in a row.
 <img width="308" height="288" alt="image" src="https://github.com/user-attachments/assets/c18b5a0f-e69e-43dd-965c-0b84bb8dbdfd" />
 
+### 🧠 Adaptive Learning
+The "Adaptive Learning" toggle in settings enables an intelligent practice system that analyzes your performance in real-time.
+
+- **Smart Error Tracking**: The system monitors notes, octaves, and key signatures where you make mistakes.
+- **Weighted Generation**: New music is generated with a bias towards your "trouble areas," ensuring you get more exposure to the notes and keys you find challenging.
+- **Natural Decay**: As you improve and play the correct notes, the "trouble" weight decreases. Once you consistently get a note right, it returns to its normal frequency.
+- **Fresh Start**: Clicking "Reset Stats" clears all tracked errors, resetting the adaptive learning system to a blank slate.
+
 ---
 
 [Home](./README.md) | [Settings](./SETTINGS.md)

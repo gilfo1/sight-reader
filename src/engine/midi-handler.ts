@@ -90,10 +90,40 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
         if (stats.currentStreak > stats.maxStreak) {
           stats.maxStreak = stats.currentStreak;
         }
+
+        // Decay trouble areas
+        if ((stats.troubleNotes[e.note.identifier] || 0) > 0) {
+          stats.troubleNotes[e.note.identifier]!--;
+        }
+        const match = e.note.identifier.match(/\d+/);
+        if (match) {
+          const octave = match[0]!;
+          if ((stats.troubleOctaves[octave] || 0) > 0) {
+            stats.troubleOctaves[octave]!--;
+          }
+        }
+        if ((stats.troubleKeys[measureData.keySignature] || 0) > 0) {
+          stats.troubleKeys[measureData.keySignature]!--;
+        }
       } else {
         stats.wrongNotes++;
         stats.currentStreak = 0;
         suppressedNotes.clear();
+
+        // Record trouble areas
+        let keyIncremented = false;
+        targetPitches.forEach(p => {
+          stats.troubleNotes[p] = (stats.troubleNotes[p] || 0) + 1;
+          const match = p.match(/\d+/);
+          if (match) {
+            const octave = match[0]!;
+            stats.troubleOctaves[octave] = (stats.troubleOctaves[octave] || 0) + 1;
+            if (!keyIncremented) {
+              stats.troubleKeys[measureData.keySignature] = (stats.troubleKeys[measureData.keySignature] || 0) + 1;
+              keyIncremented = true;
+            }
+          }
+        });
       }
     }
 

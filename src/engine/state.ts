@@ -18,6 +18,9 @@ export interface AppStats {
   wrongNotes: number;
   currentStreak: number;
   maxStreak: number;
+  troubleNotes: Record<string, number>;
+  troubleOctaves: Record<string, number>;
+  troubleKeys: Record<string, number>;
 }
 
 export const stats: AppStats = {
@@ -26,6 +29,9 @@ export const stats: AppStats = {
   wrongNotes: 0,
   currentStreak: 0,
   maxStreak: 0,
+  troubleNotes: {},
+  troubleOctaves: {},
+  troubleKeys: {},
 };
 
 export function resetStats(): void {
@@ -34,6 +40,9 @@ export function resetStats(): void {
   stats.wrongNotes = 0;
   stats.currentStreak = 0;
   stats.maxStreak = 0;
+  stats.troubleNotes = {};
+  stats.troubleOctaves = {};
+  stats.troubleKeys = {};
 }
 
 export function setMusicData(data: Measure[]): void {
