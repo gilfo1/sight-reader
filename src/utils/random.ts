@@ -2,7 +2,7 @@
  * Selects an item from an array based on weights.
  * @param items
  * @param weights
- * @returns {T}
+ * @returns
  */
 export function weightedRandom<T>(items: T[], weights: number[]): T {
   if (items.length === 0 || items.length !== weights.length) {
