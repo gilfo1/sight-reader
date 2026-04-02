@@ -2,10 +2,6 @@
   <img width="1062" height="834" alt="image" src="https://github.com/user-attachments/assets/498a46d7-06d0-42dc-8c2f-45213c31c5f3" />
 </div>
 
-## Download Desktop Apps (Electron):
-- **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
-- **Apple Silicon (M1/M2/M3) Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/mac-arm-v1.0.0/Sight.Reader-1.0.0-arm64.dmg)
-
 # MIDI Sight Reader
 
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
@@ -17,6 +13,10 @@ A dynamic, interactive music sight-reading application that helps you practice p
 - **Customizable Layout**: Adjust measures per line and total lines to fit your screen.
 - **Full Piano Range Support**: Configure note ranges from A0 to C8 (88 keys).
 - **Key Signature & Chromatic Support**: Practice in any major key or with random chromaticism.
+
+## Downloads -> Desktop Apps (Electron):
+- **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
+- **Apple Silicon (M1/M2/M3) Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/mac-arm-v1.0.0/Sight.Reader-1.0.0-arm64.dmg)
 
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
