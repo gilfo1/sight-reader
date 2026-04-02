@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-  <img width="891" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" alt="MIDI Sight Reader" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
+  <img width="1062" height="834" alt="image" src="https://github.com/user-attachments/assets/498a46d7-06d0-42dc-8c2f-45213c31c5f3" />
 </div>
 
 ### Desktop Apps:
