@@ -2,6 +2,9 @@
   <img width="891" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" alt="MIDI Sight Reader" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
 </div>
 
+### Desktop Apps:
+- **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
+
 # MIDI Sight Reader
 
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
