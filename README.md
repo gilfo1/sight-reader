@@ -29,7 +29,7 @@ https://github.com/0xfe/vexflow/wiki
 
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
-## Getting Started
+## For Developers: Getting Started
 
 ### Local Development
 
