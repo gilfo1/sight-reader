@@ -14,17 +14,21 @@ A dynamic, interactive music sight-reading application that helps you practice p
 - **Full Piano Range Support**: Configure note ranges from A0 to C8 (88 keys).
 - **Key Signature & Chromatic Support**: Practice in any major key or with random chromaticism.
 
+<BR></BR>
 
-## Downloads -> Desktop Apps (Electron):
+## Downloads: Desktop Apps (Electron):
 - **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
 - **Apple Silicon (M1/M2/M3) Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/mac-arm-v1.0.0/Sight.Reader-1.0.0-arm64.dmg)
 
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
+---
+
+<BR></BR>
 
 ## For Developers: Getting Started
 
-## Credit Belongs to the vexflo library
+### Credit Belongs to the vexflo library
 
 https://github.com/0xfe/vexflow/wiki
 
