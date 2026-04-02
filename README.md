@@ -10,15 +10,6 @@
 
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
 
-## Credit Belongs to the vexflo library
-
-https://github.com/0xfe/vexflow/wiki
-
-- Vexflo is responsible for the music and staff rendering.
-- It renders music to screen extremely well.
-- All I did was add some logic and tests to exploit this library.
-    - In a single afternoon!
-
 ## Features at a Glance
 
 - **Interactive MIDI Feedback**: Real-time highlighting of the current beat and visual feedback for correct/incorrect notes.
@@ -30,6 +21,15 @@ https://github.com/0xfe/vexflow/wiki
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
 ## For Developers: Getting Started
+
+## Credit Belongs to the vexflo library
+
+https://github.com/0xfe/vexflow/wiki
+
+- Vexflo is responsible for the music and staff rendering.
+- It renders music to screen extremely well.
+- All I did was add some logic and tests to exploit this library.
+    - In a single afternoon!
 
 ### Local Development
 
