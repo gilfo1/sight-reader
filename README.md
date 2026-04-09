@@ -1,22 +1,10 @@
 <div style="text-align: center;">
-  <img width="891" src="https://github.com/user-attachments/assets/0323eb7e-67cd-4e24-8a58-a9a316ac3483" alt="MIDI Sight Reader" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
+  <img width="1062" height="834" alt="image" src="https://github.com/user-attachments/assets/498a46d7-06d0-42dc-8c2f-45213c31c5f3" />
 </div>
-
-### Desktop Apps:
-- **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
 
 # MIDI Sight Reader
 
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
-
-## Credit Belongs to the vexflo library
-
-https://github.com/0xfe/vexflow/wiki
-
-- Vexflo is responsible for the music and staff rendering.
-- It renders music to screen extremely well.
-- All I did was add some logic and tests to exploit this library.
-    - In a single afternoon!
 
 ## Features at a Glance
 
@@ -26,9 +14,29 @@ https://github.com/0xfe/vexflow/wiki
 - **Full Piano Range Support**: Configure note ranges from A0 to C8 (88 keys).
 - **Key Signature & Chromatic Support**: Practice in any major key or with random chromaticism.
 
+<BR></BR>
+
+## For Musicians: Download Desktop App (Electron):
+- **Windows X86**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/windows-x86-v1.0.0/Sight.Reader.1.0.0.exe)
+- **Intel Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/v1.0.0/Sight.Reader-1.0.0.dmg)
+- **Apple Silicon (M1/M2/M3) Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/mac-arm-v1.0.0/Sight.Reader-1.0.0-arm64.dmg)
+
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
-## Getting Started
+---
+
+<BR></BR>
+
+## For Developers: Getting Started
+
+### Credit Belongs to the vexflo library
+
+https://github.com/0xfe/vexflow/wiki
+
+- Vexflo is responsible for the music and staff rendering.
+- It renders music to screen extremely well.
+- All I did was add some logic and tests to exploit this library.
+    - In a single afternoon!
 
 ### Local Development
 
