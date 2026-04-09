@@ -14,27 +14,30 @@ const ui = {
   get resetButton() { return getElementById<HTMLElement>('reset-stats'); }
 };
 
+function setTextContent(element: HTMLElement | null, value: string): void {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function getAccuracyPercentage(): string {
+  if (stats.notesPlayed === 0) {
+    return '0%';
+  }
+
+  return `${Math.round((stats.correctNotes / stats.notesPlayed) * 100)}%`;
+}
+
 export function updateStatsUI(): void {
-  if (ui.played) ui.played.textContent = stats.notesPlayed.toString();
-  if (ui.correct) ui.correct.textContent = stats.correctNotes.toString();
-  if (ui.wrong) ui.wrong.textContent = stats.wrongNotes.toString();
-  
-  if (ui.accuracy) {
-    const accuracy = stats.notesPlayed === 0 
-      ? 0 
-      : Math.round((stats.correctNotes / stats.notesPlayed) * 100);
-    ui.accuracy.textContent = accuracy + '%';
-  }
-  
-  if (ui.streak) ui.streak.textContent = stats.currentStreak.toString();
-  if (ui.maxStreak) ui.maxStreak.textContent = stats.maxStreak.toString();
-  
-  if (ui.wrongOctave) ui.wrongOctave.textContent = stats.wrongOctaveCount.toString();
-  if (ui.keyError) ui.keyError.textContent = stats.keySignatureNotHonoredCount.toString();
-  if (ui.avgTime) {
-    const seconds = (stats.averageCorrectNoteTime / 1000).toFixed(2);
-    ui.avgTime.textContent = seconds + 's';
-  }
+  setTextContent(ui.played, stats.notesPlayed.toString());
+  setTextContent(ui.correct, stats.correctNotes.toString());
+  setTextContent(ui.wrong, stats.wrongNotes.toString());
+  setTextContent(ui.accuracy, getAccuracyPercentage());
+  setTextContent(ui.streak, stats.currentStreak.toString());
+  setTextContent(ui.maxStreak, stats.maxStreak.toString());
+  setTextContent(ui.wrongOctave, stats.wrongOctaveCount.toString());
+  setTextContent(ui.keyError, stats.keySignatureNotHonoredCount.toString());
+  setTextContent(ui.avgTime, `${(stats.averageCorrectNoteTime / 1000).toFixed(2)}s`);
 }
 
 export function initStatsUI(): void {

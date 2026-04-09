@@ -1,6 +1,6 @@
 import { Factory, Accidental, StaveNote, Voice, Stave, Beam, EasyScore, System } from 'vexflow';
 import { KEY_SIGNATURES } from '@/constants';
-import type { Measure, GeneratorConfig } from '@/engine';
+import type { GeneratorConfig, Measure, StepLocation } from '@/engine';
 
 export interface RenderState {
   musicData: Measure[];
@@ -10,8 +10,31 @@ export interface RenderState {
 }
 
 export interface RenderSelectors {
-  getStepInfo: (index: number) => { measureIdx: number; stepIdx: number } | null;
+  getStepInfo: (index: number) => StepLocation | null;
 }
+
+interface ShiftableStaveNote extends StaveNote {
+  draw: () => void;
+}
+
+interface WidthOverrideVoice extends Voice {
+  getWidth: () => number;
+}
+
+const DEFAULT_RENDER_STATE: RenderState = {
+  musicData: [],
+  currentStepIndex: 0,
+  activeMidiNotes: new Set(),
+  suppressedNotes: new Set(),
+};
+
+const DEFAULT_MEASURE: Measure = {
+  keySignature: 'C',
+  pattern: [],
+  trebleSteps: [],
+  bassSteps: [],
+  staffType: 'grand',
+};
 
 let lastRenderParams: string | null = null;
 let cachedColWidths: number[] | null = null;
@@ -28,21 +51,20 @@ function getTargetNotes(
   isTreble: boolean, 
   currentNotesArray: StaveNote[] | null, 
   currentStepIndex: number, 
-  getStepInfo: (index: number) => { measureIdx: number; stepIdx: number } | null
+  getStepInfo: (index: number) => StepLocation | null
 ): StaveNote[] {
-  if (!measureData) return [];
-  const steps = (isTreble ? measureData.trebleSteps : measureData.bassSteps) || [];
-  const pattern = measureData.pattern || [];
+  const steps = isTreble ? measureData.trebleSteps : measureData.bassSteps;
+  const pattern = measureData.pattern;
   const clef = isTreble ? 'treble' : 'bass';
   const stem = isTreble ? 'up' : 'down';
+  const currentStep = getStepInfo(currentStepIndex);
 
   return steps.map((pitches, bIdx) => {
-    const duration = pattern[bIdx] || 'q';
-    const info = getStepInfo(currentStepIndex);
-    const isCurrent = info?.measureIdx === measureIdx && info?.stepIdx === bIdx;
+    const duration = pattern[bIdx] ?? 'q';
+    const isCurrent = currentStep?.measureIdx === measureIdx && currentStep.stepIdx === bIdx;
     
     const restPitch = isTreble ? 'B4' : 'D3';
-    const noteStr = (pitches?.length || 0) === 0 
+    const noteStr = pitches.length === 0
       ? `${restPitch}/${duration}/r` 
       : (pitches.length > 1 ? `(${pitches.join(' ')})/${duration}` : `${pitches[0]}/${duration}`);
     
@@ -97,6 +119,18 @@ function getValidKey(key?: string): string {
   return (key && KEY_SIGNATURES.includes(key)) ? key : 'C';
 }
 
+function getMeasureOrDefault(musicData: Measure[], measureIdx: number): Measure {
+  return musicData[measureIdx] ?? DEFAULT_MEASURE;
+}
+
+function createRendererElementId(prefix: string): string {
+  return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function getSystemOptions(system: System): { width: number; x: number; y: number } {
+  return (system as unknown as { options: { width: number; x: number; y: number } }).options;
+}
+
 function configureStave(stave: Stave, isTreble: boolean, m: number, keySig: string): void {
   if (m === 0) {
     stave.addClef(isTreble ? 'treble' : 'bass').addTimeSignature('4/4');
@@ -129,7 +163,7 @@ function calculateColumnWidths(
   const { musicData } = state;
   const colWidths: number[] = new Array(measuresPerLine).fill(200);
   const hiddenDiv: HTMLDivElement = document.createElement('div');
-  hiddenDiv.id = 'temp-vf-' + Math.random().toString(36).substring(2, 9);
+  hiddenDiv.id = createRendererElementId('temp-vf');
   hiddenDiv.style.display = 'none';
   document.body.appendChild(hiddenDiv);
 
@@ -139,14 +173,8 @@ function calculateColumnWidths(
   for (let m = 0; m < measuresPerLine; m++) {
     for (let l = 0; l < linesCount; l++) {
       const measureIdx = (l * measuresPerLine) + m;
-      const measureData = musicData[measureIdx] || { 
-        keySignature: 'C', 
-        pattern: [], 
-        trebleSteps: [],
-        bassSteps: [],
-        staffType: 'grand' 
-      } as Measure;
-      const system: System = widthCalculator.System({ x: 0, y: 0 });
+      const measureData = getMeasureOrDefault(musicData, measureIdx);
+      const system = widthCalculator.System({ x: 0, y: 0 });
       const keySig = getValidKey(measureData.keySignature);
 
       if (staffType === 'treble' || staffType === 'grand') {
@@ -159,7 +187,7 @@ function calculateColumnWidths(
       }
       
       system.format();
-      colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width + 30);
+      colWidths[m] = Math.max(colWidths[m]!, getSystemOptions(system).width + 30);
       widthCalculator.reset();
       hiddenDiv.innerHTML = '';
     }
@@ -197,15 +225,15 @@ function addVoicesWithPlayed(
   const info = getStepInfo(currentStepIndex);
   if (info && info.measureIdx === measureIdx) {
     const b = info.stepIdx;
-    const duration = (measureData.pattern || [])[b] || 'q';
-    const steps = isTreble ? (measureData.trebleSteps || []) : (measureData.bassSteps || []);
-    const targetPitches = steps[b] || [];
+    const duration = measureData.pattern[b] ?? 'q';
+    const steps = isTreble ? measureData.trebleSteps : measureData.bassSteps;
+    const targetPitches = steps[b] ?? [];
     
     const pitches = Array.from(activeMidiNotes).filter(p => {
       if (suppressedNotes.has(p) && !targetPitches.includes(p)) return false;
       const match = p.match(/(-?\d+)$/);
       const octave = match ? parseInt(match[1]!) : 4;
-      return (measureData.staffType || 'grand') === 'grand' ? (isTreble ? octave >= 4 : octave < 4) : true;
+      return measureData.staffType === 'grand' ? (isTreble ? octave >= 4 : octave < 4) : true;
     });
 
     if (pitches.length > 0) {
@@ -223,7 +251,8 @@ function addVoicesWithPlayed(
           }
           const tNote = targetNotes[b];
           if (tNote) {
-            const originalDraw = (note.draw as any).bind(note);
+            const shiftableNote = note as ShiftableStaveNote;
+            const originalDraw = shiftableNote.draw.bind(shiftableNote);
             note.draw = function(): void {
               if (tNote.getTickContext() && note.getTickContext()) {
                 note.setXShift(tNote.getAbsoluteX() - note.getAbsoluteX());
@@ -233,7 +262,7 @@ function addVoicesWithPlayed(
           }
         }
         const pVoice = vf.Voice().setMode(2).addTickables(pNotes);
-        (pVoice as any).getWidth = (): number => 0;
+        (pVoice as WidthOverrideVoice).getWidth = (): number => 0;
         voices.push(pVoice);
       }
     }
@@ -269,13 +298,13 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
   const linesCount = config?.linesCount || 1;
   const staffType = config?.staffType || 'grand';
   
-  const actualState = state || { musicData: [], currentStepIndex: 0, activeMidiNotes: new Set(), suppressedNotes: new Set() };
-  const actualSelectors = selectors || { getStepInfo: () => null };
+  const actualState = state ?? DEFAULT_RENDER_STATE;
+  const actualSelectors = selectors ?? { getStepInfo: () => null };
 
   const { musicData } = actualState;
 
   div.innerHTML = '';
-  if (!div.id) div.id = 'vexflow-output-' + Math.random().toString(36).substring(2, 9);
+  if (!div.id) div.id = createRendererElementId('vexflow-output');
 
   const currentParams = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
   if (lastRenderParams !== currentParams) {
@@ -297,18 +326,12 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
     
     for (let m = 0; m < measuresPerLine; m++) {
       const measureIdx = (l * measuresPerLine) + m;
-      const measureData = musicData[measureIdx] || { 
-        keySignature: 'C', 
-        pattern: [], 
-        trebleSteps: [],
-        bassSteps: [],
-        staffType: 'grand' 
-      } as Measure;
+      const measureData = getMeasureOrDefault(musicData, measureIdx);
       const width = colWidths[m]!;
       const x = currentX;
       currentX += width;
 
-      const system: System = vf.System({ x, y, width });
+      const system = vf.System({ x, y, width });
       const keySig = getValidKey(measureData.keySignature);
       
       const renderClef = (isTreble: boolean): void => {
