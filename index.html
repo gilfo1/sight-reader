@@ -130,40 +130,52 @@
         </div>
         </details>
 
-        <details id="stats-details" class="panel panel-muted stats-panel">
-          <summary class="panel-summary">Stats</summary>
-          <div id="stats-content" class="panel-content stats-grid">
-            <div class="stat-row">
-              <span>Notes Played:</span> <span id="stats-played">0</span>
-            </div>
-            <div class="stat-row">
-              <span>Correct:</span> <span id="stats-correct" class="stat-value-success">0</span>
-            </div>
-            <div class="stat-row">
-              <span>Wrong:</span> <span id="stats-wrong" class="stat-value-danger">0</span>
-            </div>
-            <div class="stat-row">
-              <span>Accuracy:</span> <span id="stats-accuracy">0%</span>
-            </div>
-            <div class="stat-row">
-              <span>Current Streak:</span> <span id="stats-streak" class="stat-value-success">0</span>
-            </div>
-            <div class="stat-row">
-              <span>Best Streak:</span> <span id="stats-max-streak">0</span>
-            </div>
-            <hr class="panel-divider">
-            <div class="stat-row stat-row-subtle">
-              <span>Wrong Octave:</span> <span id="stats-wrong-octave">0</span>
-            </div>
-            <div class="stat-row stat-row-subtle">
-              <span>Key Sig Error:</span> <span id="stats-key-error">0</span>
-            </div>
-            <div class="stat-row stat-row-subtle">
-              <span>Avg Time:</span> <span id="stats-avg-time">0s</span>
-            </div>
-            <button id="reset-stats" class="action-button">Reset Stats</button>
+        <section class="side-panel-stack">
+          <div class="utility-row">
+            <button id="sound-toggle" type="button" class="icon-button" aria-label="Turn sound off" title="Turn sound off">
+              <span id="sound-toggle-icon" class="sound-icon" aria-hidden="true">
+                <span class="sound-icon-speaker"></span>
+                <span class="sound-icon-wave sound-icon-wave-inner"></span>
+                <span class="sound-icon-wave sound-icon-wave-outer"></span>
+                <span class="sound-icon-mute-slash"></span>
+              </span>
+            </button>
           </div>
-        </details>
+          <details id="stats-details" class="panel panel-muted stats-panel">
+            <summary class="panel-summary">Stats</summary>
+            <div id="stats-content" class="panel-content stats-grid">
+              <div class="stat-row">
+                <span>Notes Played:</span> <span id="stats-played">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Correct:</span> <span id="stats-correct" class="stat-value-success">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Wrong:</span> <span id="stats-wrong" class="stat-value-danger">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Accuracy:</span> <span id="stats-accuracy">0%</span>
+              </div>
+              <div class="stat-row">
+                <span>Current Streak:</span> <span id="stats-streak" class="stat-value-success">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Best Streak:</span> <span id="stats-max-streak">0</span>
+              </div>
+              <hr class="panel-divider">
+              <div class="stat-row stat-row-subtle">
+                <span>Wrong Octave:</span> <span id="stats-wrong-octave">0</span>
+              </div>
+              <div class="stat-row stat-row-subtle">
+                <span>Key Sig Error:</span> <span id="stats-key-error">0</span>
+              </div>
+              <div class="stat-row stat-row-subtle">
+                <span>Avg Time:</span> <span id="stats-avg-time">0s</span>
+              </div>
+              <button id="reset-stats" class="action-button">Reset Stats</button>
+            </div>
+          </details>
+        </section>
       </section>
       <section class="output-shell">
         <div id="output" class="score-output"></div>

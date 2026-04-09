@@ -53,6 +53,7 @@ describe('Responsive Layout System', () => {
   it('uses touch-friendly option chips and action buttons', () => {
     expect(doc.querySelectorAll('.option-chip').length).toBeGreaterThan(0);
     expect(doc.querySelectorAll('.action-button').length).toBeGreaterThan(0);
+    expect(doc.querySelector('.icon-button')).not.toBeNull();
     expect(css).toContain('min-height: 44px;');
   });
 
@@ -84,5 +85,25 @@ describe('Responsive Layout System', () => {
     expect(css).toContain('border-radius: 0 0 8px 8px;');
     expect(css).toContain('.piano-keyboard-layout[data-size-mode="small"] .piano-key-white');
     expect(css).toContain('border-radius: 0 0 4px 4px;');
+  });
+
+  it('defines a dedicated active style for keyboard notes', () => {
+    expect(css).toContain('.piano-key-active');
+    expect(css).toContain('border-color: #19a34a;');
+    expect(css).toContain('.piano-key-white.piano-key-active');
+    expect(css).toContain('.piano-key-black.piano-key-active');
+  });
+
+  it('positions a utility-row sound toggle above the stats panel', () => {
+    expect(doc.querySelector('.side-panel-stack')).not.toBeNull();
+    expect(doc.querySelector('.utility-row')).not.toBeNull();
+    expect(doc.getElementById('sound-toggle')).not.toBeNull();
+    expect(doc.querySelector('.sound-icon')).not.toBeNull();
+    expect(css).toContain('.utility-row');
+    expect(css).toContain('justify-content: flex-end;');
+    expect(css).toContain('.icon-button');
+    expect(css).toContain('.sound-icon-speaker');
+    expect(css).toContain('.sound-icon-wave');
+    expect(css).toContain('.sound-icon-mute-slash');
   });
 });

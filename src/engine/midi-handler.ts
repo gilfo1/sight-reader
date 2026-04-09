@@ -1,5 +1,6 @@
 import { WebMidi } from 'webmidi';
 import type { Input, NoteMessageEvent, PortEvent } from 'webmidi';
+import { playNote, stopAllNotes, stopNote } from '@/audio/note-player';
 import { 
   activeMidiNotes, 
   currentStepIndex,
@@ -48,6 +49,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
     } else {
       deviceNameEl.textContent = 'No device connected';
       indicatorEl.style.backgroundColor = 'red';
+      stopAllNotes();
       activeMidiNotes.clear();
       suppressedNotes.clear();
       noteDisplayEl.textContent = '-';
@@ -79,6 +81,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
 
   const onNoteOn = (e: NoteIdentifierEvent): void => {
     activeMidiNotes.add(e.note.identifier);
+    playNote(e.note.identifier);
     
     if (currentStepIndex !== lastProcessedStep) {
         stepStartTime = Date.now();
@@ -107,6 +110,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
   const onNoteOff = (e: NoteIdentifierEvent): void => {
     activeMidiNotes.delete(e.note.identifier);
     suppressedNotes.delete(e.note.identifier);
+    stopNote(e.note.identifier);
     noteDisplayEl.textContent = activeMidiNotes.size === 0 ? '-' : Array.from(activeMidiNotes).join(', ');
     checkMatch();
     notifyStateChange();

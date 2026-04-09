@@ -185,6 +185,20 @@ describe('UI Persistence Integration', () => {
     expect(layout.dataset.sizeMode).toBe('medium');
   });
 
+  it('should persist the sound toggle state', async () => {
+    await initApp();
+
+    const soundToggle = document.getElementById('sound-toggle') as HTMLButtonElement;
+    soundToggle.click();
+
+    expect(loadFromStorage('sound-enabled')).toBe(false);
+
+    document.body.innerHTML = new DOMParser().parseFromString(readFileSync('./index.html', 'utf-8'), 'text/html').body.innerHTML;
+    await initApp();
+
+    expect((document.getElementById('sound-toggle') as HTMLButtonElement).dataset.enabled).toBe('false');
+  });
+
   it('should reset all to defaults when Reset button is clicked', async () => {
     await initApp();
     

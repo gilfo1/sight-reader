@@ -21,6 +21,7 @@ import {
 } from './engine/state';
 import { updateNoteSelectors } from './ui/controls';
 import { initPianoKeyboard } from './ui/piano-keyboard';
+import { initSoundToggle } from './ui/sound-toggle';
 
 function checkMatch(): void {
   initMidiHandler.checkMatch?.();
@@ -50,6 +51,7 @@ export {
   checkMatch,
   initKeySignatures, 
   initPianoKeyboard,
+  initSoundToggle,
   updateNoteSelectors,
   getUIConfig,
   generateScoreData,

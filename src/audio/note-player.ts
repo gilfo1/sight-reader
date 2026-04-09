@@ -1,105 +1,127 @@
 import { getNoteValue } from '@/utils/theory';
 
-const SAMPLE_RATE = 22050;
-const SAMPLE_DURATION_SECONDS = 0.8;
-const activeNotes = new Map<string, HTMLAudioElement>();
-const audioCache = new Map<string, string>();
-
-function canUseHtmlAudio(): boolean {
-  return typeof Audio !== 'undefined' && !window.navigator.userAgent.includes('jsdom');
+interface ActiveTone {
+  gainNode: GainNode;
+  oscillator: OscillatorNode;
+  releaseTimeoutId?: number;
 }
 
-function clampAudioSample(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
+const ATTACK_SECONDS = 0.01;
+const RELEASE_SECONDS = 0.05;
+const activeNotes = new Map<string, ActiveTone>();
+let audioContext: AudioContext | null = null;
+let soundEnabled = true;
 
-function createWaveFileDataUri(note: string): string {
-  const sampleCount = Math.floor(SAMPLE_RATE * SAMPLE_DURATION_SECONDS);
-  const pcmData = new Int16Array(sampleCount);
-  const frequency = noteToFrequency(note);
-
-  for (let index = 0; index < sampleCount; index++) {
-    const time = index / SAMPLE_RATE;
-    const attack = Math.min(1, time / 0.03);
-    const release = Math.min(1, (SAMPLE_DURATION_SECONDS - time) / 0.12);
-    const envelope = Math.max(0, Math.min(attack, release));
-    const sample = (
-      Math.sin(2 * Math.PI * frequency * time)
-      + 0.35 * Math.sin(4 * Math.PI * frequency * time)
-      + 0.15 * Math.sin(6 * Math.PI * frequency * time)
-    ) * 0.22 * envelope;
-    pcmData[index] = clampAudioSample(sample) * 32767;
+function getAudioContextConstructor(): typeof AudioContext | null {
+  if (typeof globalThis === 'undefined') {
+    return null;
   }
 
-  const dataSize = pcmData.length * 2;
-  const buffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buffer);
-  const writeText = (offset: number, text: string): void => {
-    for (let index = 0; index < text.length; index++) {
-      view.setUint8(offset + index, text.charCodeAt(index));
-    }
+  const globalAudio = globalThis as typeof globalThis & {
+    AudioContext?: typeof AudioContext;
+    webkitAudioContext?: typeof AudioContext;
   };
 
-  writeText(0, 'RIFF');
-  view.setUint32(4, 36 + dataSize, true);
-  writeText(8, 'WAVE');
-  writeText(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, SAMPLE_RATE, true);
-  view.setUint32(28, SAMPLE_RATE * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeText(36, 'data');
-  view.setUint32(40, dataSize, true);
-
-  pcmData.forEach((sample, index) => {
-    view.setInt16(44 + (index * 2), sample, true);
-  });
-
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-
-  return `data:audio/wav;base64,${btoa(binary)}`;
+  return globalAudio.AudioContext ?? globalAudio.webkitAudioContext ?? null;
 }
 
-function getAudioSource(note: string): string {
-  const cached = audioCache.get(note);
+function canUseAudioContext(): boolean {
+  return getAudioContextConstructor() !== null && !window.navigator.userAgent.includes('jsdom');
+}
 
-  if (cached) {
-    return cached;
+function getAudioContext(): AudioContext | null {
+  if (audioContext) {
+    return audioContext;
   }
 
-  const source = createWaveFileDataUri(note);
-  audioCache.set(note, source);
-  return source;
+  const AudioContextConstructor = getAudioContextConstructor();
+  if (!AudioContextConstructor) {
+    return null;
+  }
+
+  try {
+    audioContext = new AudioContextConstructor();
+  } catch {
+    audioContext = null;
+  }
+
+  return audioContext;
+}
+
+function teardownActiveTone(activeNote: ActiveTone): void {
+  if (activeNote.releaseTimeoutId !== undefined) {
+    clearTimeout(activeNote.releaseTimeoutId);
+  }
+
+  try {
+    activeNote.oscillator.disconnect();
+  } catch {}
+
+  try {
+    activeNote.gainNode.disconnect();
+  } catch {}
+}
+
+function cleanupActiveNote(note: string, activeNote: ActiveTone): void {
+  if (activeNotes.get(note) === activeNote) {
+    activeNotes.delete(note);
+  }
+
+  teardownActiveTone(activeNote);
 }
 
 export function noteToFrequency(note: string): number {
   return 440 * Math.pow(2, (getNoteValue(note) - 69) / 12);
 }
 
+export function isSoundEnabled(): boolean {
+  return soundEnabled;
+}
+
+export function setSoundEnabled(enabled: boolean): void {
+  soundEnabled = enabled;
+
+  if (!enabled) {
+    stopAllNotes();
+  }
+}
+
+export function toggleSoundEnabled(): boolean {
+  setSoundEnabled(!soundEnabled);
+  return soundEnabled;
+}
+
 export function playNote(note: string): void {
-  if (!canUseHtmlAudio() || activeNotes.has(note)) {
+  if (!soundEnabled || activeNotes.has(note) || !canUseAudioContext()) {
     return;
   }
 
-  const audio = new Audio(getAudioSource(note));
-  audio.loop = true;
-  audio.currentTime = 0;
-  activeNotes.set(note, audio);
+  const context = getAudioContext();
+  if (!context) {
+    return;
+  }
+
+  if (typeof context.resume === 'function') {
+    context.resume().catch(() => undefined);
+  }
 
   try {
-    const playResult = audio.play();
-    if (playResult && typeof playResult.catch === 'function') {
-      void playResult.catch(() => {
-        activeNotes.delete(note);
-      });
-    }
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+    const now = context.currentTime;
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(noteToFrequency(note), now);
+
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.18, now + ATTACK_SECONDS);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(context.destination);
+    oscillator.start(now);
+
+    activeNotes.set(note, { oscillator, gainNode });
   } catch {
     activeNotes.delete(note);
   }
@@ -112,13 +134,23 @@ export function stopNote(note: string): void {
     return;
   }
 
-  if (canUseHtmlAudio()) {
-    activeNote.pause();
-    activeNote.currentTime = 0;
+  const context = getAudioContext();
+  const now = context?.currentTime ?? 0;
+
+  try {
+    activeNotes.delete(note);
+    activeNote.gainNode.gain.cancelScheduledValues(now);
+    activeNote.gainNode.gain.setValueAtTime(Math.max(activeNote.gainNode.gain.value, 0.0001), now);
+    activeNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + RELEASE_SECONDS);
+    activeNote.oscillator.stop(now + RELEASE_SECONDS);
+    activeNote.oscillator.onended = () => cleanupActiveNote(note, activeNote);
+    activeNote.releaseTimeoutId = window.setTimeout(() => cleanupActiveNote(note, activeNote), Math.ceil(RELEASE_SECONDS * 1000) + 32);
+  } catch {
+    cleanupActiveNote(note, activeNote);
   }
-  activeNotes.delete(note);
 }
 
 export function stopAllNotes(): void {
   Array.from(activeNotes.keys()).forEach(stopNote);
+  audioContext = null;
 }

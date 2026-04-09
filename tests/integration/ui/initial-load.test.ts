@@ -42,6 +42,8 @@ describe('Initial DOM Structure', () => {
 
   it('should have MIDI status and note display elements', () => {
     expect(doc.getElementById('midi-status')).not.toBeNull();
+    expect(doc.getElementById('sound-toggle')).not.toBeNull();
+    expect(doc.getElementById('sound-toggle-icon')).not.toBeNull();
     expect(doc.getElementById('midi-device-name')).not.toBeNull();
     expect(doc.getElementById('midi-indicator')).not.toBeNull();
     expect(doc.getElementById('midi-notes-details')).not.toBeNull();

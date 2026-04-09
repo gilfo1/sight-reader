@@ -57,6 +57,130 @@ body.app-shell {
   align-items: start;
 }
 
+.side-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.utility-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: var(--panel-shadow);
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.08s ease;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  background: #111111;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.icon-button[data-enabled="false"] {
+  color: #6f6f6f;
+}
+
+.sound-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+}
+
+.sound-icon-speaker {
+  position: absolute;
+  left: 1px;
+  top: 5px;
+  width: 6px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 2px 0 0 2px;
+  transition:
+    opacity 0.14s ease,
+    color 0.14s ease;
+}
+
+.sound-icon-speaker::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 6px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 55% 50%);
+}
+
+.sound-icon-wave {
+  position: absolute;
+  top: 50%;
+  border: 2px solid transparent;
+  border-right-color: currentColor;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+.sound-icon-wave-inner {
+  right: 3px;
+  width: 6px;
+  height: 10px;
+}
+
+.sound-icon-wave-outer {
+  right: -1px;
+  width: 10px;
+  height: 16px;
+}
+
+.sound-icon-mute-slash {
+  position: absolute;
+  left: 11px;
+  top: 2px;
+  width: 2px;
+  height: 16px;
+  background: currentColor;
+  border-radius: 999px;
+  transform: rotate(35deg);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.icon-button:hover .sound-icon-wave,
+.icon-button:focus-visible .sound-icon-wave {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.icon-button[data-enabled="false"] .sound-icon-wave {
+  opacity: 0.18;
+}
+
+.icon-button[data-enabled="false"] .sound-icon-mute-slash {
+  opacity: 1;
+}
+
 .panel {
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
@@ -385,6 +509,7 @@ details[open] > .keyboard-summary .keyboard-summary-label {
   touch-action: none;
   transition:
     background-color 0.14s ease,
+    border-color 0.14s ease,
     transform 0.08s ease,
     box-shadow 0.14s ease;
 }
@@ -397,6 +522,22 @@ details[open] > .keyboard-summary .keyboard-summary-label {
 .piano-key-black {
   border-radius: 0 0 5px 5px;
   box-shadow: 0 9px 18px rgba(0, 0, 0, 0.28);
+}
+
+.piano-key-active {
+  border-color: #19a34a;
+}
+
+.piano-key-white.piano-key-active {
+  box-shadow:
+    0 0 0 1px rgba(25, 163, 74, 0.18),
+    0 12px 24px rgba(10, 86, 37, 0.18);
+}
+
+.piano-key-black.piano-key-active {
+  box-shadow:
+    0 0 0 1px rgba(25, 163, 74, 0.28),
+    0 10px 18px rgba(5, 61, 25, 0.36);
 }
 
 .piano-keyboard-layout[data-size-mode="small"] .piano-key-white {
@@ -490,6 +631,10 @@ details[open] > .keyboard-summary .keyboard-summary-label {
     align-items: stretch;
   }
 
+  .utility-row {
+    justify-content: flex-start;
+  }
+
   .action-button {
     width: 100%;
   }
@@ -540,6 +685,10 @@ details[open] > .keyboard-summary .keyboard-summary-label {
   .control-grid,
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .utility-row {
+    justify-content: flex-end;
   }
 
   .option-grid {

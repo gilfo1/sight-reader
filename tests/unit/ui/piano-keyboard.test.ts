@@ -1,18 +1,27 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { activeMidiNotes } from '@/engine/state';
 import {
   getKeyboardLayout,
   getKeyboardRange,
   getKeyboardSizeMode,
   getVisibleKeyboardNotes,
+  initPianoKeyboard,
   isPianoKeyboardOpen,
   setKeyboardSizeMode,
+  updatePianoKeyboardActiveNotes,
 } from '@/ui/piano-keyboard';
 import { getNoteValue } from '@/utils/theory';
 
 describe('Piano Keyboard Layout', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<details id="piano-keyboard-details" open></details>';
+    document.body.innerHTML = `
+      <details id="piano-keyboard-details" open></details>
+      <div class="keyboard-scroll">
+        <div id="piano-keyboard"></div>
+      </div>
+    `;
     localStorage.clear();
+    activeMidiNotes.clear();
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 960 });
     setKeyboardSizeMode('large');
   });
@@ -49,5 +58,17 @@ describe('Piano Keyboard Layout', () => {
     expect(getKeyboardSizeMode()).toBe('small');
     expect(mediumCount).toBeGreaterThan(largeCount);
     expect(smallCount).toBeGreaterThan(mediumCount);
+  });
+
+  it('syncs rendered keys with active MIDI notes', () => {
+    initPianoKeyboard();
+    activeMidiNotes.add('C4');
+    activeMidiNotes.add('E4');
+
+    updatePianoKeyboardActiveNotes();
+
+    expect((document.querySelector('[data-note="C4"]') as HTMLButtonElement).dataset.active).toBe('true');
+    expect((document.querySelector('[data-note="E4"]') as HTMLButtonElement).classList.contains('piano-key-active')).toBe(true);
+    expect((document.querySelector('[data-note="D4"]') as HTMLButtonElement).dataset.active).toBe('false');
   });
 });

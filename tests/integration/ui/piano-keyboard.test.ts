@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { activeMidiNotes, currentStepIndex, initApp, resetGameState, setCurrentStepIndex, setMusicData } from '@/main';
+import { activeMidiNotes, currentStepIndex, initApp, initPianoKeyboard, resetGameState, setCurrentStepIndex, setMusicData } from '@/main';
+import { initMidiHandler } from '@/engine/midi-handler';
 import { resetStats, stats } from '@/engine/state';
 import { getKeyboardSizeMode } from '@/ui/piano-keyboard';
 
@@ -135,5 +136,38 @@ describe('On-Screen Piano Keyboard', () => {
     const wideCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
 
     expect(wideCount).toBeGreaterThan(narrowCount);
+  });
+
+  it('reflects MIDI keyboard note presses on the on-screen keyboard', async () => {
+    await initApp();
+
+    initMidiHandler.triggerNoteOn?.('C4');
+    initMidiHandler.triggerNoteOn?.('E4');
+
+    const c4Key = document.querySelector('[data-note="C4"]') as HTMLButtonElement;
+    const e4Key = document.querySelector('[data-note="E4"]') as HTMLButtonElement;
+    const d4Key = document.querySelector('[data-note="D4"]') as HTMLButtonElement;
+
+    expect(activeMidiNotes.has('C4')).toBe(true);
+    expect(c4Key.dataset.active).toBe('true');
+    expect(c4Key.classList.contains('piano-key-active')).toBe(true);
+    expect(e4Key.dataset.active).toBe('true');
+    expect(d4Key.dataset.active).toBe('false');
+
+    initMidiHandler.triggerNoteOff?.('C4');
+    expect(c4Key.dataset.active).toBe('false');
+    expect(e4Key.dataset.active).toBe('true');
+
+    initMidiHandler.triggerNoteOff?.('E4');
+    expect(e4Key.dataset.active).toBe('false');
+  });
+
+  it('reapplies active MIDI notes after the keyboard layout is redrawn', async () => {
+    await initApp();
+
+    initMidiHandler.triggerNoteOn?.('C4');
+    initPianoKeyboard();
+
+    expect((document.querySelector('[data-note="C4"]') as HTMLButtonElement).dataset.active).toBe('true');
   });
 });

@@ -24,7 +24,8 @@ import {
   updateNoteSelectors,
 } from '@/ui/controls';
 import { initStatsUI, updateStatsUI } from '@/ui/stats';
-import { initPianoKeyboard, releaseAllKeyboardNotes } from '@/ui/piano-keyboard';
+import { initPianoKeyboard, releaseAllKeyboardNotes, updatePianoKeyboardActiveNotes } from '@/ui/piano-keyboard';
+import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
 import { suppressedNotes } from '@/engine/session-state';
 
@@ -67,12 +68,14 @@ function handleStateChange(shouldRegenerate = false): void {
     regenerateScore();
   }
 
+  updatePianoKeyboardActiveNotes();
   renderCurrentScore();
   updateStatsUI();
 }
 
 export function resetAllToDefaults(): void {
   clearStorage();
+  resetSoundToggle();
   resetStats();
   applyUIConfig(DEFAULT_CONFIG);
   saveUIConfig();
@@ -91,6 +94,7 @@ export async function initApp(): Promise<void> {
   updateNoteSelectors();
   initKeySignatures(() => handleStateChange(true));
   initStatsUI();
+  initSoundToggle();
 
   const savedConfig = loadFromStorage<Partial<GeneratorConfig>>('generator-config');
   if (savedConfig) {

@@ -1,5 +1,6 @@
-import { playNote, stopAllNotes, stopNote } from '@/audio/note-player';
+import { stopAllNotes } from '@/audio/note-player';
 import { initMidiHandler } from '@/engine/midi-handler';
+import { activeMidiNotes } from '@/engine/state';
 import type { KeyboardRange, KeyboardRangeState, KeyboardSizeMode } from '@/ui/piano-keyboard-layout';
 import {
   DEFAULT_KEYBOARD_SIZE_MODE,
@@ -94,22 +95,27 @@ export function getKeyboardLayout(): KeyboardNote[] {
   });
 }
 
+function setKeyboardKeyActiveState(keyElement: HTMLElement, isActive: boolean): void {
+  keyElement.dataset.active = isActive ? 'true' : 'false';
+  keyElement.classList.toggle('piano-key-active', isActive);
+  keyElement.style.transform = isActive ? 'translateY(2px)' : '';
+  keyElement.style.background = isActive
+    ? keyElement.dataset.activeBackground ?? ''
+    : keyElement.dataset.defaultBackground ?? '';
+  keyElement.style.color = isActive
+    ? keyElement.dataset.activeColor ?? ''
+    : keyElement.dataset.defaultColor ?? '';
+}
+
 function releaseKeyboardNote(note: string, keyElement: HTMLElement): void {
-  keyElement.dataset.active = 'false';
+  setKeyboardKeyActiveState(keyElement, false);
   keyElement.style.transform = '';
-  keyElement.style.background = keyElement.dataset.defaultBackground ?? '';
-  keyElement.style.color = keyElement.dataset.defaultColor ?? '';
   initMidiHandler.triggerNoteOff?.(note);
-  stopNote(note);
 }
 
 function pressKeyboardNote(note: string, keyElement: HTMLElement): void {
-  keyElement.dataset.active = 'true';
-  keyElement.style.transform = 'translateY(2px)';
-  keyElement.style.background = keyElement.dataset.activeBackground ?? '';
-  keyElement.style.color = keyElement.dataset.activeColor ?? '';
+  setKeyboardKeyActiveState(keyElement, true);
   initMidiHandler.triggerNoteOn?.(note);
-  playNote(note);
 }
 
 function createKeyboardKey(keyboardNote: KeyboardNote): HTMLButtonElement {
@@ -125,8 +131,8 @@ function createKeyboardKey(keyboardNote: KeyboardNote): HTMLButtonElement {
   key.dataset.active = 'false';
   key.dataset.defaultBackground = keyboardNote.isBlackKey ? '#111111' : '#ffffff';
   key.dataset.defaultColor = keyboardNote.isBlackKey ? '#f7f7f7' : '#111111';
-  key.dataset.activeBackground = keyboardNote.isBlackKey ? '#444444' : '#e5e5e5';
-  key.dataset.activeColor = keyboardNote.isBlackKey ? '#ffffff' : '#111111';
+  key.dataset.activeBackground = keyboardNote.isBlackKey ? '#0f7c43' : '#dff5e6';
+  key.dataset.activeColor = keyboardNote.isBlackKey ? '#ffffff' : '#0d3319';
   key.setAttribute('aria-label', `Play ${keyboardNote.note}`);
   key.style.position = 'absolute';
   key.style.left = `${left}px`;
@@ -232,6 +238,7 @@ function renderKeyboardLayout(): void {
 
   container.appendChild(keyboard);
   lastRenderedRange = rangeState;
+  updatePianoKeyboardActiveNotes();
 }
 
 function notifyRangeChangeIfNeeded(previousRange: KeyboardRangeState | null): void {
@@ -279,6 +286,13 @@ export function initPianoKeyboard(onRangeChange?: () => void): void {
     window.addEventListener('resize', handleKeyboardViewportChange);
     keyboardResizeHandlerBound = true;
   }
+}
+
+export function updatePianoKeyboardActiveNotes(): void {
+  document.querySelectorAll<HTMLElement>('#piano-keyboard [data-note]').forEach((keyElement) => {
+    const note = keyElement.dataset.note;
+    setKeyboardKeyActiveState(keyElement, note !== undefined && activeMidiNotes.has(note));
+  });
 }
 
 export function releaseAllKeyboardNotes(): void {
