@@ -28,6 +28,9 @@ export interface AppStats {
   troubleNotes: Record<string, number>;
   troubleOctaves: Record<string, number>;
   troubleKeys: Record<string, number>;
+  slowNoteTimes: Record<string, number[]>; // Track recent times for each note
+  wrongOctaveNotes: Record<string, number>; // Specific notes missed by octave
+  keySignatureMissedNotes: Record<string, number>; // Specific notes missed by key sig
 }
 
 export const stats: AppStats = {
@@ -43,6 +46,9 @@ export const stats: AppStats = {
   troubleNotes: {},
   troubleOctaves: {},
   troubleKeys: {},
+  slowNoteTimes: {},
+  wrongOctaveNotes: {},
+  keySignatureMissedNotes: {},
 };
 
 export function resetStats(): void {
@@ -58,6 +64,9 @@ export function resetStats(): void {
   stats.troubleNotes = {};
   stats.troubleOctaves = {};
   stats.troubleKeys = {};
+  stats.slowNoteTimes = {};
+  stats.wrongOctaveNotes = {};
+  stats.keySignatureMissedNotes = {};
 }
 
 export function recordCorrectNote(noteIdentifier: string, keySignature: string, timeMs?: number): void {
@@ -71,6 +80,16 @@ export function recordCorrectNote(noteIdentifier: string, keySignature: string, 
   if (timeMs !== undefined) {
     stats.totalCorrectNoteTime += timeMs;
     stats.averageCorrectNoteTime = stats.totalCorrectNoteTime / stats.correctNotes;
+    
+    // Store recent times for slow note detection
+    if (!stats.slowNoteTimes[noteIdentifier]) {
+      stats.slowNoteTimes[noteIdentifier] = [];
+    }
+    stats.slowNoteTimes[noteIdentifier]!.push(timeMs);
+    // Keep only last 10 times per note for moving average/recent trend
+    if (stats.slowNoteTimes[noteIdentifier]!.length > 10) {
+      stats.slowNoteTimes[noteIdentifier]!.shift();
+    }
   }
 
   if ((stats.troubleNotes[noteIdentifier] || 0) > 0) {
@@ -85,6 +104,12 @@ export function recordCorrectNote(noteIdentifier: string, keySignature: string, 
   }
   if ((stats.troubleKeys[keySignature] || 0) > 0) {
     stats.troubleKeys[keySignature]!--;
+  }
+  if ((stats.wrongOctaveNotes[noteIdentifier] || 0) > 0) {
+    stats.wrongOctaveNotes[noteIdentifier]!--;
+  }
+  if ((stats.keySignatureMissedNotes[noteIdentifier] || 0) > 0) {
+    stats.keySignatureMissedNotes[noteIdentifier]!--;
   }
 }
 
@@ -126,8 +151,18 @@ export function recordWrongNote(playedNote: string, targetPitches: string[], cur
     }
   }
 
-  if (isWrongOctave) stats.wrongOctaveCount++;
-  if (isKeySignatureNotHonored) stats.keySignatureNotHonoredCount++;
+  if (isWrongOctave) {
+    stats.wrongOctaveCount++;
+    targetPitches.forEach(p => {
+      stats.wrongOctaveNotes[p] = (stats.wrongOctaveNotes[p] || 0) + 1;
+    });
+  }
+  if (isKeySignatureNotHonored) {
+    stats.keySignatureNotHonoredCount++;
+    targetPitches.forEach(p => {
+      stats.keySignatureMissedNotes[p] = (stats.keySignatureMissedNotes[p] || 0) + 1;
+    });
+  }
 
   let keyIncremented = false;
   targetPitches.forEach(p => {

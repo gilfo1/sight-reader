@@ -67,10 +67,30 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
     let note: string;
     if (isAdaptive) {
       const weights = currentPool.map(n => {
-        const noteWeight = (stats.troubleNotes[n] || 0) * 3;
+        // Base weight from general trouble notes
+        const noteErrorWeight = (stats.troubleNotes[n] || 0) * 3;
+        
+        // Specific error types weights
+        const octaveErrorWeight = (stats.wrongOctaveNotes[n] || 0) * 5;
+        const keySigErrorWeight = (stats.keySignatureMissedNotes[n] || 0) * 5;
+        
+        // Timing weight: factor in if the note is slower than average
+        let timingWeight = 0;
+        const times = stats.slowNoteTimes[n];
+        if (times && times.length > 0) {
+          const avgNoteTime = times.reduce((a, b) => a + b, 0) / times.length;
+          // If note is slower than overall average, increase weight
+          if (avgNoteTime > stats.averageCorrectNoteTime && stats.averageCorrectNoteTime > 0) {
+            // Scale weight based on how much slower it is, up to a max
+            const ratio = avgNoteTime / stats.averageCorrectNoteTime;
+            timingWeight = Math.min(ratio * 2, 10); 
+          }
+        }
+
         const octMatch = n.match(/\d+/);
         const octWeight = octMatch ? (stats.troubleOctaves[octMatch[0]] || 0) : 0;
-        return 1 + noteWeight + octWeight;
+        
+        return 1 + noteErrorWeight + octaveErrorWeight + keySigErrorWeight + timingWeight + octWeight;
       });
       note = weightedRandom(currentPool, weights);
     } else {
@@ -134,13 +154,31 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
   const availableKeys = actualKeys.length > 0 ? actualKeys : ['C'];
 
   const data: Measure[] = [];
+  let lastLineKey = '';
+  let lineKeyRepeatCount = 0;
+
   for (let l = 0; l < linesCount; l++) {
     let lineKey: string;
     if (isAdaptive && availableKeys.length > 1) {
-      const weights = availableKeys.map(k => 1 + (stats.troubleKeys[k] || 0) * 5);
+      const weights = availableKeys.map(k => {
+        let weight = 1 + (stats.troubleKeys[k] || 0) * 5;
+        // Penalize the last used key to encourage rotation if it has been used consecutively
+        if (k === lastLineKey) {
+          // The more it repeats, the more we heavily penalize its weight
+          weight /= (Math.pow(2, lineKeyRepeatCount));
+        }
+        return weight;
+      });
       lineKey = weightedRandom(availableKeys, weights);
     } else {
       lineKey = availableKeys[Math.floor(Math.random() * availableKeys.length)]!;
+    }
+
+    if (lineKey === lastLineKey) {
+      lineKeyRepeatCount++;
+    } else {
+      lastLineKey = lineKey;
+      lineKeyRepeatCount = 1;
     }
 
     for (let m = 0; m < measuresPerLine; m++) {
