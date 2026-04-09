@@ -7,10 +7,92 @@
   </head>
   <body class="app-shell">
     <main class="app-main">
+      <header class="app-toolbar">
+        <button
+          id="settings-menu-toggle"
+          type="button"
+          class="icon-button icon-button-menu"
+          aria-label="Open settings"
+          aria-controls="settings-modal"
+          aria-expanded="false"
+        >
+          <span class="menu-icon" aria-hidden="true">
+            <span class="menu-icon-line"></span>
+            <span class="menu-icon-line"></span>
+            <span class="menu-icon-line"></span>
+          </span>
+        </button>
+        <div class="toolbar-actions">
+          <button id="sound-toggle" type="button" class="icon-button" aria-label="Turn sound off" title="Turn sound off">
+            <span id="sound-toggle-icon" class="sound-icon" aria-hidden="true">
+              <span class="sound-icon-speaker"></span>
+              <span class="sound-icon-wave sound-icon-wave-inner"></span>
+              <span class="sound-icon-wave sound-icon-wave-outer"></span>
+              <span class="sound-icon-mute-slash"></span>
+            </span>
+          </button>
+        </div>
+      </header>
       <section class="panel-grid">
-        <details id="settings-details" open class="panel settings-panel">
-          <summary class="panel-summary">Settings</summary>
-          <div id="controls" class="panel-content controls-content">
+        <section class="side-panel-stack">
+          <details id="stats-details" class="panel panel-muted stats-panel">
+            <summary class="panel-summary">Stats</summary>
+            <div id="stats-content" class="panel-content stats-grid">
+              <div class="stat-row">
+                <span>Notes Played:</span> <span id="stats-played">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Correct:</span> <span id="stats-correct" class="stat-value-success">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Wrong:</span> <span id="stats-wrong" class="stat-value-danger">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Accuracy:</span> <span id="stats-accuracy">0%</span>
+              </div>
+              <div class="stat-row">
+                <span>Current Streak:</span> <span id="stats-streak" class="stat-value-success">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Best Streak:</span> <span id="stats-max-streak">0</span>
+              </div>
+              <hr class="panel-divider">
+              <div class="stat-row stat-row-subtle">
+                <span>Wrong Octave:</span> <span id="stats-wrong-octave">0</span>
+              </div>
+              <div class="stat-row stat-row-subtle">
+                <span>Key Sig Error:</span> <span id="stats-key-error">0</span>
+              </div>
+              <div class="stat-row stat-row-subtle">
+                <span>Avg Time:</span> <span id="stats-avg-time">0s</span>
+              </div>
+              <button id="reset-stats" class="action-button">Reset Stats</button>
+            </div>
+          </details>
+        </section>
+      </section>
+      <section class="output-shell">
+        <div id="output" class="score-output"></div>
+      </section>
+    </main>
+    <div id="settings-modal-backdrop" class="modal-backdrop" hidden></div>
+    <section
+      id="settings-modal"
+      class="settings-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="settings-modal-title"
+      hidden
+    >
+      <div class="settings-modal-panel panel settings-panel">
+        <div class="settings-modal-header">
+          <h2 id="settings-modal-title" class="settings-modal-title">Settings</h2>
+          <button id="settings-modal-close" type="button" class="icon-button settings-modal-close" aria-label="Close settings">
+            Close
+          </button>
+        </div>
+        <div id="controls" class="panel-content controls-content">
           <div class="control-grid">
             <div class="field-group">
               <label for="measures-per-line">Measures per Line:</label>
@@ -128,59 +210,8 @@
             </div>
           </details>
         </div>
-        </details>
-
-        <section class="side-panel-stack">
-          <div class="utility-row">
-            <button id="sound-toggle" type="button" class="icon-button" aria-label="Turn sound off" title="Turn sound off">
-              <span id="sound-toggle-icon" class="sound-icon" aria-hidden="true">
-                <span class="sound-icon-speaker"></span>
-                <span class="sound-icon-wave sound-icon-wave-inner"></span>
-                <span class="sound-icon-wave sound-icon-wave-outer"></span>
-                <span class="sound-icon-mute-slash"></span>
-              </span>
-            </button>
-          </div>
-          <details id="stats-details" class="panel panel-muted stats-panel">
-            <summary class="panel-summary">Stats</summary>
-            <div id="stats-content" class="panel-content stats-grid">
-              <div class="stat-row">
-                <span>Notes Played:</span> <span id="stats-played">0</span>
-              </div>
-              <div class="stat-row">
-                <span>Correct:</span> <span id="stats-correct" class="stat-value-success">0</span>
-              </div>
-              <div class="stat-row">
-                <span>Wrong:</span> <span id="stats-wrong" class="stat-value-danger">0</span>
-              </div>
-              <div class="stat-row">
-                <span>Accuracy:</span> <span id="stats-accuracy">0%</span>
-              </div>
-              <div class="stat-row">
-                <span>Current Streak:</span> <span id="stats-streak" class="stat-value-success">0</span>
-              </div>
-              <div class="stat-row">
-                <span>Best Streak:</span> <span id="stats-max-streak">0</span>
-              </div>
-              <hr class="panel-divider">
-              <div class="stat-row stat-row-subtle">
-                <span>Wrong Octave:</span> <span id="stats-wrong-octave">0</span>
-              </div>
-              <div class="stat-row stat-row-subtle">
-                <span>Key Sig Error:</span> <span id="stats-key-error">0</span>
-              </div>
-              <div class="stat-row stat-row-subtle">
-                <span>Avg Time:</span> <span id="stats-avg-time">0s</span>
-              </div>
-              <button id="reset-stats" class="action-button">Reset Stats</button>
-            </div>
-          </details>
-        </section>
-      </section>
-      <section class="output-shell">
-        <div id="output" class="score-output"></div>
-      </section>
-    </main>
+      </div>
+    </section>
     <div id="keyboard-dock" class="keyboard-dock">
       <details id="piano-keyboard-details" open class="keyboard-panel">
         <summary class="keyboard-summary" aria-label="Keyboard">

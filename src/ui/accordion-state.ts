@@ -1,7 +1,7 @@
 import { loadFromStorage, saveToStorage } from '@/utils/storage';
 
 const ACCORDION_STORAGE_KEY = 'accordion-state';
-const DEFAULT_OPEN_ACCORDIONS = new Set(['settings-details', 'piano-keyboard-details']);
+const DEFAULT_OPEN_ACCORDIONS = new Set(['piano-keyboard-details']);
 
 export function saveAccordionState(): void {
   const accordionState: Record<string, boolean> = {};

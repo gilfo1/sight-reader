@@ -21,6 +21,7 @@ import {
 } from './engine/state';
 import { updateNoteSelectors } from './ui/controls';
 import { initPianoKeyboard } from './ui/piano-keyboard';
+import { initSettingsModal } from './ui/settings-modal';
 import { initSoundToggle } from './ui/sound-toggle';
 
 function checkMatch(): void {
@@ -51,6 +52,7 @@ export {
   checkMatch,
   initKeySignatures, 
   initPianoKeyboard,
+  initSettingsModal,
   initSoundToggle,
   updateNoteSelectors,
   getUIConfig,

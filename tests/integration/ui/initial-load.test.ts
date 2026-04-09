@@ -14,13 +14,16 @@ describe('Initial DOM Structure', () => {
     const body = doc.body;
     expect(body.classList.contains('app-shell')).toBe(true);
     expect(doc.querySelector('.app-main')).not.toBeNull();
+    expect(doc.querySelector('.app-toolbar')).not.toBeNull();
     expect(doc.querySelector('.panel-grid')).not.toBeNull();
   });
 
-  it('should have a Settings accordion', () => {
-    const details = doc.querySelector('details')!;
-    const summary = details.querySelector('summary')!;
-    expect(summary.textContent).toBe('Settings');
+  it('should have a settings menu button and modal', () => {
+    const menuButton = doc.getElementById('settings-menu-toggle');
+    const modal = doc.getElementById('settings-modal');
+    expect(menuButton).not.toBeNull();
+    expect(modal).not.toBeNull();
+    expect(menuButton?.getAttribute('aria-controls')).toBe('settings-modal');
     expect(doc.getElementById('controls')).not.toBeNull();
   });
 
@@ -44,6 +47,8 @@ describe('Initial DOM Structure', () => {
     expect(doc.getElementById('midi-status')).not.toBeNull();
     expect(doc.getElementById('sound-toggle')).not.toBeNull();
     expect(doc.getElementById('sound-toggle-icon')).not.toBeNull();
+    expect(doc.getElementById('settings-modal-close')).not.toBeNull();
+    expect(doc.getElementById('settings-modal-backdrop')).not.toBeNull();
     expect(doc.getElementById('midi-device-name')).not.toBeNull();
     expect(doc.getElementById('midi-indicator')).not.toBeNull();
     expect(doc.getElementById('midi-notes-details')).not.toBeNull();

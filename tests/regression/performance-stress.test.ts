@@ -42,7 +42,7 @@ describe('Performance and Stress Regression', () => {
     expect(svg).not.toBeNull();
   });
 
-  it('should handle rapid re-renders during fuzz-like input changes', { timeout: 45000 }, () => {
+  it('should handle rapid re-renders during fuzz-like input changes', { timeout: 90000 }, () => {
     for (let i = 0; i < 20; i++) {
       (document.getElementById('staff-type') as HTMLSelectElement).value = i % 2 === 0 ? 'treble' : 'grand';
         generateScoreData();

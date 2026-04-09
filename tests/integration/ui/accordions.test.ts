@@ -10,11 +10,12 @@ describe('Accordions UI', () => {
     document.body.innerHTML = html;
   });
 
-  it('should have a settings accordion', () => {
-    const settings = document.getElementById('settings-details');
-    expect(settings).not.toBeNull();
-    expect(settings?.tagName.toLowerCase()).toBe('details');
-    expect(settings?.querySelector('summary')?.textContent).toBe('Settings');
+  it('should have a hamburger settings trigger and modal container', () => {
+    const trigger = document.getElementById('settings-menu-toggle');
+    const modal = document.getElementById('settings-modal');
+    expect(trigger).not.toBeNull();
+    expect(modal).not.toBeNull();
+    expect(trigger?.getAttribute('aria-controls')).toBe('settings-modal');
   });
 
   it('should have a stats accordion', () => {
@@ -34,22 +35,19 @@ describe('Accordions UI', () => {
   });
 
   it('should use shared summary classes so accordion chevrons render consistently', () => {
-    expect(document.querySelector('#settings-details > .panel-summary')).not.toBeNull();
     expect(document.querySelector('#stats-details > .panel-summary')).not.toBeNull();
     expect(document.querySelector('#piano-keyboard-details > .keyboard-summary')).not.toBeNull();
     expect(document.querySelector('#midi-notes-details > .subpanel-summary')).not.toBeNull();
   });
 
-  it('settings and piano accordions should be open by default, stats collapsed', () => {
-    const settings = document.getElementById('settings-details') as HTMLDetailsElement;
+  it('stats is collapsed by default and piano accordion is open', () => {
     const stats = document.getElementById('stats-details') as HTMLDetailsElement;
     const keyboard = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
-    expect(settings.open).toBe(true);
     expect(stats.open).toBe(false);
     expect(keyboard.open).toBe(true);
   });
 
-  it('settings accordion should contain control elements', () => {
+  it('settings modal should contain control elements', () => {
     const controls = document.getElementById('controls');
     expect(controls).not.toBeNull();
     expect(document.getElementById('measures-per-line')).not.toBeNull();
@@ -71,23 +69,13 @@ describe('Accordions UI', () => {
     expect(stats?.classList.contains('panel-muted')).toBe(true);
   });
 
-  it('should place the top accordions inside the responsive panel grid', () => {
+  it('should place the stats panel inside the responsive panel grid', () => {
     const container = document.querySelector('.panel-grid');
     expect(container).not.toBeNull();
-    expect(container?.contains(document.getElementById('settings-details'))).toBe(true);
     expect(container?.contains(document.getElementById('stats-details'))).toBe(true);
   });
 
-  describe('Settings Accordion Functionality', () => {
-    it('should allow toggling settings accordion', () => {
-      const settings = document.getElementById('settings-details') as HTMLDetailsElement;
-      expect(settings.open).toBe(true);
-      settings.open = false;
-      expect(settings.open).toBe(false);
-      settings.open = true;
-      expect(settings.open).toBe(true);
-    });
-
+  describe('Settings Modal Content', () => {
     it('should have all expected select elements in settings', () => {
       const ids = [
         'measures-per-line', 'lines', 'staff-type', 'notes-per-step', 'min-note', 'max-note'

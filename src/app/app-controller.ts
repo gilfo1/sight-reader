@@ -25,6 +25,7 @@ import {
 } from '@/ui/controls';
 import { initStatsUI, updateStatsUI } from '@/ui/stats';
 import { initPianoKeyboard, releaseAllKeyboardNotes, updatePianoKeyboardActiveNotes } from '@/ui/piano-keyboard';
+import { closeSettingsModal, initSettingsModal } from '@/ui/settings-modal';
 import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
 import { suppressedNotes } from '@/engine/session-state';
@@ -75,6 +76,7 @@ function handleStateChange(shouldRegenerate = false): void {
 
 export function resetAllToDefaults(): void {
   clearStorage();
+  closeSettingsModal();
   resetSoundToggle();
   resetStats();
   applyUIConfig(DEFAULT_CONFIG);
@@ -94,6 +96,7 @@ export async function initApp(): Promise<void> {
   updateNoteSelectors();
   initKeySignatures(() => handleStateChange(true));
   initStatsUI();
+  initSettingsModal();
   initSoundToggle();
 
   const savedConfig = loadFromStorage<Partial<GeneratorConfig>>('generator-config');

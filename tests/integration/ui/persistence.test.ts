@@ -49,7 +49,6 @@ describe('UI Persistence Integration', () => {
 
   it('should load accordion state from localStorage on init', async () => {
     const accordionState = {
-      'settings-details': false,
       'stats-details': true,
       'piano-keyboard-details': false,
     };
@@ -57,11 +56,9 @@ describe('UI Persistence Integration', () => {
     
     await initApp();
     
-    const settingsDetails = document.getElementById('settings-details') as HTMLDetailsElement;
     const statsDetails = document.getElementById('stats-details') as HTMLDetailsElement;
     const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     
-    expect(settingsDetails.open).toBe(false);
     expect(statsDetails.open).toBe(true);
     expect(keyboardDetails.open).toBe(false);
   });
@@ -150,24 +147,12 @@ describe('UI Persistence Integration', () => {
 
   it('should save accordion state when toggled', async () => {
     await initApp();
-    
-    const settingsDetails = document.getElementById('settings-details') as HTMLDetailsElement;
-    settingsDetails.open = true;
-    settingsDetails.dispatchEvent(new Event('toggle'));
-    
-    const saved = loadFromStorage<any>('accordion-state');
-    expect(saved['settings-details']).toBe(true);
-    
-    settingsDetails.open = false;
-    settingsDetails.dispatchEvent(new Event('toggle'));
-    const saved2 = loadFromStorage<any>('accordion-state');
-    expect(saved2['settings-details']).toBe(false);
 
     const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     keyboardDetails.open = false;
     keyboardDetails.dispatchEvent(new Event('toggle'));
-    const saved3 = loadFromStorage<any>('accordion-state');
-    expect(saved3['piano-keyboard-details']).toBe(false);
+    const saved = loadFromStorage<any>('accordion-state');
+    expect(saved['piano-keyboard-details']).toBe(false);
   });
 
   it('should persist the keyboard size mode when the size toggle is used', async () => {
@@ -207,10 +192,6 @@ describe('UI Persistence Integration', () => {
     measuresSelect.value = '8';
     measuresSelect.dispatchEvent(new Event('change'));
     
-    const settingsDetails = document.getElementById('settings-details') as HTMLDetailsElement;
-    settingsDetails.open = false;
-    settingsDetails.dispatchEvent(new Event('toggle'));
-
     const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     keyboardDetails.open = false;
     keyboardDetails.dispatchEvent(new Event('toggle'));
@@ -221,7 +202,6 @@ describe('UI Persistence Integration', () => {
     
     // Check if it reset in UI
     expect(measuresSelect.value).toBe('4'); // Default
-    expect(settingsDetails.open).toBe(true);
     expect(keyboardDetails.open).toBe(true);
     
     // Check if storage is cleared

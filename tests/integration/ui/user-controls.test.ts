@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { 
   updateNoteSelectors, 
   initKeySignatures, 
+  initSettingsModal,
   resetGameState,
   initMidiHandler
 } from '@/main';
@@ -78,10 +79,18 @@ describe('User Interactions and Dynamic Controls', () => {
     expect(name.textContent).toBe('Test Keyboard');
   });
 
-  it('should toggle accordion states', () => {
-    const settings = document.querySelector('details') as HTMLDetailsElement;
-    expect(settings.open).toBe(true);
-    settings.open = false;
-    expect(settings.open).toBe(false);
+  it('should toggle the settings modal and remaining accordions', () => {
+    initSettingsModal();
+    const menuButton = document.getElementById('settings-menu-toggle') as HTMLButtonElement;
+    const modal = document.getElementById('settings-modal') as HTMLElement;
+    const stats = document.getElementById('stats-details') as HTMLDetailsElement;
+
+    expect(modal.hidden).toBe(true);
+    menuButton.click();
+    expect(modal.hidden).toBe(false);
+
+    expect(stats.open).toBe(false);
+    stats.open = true;
+    expect(stats.open).toBe(true);
   });
 });

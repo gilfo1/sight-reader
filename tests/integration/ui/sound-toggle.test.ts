@@ -23,11 +23,11 @@ describe('Sound Toggle UI', () => {
   it('renders a speaker control in the top-right utility row', async () => {
     await initApp();
 
-    const utilityRow = document.querySelector('.utility-row');
+    const toolbar = document.querySelector('.app-toolbar');
     const soundToggle = document.getElementById('sound-toggle') as HTMLButtonElement;
     const soundIcon = document.getElementById('sound-toggle-icon') as HTMLSpanElement;
 
-    expect(utilityRow).not.toBeNull();
+    expect(toolbar).not.toBeNull();
     expect(soundToggle.dataset.enabled).toBe('true');
     expect(soundToggle.getAttribute('aria-label')).toBe('Turn sound off');
     expect(soundIcon.classList.contains('sound-icon')).toBe(true);

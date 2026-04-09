@@ -30,7 +30,7 @@ describe('Responsive Layout System', () => {
 
   it('uses a grid layout that can collapse from two columns to one', () => {
     expect(css).toContain('.panel-grid');
-    expect(css).toContain('grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.75fr);');
+    expect(css).toContain('grid-template-columns: minmax(280px, 360px);');
     expect(css).toContain('.panel-grid {\n    grid-template-columns: 1fr;');
   });
 
@@ -95,15 +95,29 @@ describe('Responsive Layout System', () => {
   });
 
   it('positions a utility-row sound toggle above the stats panel', () => {
+    expect(doc.querySelector('.app-toolbar')).not.toBeNull();
+    expect(doc.querySelector('.toolbar-actions')).not.toBeNull();
     expect(doc.querySelector('.side-panel-stack')).not.toBeNull();
-    expect(doc.querySelector('.utility-row')).not.toBeNull();
+    expect(doc.getElementById('settings-menu-toggle')).not.toBeNull();
     expect(doc.getElementById('sound-toggle')).not.toBeNull();
     expect(doc.querySelector('.sound-icon')).not.toBeNull();
-    expect(css).toContain('.utility-row');
-    expect(css).toContain('justify-content: flex-end;');
+    expect(css).toContain('.app-toolbar');
+    expect(css).toContain('.toolbar-actions');
+    expect(css).toContain('.menu-icon');
     expect(css).toContain('.icon-button');
     expect(css).toContain('.sound-icon-speaker');
     expect(css).toContain('.sound-icon-wave');
     expect(css).toContain('.sound-icon-mute-slash');
+  });
+
+  it('defines a responsive settings modal and backdrop', () => {
+    expect(doc.getElementById('settings-modal')).not.toBeNull();
+    expect(doc.getElementById('settings-modal-backdrop')).not.toBeNull();
+    expect(css).toContain('.settings-modal');
+    expect(css).toContain('.modal-backdrop');
+    expect(css).toContain('.settings-modal-panel');
+    expect(css).toContain('body.modal-open');
+    expect(css).toContain('position: fixed;');
+    expect(css).toContain('inset: 0;');
   });
 });
