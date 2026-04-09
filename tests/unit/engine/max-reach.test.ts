@@ -13,7 +13,7 @@ describe('Max Hand Reach Logic', () => {
       const v2 = getNoteValue(pitches[1]);
       const reach = Math.abs(v1 - v2);
       
-      expect(reach).toBeLessThanOrEqual(5);
+      expect(reach).toBeLessThan(5);
     }
   });
 
@@ -27,7 +27,7 @@ describe('Max Hand Reach Logic', () => {
       const maxVal = Math.max(...vals);
       const reach = maxVal - minVal;
       
-      expect(reach).toBeLessThanOrEqual(12);
+      expect(reach).toBeLessThan(12);
     }
   });
 
@@ -41,7 +41,7 @@ describe('Max Hand Reach Logic', () => {
       const maxVal = Math.max(...vals);
       const reach = maxVal - minVal;
       
-      expect(reach).toBeLessThanOrEqual(19);
+      expect(reach).toBeLessThan(19);
     }
   });
 
@@ -55,9 +55,9 @@ describe('Max Hand Reach Logic', () => {
     const maxVal = Math.max(...vals);
     const reach = maxVal - minVal;
     
-    expect(reach).toBeLessThanOrEqual(5);
-    // There are only 4 notes within 5 semitones of C4 in C Major scale: C4, D4, E4, F4.
-    expect(pitches.length).toBeLessThanOrEqual(4);
+    expect(reach).toBeLessThan(5);
+    // There are only 3 notes within 4 semitones of C4 in C Major scale: C4, D4, E4. (F4 is 5 semitones away)
+    expect(pitches.length).toBeLessThanOrEqual(3);
   });
 
   it('should respect maxReach even with adaptive learning enabled', async () => {
@@ -70,7 +70,7 @@ describe('Max Hand Reach Logic', () => {
       
       const vals = pitches.map(getNoteValue);
       const reach = Math.abs(vals[0] - vals[1]);
-      expect(reach).toBeLessThanOrEqual(5);
+      expect(reach).toBeLessThan(5);
       // Even though C6 has high weight, it shouldn't be picked if it's too far from the first note
     }
     
@@ -87,7 +87,7 @@ describe('Max Hand Reach Logic', () => {
       const v2 = getNoteValue(pitches[1]);
       const reach = Math.abs(v1 - v2);
       
-      expect(reach).toBeLessThanOrEqual(5);
+      expect(reach).toBeLessThan(5);
     }
   });
 
@@ -102,7 +102,7 @@ describe('Max Hand Reach Logic', () => {
       const maxVal = Math.max(...vals);
       const reach = maxVal - minVal;
       
-      expect(reach).toBeLessThanOrEqual(7);
+      expect(reach).toBeLessThan(7);
     }
   });
 });

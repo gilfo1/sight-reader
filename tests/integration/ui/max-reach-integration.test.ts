@@ -31,7 +31,7 @@ describe('Max Hand Reach UI Integration', () => {
     initApp();
     
     const maxReachSelect = document.getElementById('max-reach') as HTMLSelectElement;
-    expect(maxReachSelect.value).toBe('12'); // Default
+    expect(maxReachSelect.value).toBe('13'); // Default is now 13 (Octave / 12 half steps)
     
     // Change to -5 (7 semitones)
     maxReachSelect.value = '7';

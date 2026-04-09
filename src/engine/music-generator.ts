@@ -23,7 +23,7 @@ export function generateRhythmicPattern(selectedDurations: string[]): string[] {
   return pattern;
 }
 
-export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, keySignature: string, isChromatic: boolean, isAdaptive: boolean = false, maxReach: number = 12): string[] {
+export function getRandomPitches(clef: string, count: number, minNote: string, maxNote: string, keySignature: string, isChromatic: boolean, isAdaptive: boolean = false, maxReach: number = 12, existingPitches: string[] = []): string[] {
   const minVal: number = getNoteValue(minNote);
   const maxVal: number = getNoteValue(maxNote);
   const midC: number = getNoteValue('C4');
@@ -46,19 +46,20 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
 
   const tempPool = [...pool];
   const selected: string[] = [];
+  const allConsidered = [...existingPitches];
 
   for (let i = 0; i < Math.min(count, pool.length); i++) {
     let currentPool = tempPool;
-    if (selected.length > 0) {
-      const minS = Math.min(...selected.map(getNoteValue));
-      const maxS = Math.max(...selected.map(getNoteValue));
+    if (allConsidered.length > 0) {
+      const minS = Math.min(...allConsidered.map(getNoteValue));
+      const maxS = Math.max(...allConsidered.map(getNoteValue));
       const reachLimit = maxReach;
       
       currentPool = tempPool.filter(n => {
         const v = getNoteValue(n);
         const newMin = Math.min(minS, v);
         const newMax = Math.max(maxS, v);
-        return (newMax - newMin) <= reachLimit;
+        return (newMax - newMin) < reachLimit; // Changed to < as requested (e.g. 5 half steps means max distance 4)
       });
     }
 
@@ -96,10 +97,12 @@ export function getRandomPitches(clef: string, count: number, minNote: string, m
     } else {
       note = currentPool[Math.floor(Math.random() * currentPool.length)]!;
     }
+    const noteWithAccidental = getEnharmonic(note, keySignature, isChromatic);
     const tempIdx = tempPool.indexOf(note);
     if (tempIdx > -1) tempPool.splice(tempIdx, 1);
-    
-    selected.push(getEnharmonic(note, keySignature, isChromatic));
+
+    selected.push(noteWithAccidental);
+    allConsidered.push(noteWithAccidental);
   }
   
   return selected.sort((a, b) => getNoteValue(a) - getNoteValue(b));
@@ -157,6 +160,9 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
   let lastLineKey = '';
   let lineKeyRepeatCount = 0;
 
+  let lastTrebleNotes: string[] = [];
+  let lastBassNotes: string[] = [];
+
   for (let l = 0; l < linesCount; l++) {
     let lineKey: string;
     if (isAdaptive && availableKeys.length > 1) {
@@ -187,34 +193,52 @@ export function generateScoreData(config: GeneratorConfig): Measure[] {
       const { trebleCounts, bassCounts } = computeMeasureCounts(staffType, notesPerStep, globalMeasureIdx, pattern);
       const trebleStepsInMeasure: string[][] = [];
       const bassStepsInMeasure: string[][] = [];
+      const allTrebleNotesInMeasure: string[] = [...lastTrebleNotes];
+      const allBassNotesInMeasure: string[] = [...lastBassNotes];
 
       for (let b = 0; b < pattern.length; b++) {
         let trebleCount = trebleCounts[b] || 0;
         let bassCount = bassCounts[b] || 0;
 
         if (staffType === 'grand' && notesPerStep === 1) {
-          const trebleNotes = getRandomPitches('treble', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach);
-          const bassNotes = getRandomPitches('bass', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach);
+          const trebleNotes = getRandomPitches('treble', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach, allTrebleNotesInMeasure);
+          const bassNotes = getRandomPitches('bass', 1, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach, allBassNotesInMeasure);
 
           if (trebleCount > 0 && trebleNotes.length === 0 && bassNotes.length > 0) {
             // Treble turn but no treble notes, and bass notes are available. Switch to bass.
             trebleStepsInMeasure.push([]);
             bassStepsInMeasure.push(bassNotes);
+            allBassNotesInMeasure.push(...bassNotes);
           } else if (bassCount > 0 && bassNotes.length === 0 && trebleNotes.length > 0) {
-            // Bass turn but no bass notes, and treble notes are available. Switch to treble.
+            // Bass turn but no treble notes, and treble notes are available. Switch to treble.
             trebleStepsInMeasure.push(trebleNotes);
+            allTrebleNotesInMeasure.push(...trebleNotes);
             bassStepsInMeasure.push([]);
           } else {
             // Normal case or both empty or both available but we stick to original turn
-            trebleStepsInMeasure.push(trebleCount > 0 ? trebleNotes : []);
-            bassStepsInMeasure.push(bassCount > 0 ? bassNotes : []);
+            const finalTrebleNotes = trebleCount > 0 ? trebleNotes : [];
+            const finalBassNotes = bassCount > 0 ? bassNotes : [];
+            trebleStepsInMeasure.push(finalTrebleNotes);
+            bassStepsInMeasure.push(finalBassNotes);
+            allTrebleNotesInMeasure.push(...finalTrebleNotes);
+            allBassNotesInMeasure.push(...finalBassNotes);
           }
         } else {
-          trebleStepsInMeasure.push(trebleCount > 0 ? getRandomPitches('treble', trebleCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
-          bassStepsInMeasure.push(bassCount > 0 ? getRandomPitches('bass', bassCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach) : []);
+          const finalTrebleNotes = trebleCount > 0 ? getRandomPitches('treble', trebleCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach, allTrebleNotesInMeasure) : [];
+          const finalBassNotes = bassCount > 0 ? getRandomPitches('bass', bassCount, minNote, maxNote, lineKey, isChromatic, isAdaptive, maxReach, allBassNotesInMeasure) : [];
+          trebleStepsInMeasure.push(finalTrebleNotes);
+          bassStepsInMeasure.push(finalBassNotes);
+          allTrebleNotesInMeasure.push(...finalTrebleNotes);
+          allBassNotesInMeasure.push(...finalBassNotes);
         }
       }
       data.push({ trebleSteps: trebleStepsInMeasure, bassSteps: bassStepsInMeasure, pattern, staffType, keySignature: lineKey });
+
+      const currentTrebleLast = trebleStepsInMeasure.filter(s => s.length > 0).pop();
+      lastTrebleNotes = currentTrebleLast ? [...currentTrebleLast] : [];
+
+      const currentBassLast = bassStepsInMeasure.filter(s => s.length > 0).pop();
+      lastBassNotes = currentBassLast ? [...currentBassLast] : [];
     }
   }
   return data;
