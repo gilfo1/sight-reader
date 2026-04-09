@@ -50,7 +50,8 @@ describe('UI Persistence Integration', () => {
   it('should load accordion state from localStorage on init', async () => {
     const accordionState = {
       'settings-details': false,
-      'stats-details': true
+      'stats-details': true,
+      'piano-keyboard-details': false,
     };
     saveToStorage('accordion-state', accordionState);
     
@@ -58,9 +59,11 @@ describe('UI Persistence Integration', () => {
     
     const settingsDetails = document.getElementById('settings-details') as HTMLDetailsElement;
     const statsDetails = document.getElementById('stats-details') as HTMLDetailsElement;
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     
     expect(settingsDetails.open).toBe(false);
     expect(statsDetails.open).toBe(true);
+    expect(keyboardDetails.open).toBe(false);
   });
 
   it('should save settings when UI changes', async () => {
@@ -159,6 +162,12 @@ describe('UI Persistence Integration', () => {
     settingsDetails.dispatchEvent(new Event('toggle'));
     const saved2 = loadFromStorage<any>('accordion-state');
     expect(saved2['settings-details']).toBe(false);
+
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = false;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
+    const saved3 = loadFromStorage<any>('accordion-state');
+    expect(saved3['piano-keyboard-details']).toBe(false);
   });
 
   it('should reset all to defaults when Reset button is clicked', async () => {
@@ -172,6 +181,10 @@ describe('UI Persistence Integration', () => {
     const settingsDetails = document.getElementById('settings-details') as HTMLDetailsElement;
     settingsDetails.open = false;
     settingsDetails.dispatchEvent(new Event('toggle'));
+
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = false;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
     
     // Click reset
     const resetBtn = document.getElementById('reset-all-settings') as HTMLButtonElement;
@@ -179,7 +192,8 @@ describe('UI Persistence Integration', () => {
     
     // Check if it reset in UI
     expect(measuresSelect.value).toBe('4'); // Default
-    expect(settingsDetails.open).toBe(true); // Default (it's open by default in HTML usually, or let's check index.html)
+    expect(settingsDetails.open).toBe(true);
+    expect(keyboardDetails.open).toBe(true);
     
     // Check if storage is cleared
     expect(loadFromStorage('generator-config')).toEqual(expect.objectContaining({measuresPerLine: 4}));

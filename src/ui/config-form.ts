@@ -1,5 +1,6 @@
 import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '@/constants/music';
 import type { GeneratorConfig } from '@/engine/types';
+import { getKeyboardRange, isPianoKeyboardOpen } from '@/ui/piano-keyboard';
 import { getNoteValue } from '@/utils/theory';
 import { saveToStorage } from '@/utils/storage';
 import { saveAccordionState } from '@/ui/accordion-state';
@@ -135,6 +136,19 @@ export function getUIConfig(): GeneratorConfig {
   };
 }
 
+export function getEffectiveUIConfig(): GeneratorConfig {
+  const config = getUIConfig();
+
+  if (!isPianoKeyboardOpen()) {
+    return config;
+  }
+
+  return {
+    ...config,
+    ...getKeyboardRange(),
+  };
+}
+
 export function saveUIConfig(): void {
   saveToStorage(GENERATOR_CONFIG_STORAGE_KEY, getUIConfig());
 }
@@ -219,6 +233,11 @@ export function setupEventListeners(onConfigChange: () => void): void {
   });
 
   document.querySelectorAll('details').forEach((accordion) => {
-    accordion.addEventListener('toggle', saveAccordionState);
+    accordion.addEventListener('toggle', () => {
+      saveAccordionState();
+      if (accordion.id === 'piano-keyboard-details') {
+        onConfigChange();
+      }
+    });
   });
 }

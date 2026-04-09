@@ -14,6 +14,7 @@ import { clearRenderCache, renderScore as drawScore } from '@/rendering/score-re
 import {
   DEFAULT_CONFIG,
   applyUIConfig,
+  getEffectiveUIConfig,
   getUIConfig,
   initKeySignatures,
   loadAccordionState,
@@ -23,14 +24,16 @@ import {
   updateNoteSelectors,
 } from '@/ui/controls';
 import { initStatsUI, updateStatsUI } from '@/ui/stats';
+import { initPianoKeyboard, releaseAllKeyboardNotes } from '@/ui/piano-keyboard';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
 import { suppressedNotes } from '@/engine/session-state';
 
 function getGeneratorConfig(config?: Partial<GeneratorConfig>): GeneratorConfig {
-  return { ...getUIConfig(), ...config };
+  return { ...getEffectiveUIConfig(), ...config };
 }
 
 function resetGameState(): void {
+  releaseAllKeyboardNotes();
   resetSessionState();
   clearRenderCache();
 }
@@ -56,7 +59,7 @@ function renderCurrentScore(outputDiv: HTMLElement | null = null, config?: Parti
 
 function regenerateScore(): void {
   resetGameState();
-  setMusicData(generateScoreData(getUIConfig()));
+  setMusicData(generateScoreData(getEffectiveUIConfig()));
 }
 
 function handleStateChange(shouldRegenerate = false): void {
@@ -99,6 +102,7 @@ export async function initApp(): Promise<void> {
   renderCurrentScore();
 
   initMidiHandler(handleStateChange);
+  initPianoKeyboard();
   setupEventListeners(() => handleStateChange(true));
 
   const resetButton = document.getElementById('reset-all-settings');

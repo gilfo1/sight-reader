@@ -24,11 +24,20 @@ describe('Accordions UI', () => {
     expect(stats?.querySelector('summary')?.textContent).toBe('Stats');
   });
 
-  it('settings accordion should be open by default, stats collapsed', () => {
+  it('should have a bottom piano keyboard accordion', () => {
+    const keyboard = document.getElementById('piano-keyboard-details');
+    expect(keyboard).not.toBeNull();
+    expect(keyboard?.tagName.toLowerCase()).toBe('details');
+    expect(keyboard?.querySelector('summary')?.textContent).toBe('On-Screen Piano');
+  });
+
+  it('settings and piano accordions should be open by default, stats collapsed', () => {
     const settings = document.getElementById('settings-details') as HTMLDetailsElement;
     const stats = document.getElementById('stats-details') as HTMLDetailsElement;
+    const keyboard = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     expect(settings.open).toBe(true);
     expect(stats.open).toBe(false);
+    expect(keyboard.open).toBe(true);
   });
 
   it('settings accordion should contain control elements', () => {

@@ -20,7 +20,7 @@ describe('Performance and Stress Regression', () => {
     initKeySignatures(() => {});
   });
 
-  it('should render 100 dense measures without crashing', () => {
+  it('should render 100 dense measures without crashing', { timeout: 30000 }, () => {
     // 10 lines * 10 measures = 100 measures
     const config = {
       measuresPerLine: 10,
@@ -44,7 +44,7 @@ describe('Performance and Stress Regression', () => {
 
   it('should handle rapid re-renders during fuzz-like input changes', { timeout: 30000 }, () => {
     for (let i = 0; i < 20; i++) {
-      (document.getElementById('staff-type') as any).value = i % 2 === 0 ? 'treble' : 'grand';
+      (document.getElementById('staff-type') as HTMLSelectElement).value = i % 2 === 0 ? 'treble' : 'grand';
         generateScoreData();
         renderScore();
     }

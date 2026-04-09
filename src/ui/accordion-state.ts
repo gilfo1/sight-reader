@@ -1,6 +1,7 @@
 import { loadFromStorage, saveToStorage } from '@/utils/storage';
 
 const ACCORDION_STORAGE_KEY = 'accordion-state';
+const DEFAULT_OPEN_ACCORDIONS = new Set(['settings-details', 'piano-keyboard-details']);
 
 export function saveAccordionState(): void {
   const accordionState: Record<string, boolean> = {};
@@ -32,7 +33,7 @@ export function loadAccordionState(): void {
 
 export function resetAccordionState(): void {
   document.querySelectorAll('details').forEach((accordion) => {
-    accordion.open = accordion.id === 'settings-details';
+    accordion.open = DEFAULT_OPEN_ACCORDIONS.has(accordion.id);
   });
 
   saveAccordionState();

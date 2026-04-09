@@ -46,5 +46,7 @@ describe('Initial DOM Structure', () => {
     expect(doc.getElementById('midi-indicator')).not.toBeNull();
     expect(doc.getElementById('midi-notes-details')).not.toBeNull();
     expect(doc.getElementById('current-note')).not.toBeNull();
+    expect(doc.getElementById('piano-keyboard-details')).not.toBeNull();
+    expect(doc.getElementById('piano-keyboard')).not.toBeNull();
   });
 });

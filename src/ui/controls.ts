@@ -6,6 +6,7 @@ export {
 export {
   applyUIConfig,
   DEFAULT_CONFIG,
+  getEffectiveUIConfig,
   getUIConfig,
   initKeySignatures,
   saveUIConfig,

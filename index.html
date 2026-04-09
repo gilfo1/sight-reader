@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>sight-reader</title>
   </head>
-  <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px;">
+  <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px; padding-bottom: 260px; margin: 0;">
     <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center;">
       <div style="display: flex; gap: 10px; justify-content: center; align-items: flex-start; flex-wrap: wrap; width: 100%; margin-bottom: 20px;">
         <details id="settings-details" open style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content;">
@@ -168,6 +168,14 @@
       </div>
     </div>
     <div id="output" style="width: 100%; display: flex; justify-content: center;"></div>
+    <div id="keyboard-dock" style="position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; z-index: 20; pointer-events: none;">
+      <details id="piano-keyboard-details" open style="pointer-events: auto; width: min(100%, 960px); margin: 0 16px 12px; border: 1px solid #c7b9a3; border-radius: 18px; background: linear-gradient(180deg, #f8f1e2 0%, #ecdfc9 100%); box-shadow: 0 -14px 32px rgba(51, 35, 15, 0.2); overflow: hidden;">
+        <summary style="cursor: pointer; font-weight: bold; color: #4d3926; text-align: center; padding: 10px 16px; list-style: none;">On-Screen Piano</summary>
+        <div style="display: flex; justify-content: center; padding: 14px 18px 18px;">
+          <div id="piano-keyboard" style="width: 100%; overflow-x: auto; overflow-y: hidden; display: flex; justify-content: center;"></div>
+        </div>
+      </details>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

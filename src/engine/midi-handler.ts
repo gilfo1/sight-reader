@@ -15,6 +15,7 @@ import {
 import { getNoteValue } from '@/utils/theory';
 
 type MidiStateChangeHandler = (shouldRegenerate?: boolean) => void;
+type NoteIdentifierEvent = Pick<NoteMessageEvent, 'note'>;
 
 export interface MIDIInitFunction {
   (onStateChange?: MidiStateChangeHandler): void;
@@ -22,6 +23,8 @@ export interface MIDIInitFunction {
   updateStatus?: () => void;
   onNoteOn?: (e: NoteMessageEvent) => void;
   onNoteOff?: (e: NoteMessageEvent) => void;
+  triggerNoteOn?: (identifier: string) => void;
+  triggerNoteOff?: (identifier: string) => void;
 }
 
 export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiStateChangeHandler): void {
@@ -74,7 +77,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
     }
   };
 
-  const onNoteOn = (e: NoteMessageEvent): void => {
+  const onNoteOn = (e: NoteIdentifierEvent): void => {
     activeMidiNotes.add(e.note.identifier);
     
     if (currentStepIndex !== lastProcessedStep) {
@@ -101,7 +104,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
     notifyStateChange();
   };
 
-  const onNoteOff = (e: NoteMessageEvent): void => {
+  const onNoteOff = (e: NoteIdentifierEvent): void => {
     activeMidiNotes.delete(e.note.identifier);
     suppressedNotes.delete(e.note.identifier);
     noteDisplayEl.textContent = activeMidiNotes.size === 0 ? '-' : Array.from(activeMidiNotes).join(', ');
@@ -111,8 +114,14 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
 
   initMidiHandler.checkMatch = checkMatch;
   initMidiHandler.updateStatus = updateStatus;
-  initMidiHandler.onNoteOn = onNoteOn;
-  initMidiHandler.onNoteOff = onNoteOff;
+  initMidiHandler.onNoteOn = onNoteOn as MIDIInitFunction['onNoteOn'];
+  initMidiHandler.onNoteOff = onNoteOff as MIDIInitFunction['onNoteOff'];
+  initMidiHandler.triggerNoteOn = (identifier: string): void => {
+    onNoteOn({ note: { identifier } } as NoteIdentifierEvent);
+  };
+  initMidiHandler.triggerNoteOff = (identifier: string): void => {
+    onNoteOff({ note: { identifier } } as NoteIdentifierEvent);
+  };
 
   const addInputListeners = (input: Input): void => {
     input.removeListener('noteon');

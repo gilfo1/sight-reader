@@ -19,6 +19,7 @@ import {
   suppressedNotes,
 } from './engine/state';
 import { updateNoteSelectors } from './ui/controls';
+import { initPianoKeyboard } from './ui/piano-keyboard';
 
 function checkMatch(): void {
   initMidiHandler.checkMatch?.();
@@ -47,6 +48,7 @@ export {
   initMidiHandler, 
   checkMatch,
   initKeySignatures, 
+  initPianoKeyboard,
   updateNoteSelectors,
   getUIConfig,
   generateScoreData,
