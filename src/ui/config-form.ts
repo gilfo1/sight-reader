@@ -80,6 +80,7 @@ export function initKeySignatures(onChange: (event: Event) => void): void {
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
 
+    label.className = keySignature === 'Chromatic' ? 'option-toggle' : 'option-chip';
     checkbox.type = 'checkbox';
     checkbox.value = keySignature;
     checkbox.id = `key-${keySignature}`;

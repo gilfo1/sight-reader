@@ -1,3 +1,4 @@
+import './styles/app.css';
 import {
   generateAndStoreScore as generateScoreData,
   getUIConfig,

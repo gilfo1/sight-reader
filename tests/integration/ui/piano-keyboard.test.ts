@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { activeMidiNotes, currentStepIndex, initApp, resetGameState, setCurrentStepIndex, setMusicData } from '@/main';
 import { resetStats, stats } from '@/engine/state';
+import { getKeyboardSizeMode } from '@/ui/piano-keyboard';
 
 describe('On-Screen Piano Keyboard', () => {
   beforeEach(() => {
     localStorage.clear();
     resetGameState();
     resetStats();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 960 });
     const html = readFileSync('./index.html', 'utf-8');
     const doc = new DOMParser().parseFromString(html, 'text/html');
     document.body.innerHTML = doc.body.innerHTML;
@@ -41,13 +43,20 @@ describe('On-Screen Piano Keyboard', () => {
     const dock = document.getElementById('keyboard-dock') as HTMLDivElement;
     const details = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     const keyboard = document.getElementById('piano-keyboard-layout') as HTMLDivElement;
+    const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
+    const middleCKey = document.querySelector('[data-note="C4"]') as HTMLButtonElement;
 
-    expect(dock.style.position).toBe('fixed');
-    expect(dock.style.bottom).toBe('0px');
+    expect(dock.classList.contains('keyboard-dock')).toBe(true);
+    expect(details.classList.contains('keyboard-panel')).toBe(true);
     expect(details.open).toBe(true);
     expect(keyboard).not.toBeNull();
-    expect(keyboard.querySelectorAll('button')).toHaveLength(30);
-    expect(Array.from(keyboard.querySelectorAll('button')).every((key) => key.textContent === '')).toBe(true);
+    expect(keyboard.dataset.sizeMode).toBe('large');
+    expect(keyboard.querySelectorAll('.piano-key').length).toBeGreaterThan(30);
+    expect(Array.from(keyboard.querySelectorAll('.piano-key')).every((key) => key.textContent === '')).toBe(true);
+    expect(sizeToggle.dataset.sizeMode).toBe('large');
+    expect(sizeToggle.title).toContain('Change keyboard size');
+    expect(sizeToggle.querySelectorAll('.piano-keyboard-size-dash')).toHaveLength(3);
+    expect(parseFloat(sizeToggle.style.left)).toBeGreaterThan(parseFloat(middleCKey.style.left));
   });
 
   it('pressing and releasing a key mirrors MIDI note state', async () => {
@@ -95,5 +104,36 @@ describe('On-Screen Piano Keyboard', () => {
 
     key.dispatchEvent(new Event('touchend', { bubbles: true }));
     expect(activeMidiNotes.has('D4')).toBe(false);
+  });
+
+  it('cycles through keyboard sizes and shows more keys each time', async () => {
+    await initApp();
+
+    const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
+    const largeCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    sizeToggle.click();
+    const mediumCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    sizeToggle.click();
+    const smallCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    expect(largeCount).toBeLessThan(mediumCount);
+    expect(mediumCount).toBeLessThan(smallCount);
+    expect(getKeyboardSizeMode()).toBe('small');
+    expect((document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement).dataset.sizeMode).toBe('small');
+  });
+
+  it('rebuilds the keyboard with more notes when the viewport grows', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 640 });
+    await initApp();
+
+    const narrowCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1280 });
+    window.dispatchEvent(new Event('resize'));
+    const wideCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    expect(wideCount).toBeGreaterThan(narrowCount);
   });
 });

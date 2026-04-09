@@ -26,9 +26,18 @@ describe('Accordions UI', () => {
 
   it('should have a bottom piano keyboard accordion', () => {
     const keyboard = document.getElementById('piano-keyboard-details');
+    const summary = keyboard?.querySelector('summary');
     expect(keyboard).not.toBeNull();
     expect(keyboard?.tagName.toLowerCase()).toBe('details');
-    expect(keyboard?.querySelector('summary')?.textContent).toBe('On-Screen Piano');
+    expect(summary?.getAttribute('aria-label')).toBe('Keyboard');
+    expect(summary?.querySelector('.keyboard-summary-label')?.textContent).toContain('Keyboard');
+  });
+
+  it('should use shared summary classes so accordion chevrons render consistently', () => {
+    expect(document.querySelector('#settings-details > .panel-summary')).not.toBeNull();
+    expect(document.querySelector('#stats-details > .panel-summary')).not.toBeNull();
+    expect(document.querySelector('#piano-keyboard-details > .keyboard-summary')).not.toBeNull();
+    expect(document.querySelector('#midi-notes-details > .subpanel-summary')).not.toBeNull();
   });
 
   it('settings and piano accordions should be open by default, stats collapsed', () => {
@@ -59,19 +68,14 @@ describe('Accordions UI', () => {
 
   it('should have correct styling for stats (unobtrusive)', () => {
     const stats = document.getElementById('stats-details');
-    const style = stats?.getAttribute('style');
-    // Check for color greyed (#777 or equivalent)
-    expect(style).toMatch(/color:\s*(#777|rgb\(119,\s*119,\s*119\))/);
+    expect(stats?.classList.contains('panel-muted')).toBe(true);
   });
 
-  it('should have a wrapping flex container for accordions to allow stacking', () => {
-    const settings = document.getElementById('settings-details');
-    const container = settings?.parentElement;
+  it('should place the top accordions inside the responsive panel grid', () => {
+    const container = document.querySelector('.panel-grid');
     expect(container).not.toBeNull();
-    const style = container?.getAttribute('style');
-    expect(style).toContain('display: flex');
-    expect(style).toContain('flex-wrap: wrap');
-    expect(style).toContain('justify-content: center');
+    expect(container?.contains(document.getElementById('settings-details'))).toBe(true);
+    expect(container?.contains(document.getElementById('stats-details'))).toBe(true);
   });
 
   describe('Settings Accordion Functionality', () => {

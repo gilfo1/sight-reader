@@ -170,6 +170,21 @@ describe('UI Persistence Integration', () => {
     expect(saved3['piano-keyboard-details']).toBe(false);
   });
 
+  it('should persist the keyboard size mode when the size toggle is used', async () => {
+    await initApp();
+
+    const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
+    sizeToggle.click();
+
+    expect(loadFromStorage('keyboard-size-mode')).toBe('medium');
+
+    document.body.innerHTML = new DOMParser().parseFromString(readFileSync('./index.html', 'utf-8'), 'text/html').body.innerHTML;
+    await initApp();
+
+    const layout = document.getElementById('piano-keyboard-layout') as HTMLDivElement;
+    expect(layout.dataset.sizeMode).toBe('medium');
+  });
+
   it('should reset all to defaults when Reset button is clicked', async () => {
     await initApp();
     

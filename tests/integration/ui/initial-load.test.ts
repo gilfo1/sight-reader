@@ -10,11 +10,11 @@ describe('Initial DOM Structure', () => {
     doc = parser.parseFromString(html, 'text/html');
   });
 
-  it('should have a centered main body', () => {
+  it('should have the responsive shell classes', () => {
     const body = doc.body;
-    expect(body.style.display).toBe('flex');
-    expect(body.style.flexDirection).toBe('column');
-    expect(body.style.alignItems).toBe('center');
+    expect(body.classList.contains('app-shell')).toBe(true);
+    expect(doc.querySelector('.app-main')).not.toBeNull();
+    expect(doc.querySelector('.panel-grid')).not.toBeNull();
   });
 
   it('should have a Settings accordion', () => {
@@ -48,5 +48,6 @@ describe('Initial DOM Structure', () => {
     expect(doc.getElementById('current-note')).not.toBeNull();
     expect(doc.getElementById('piano-keyboard-details')).not.toBeNull();
     expect(doc.getElementById('piano-keyboard')).not.toBeNull();
+    expect(doc.querySelector('.output-shell')).not.toBeNull();
   });
 });

@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>sight-reader</title>
   </head>
-  <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px; padding-bottom: 260px; margin: 0;">
-    <div style="width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center;">
-      <div style="display: flex; gap: 10px; justify-content: center; align-items: flex-start; flex-wrap: wrap; width: 100%; margin-bottom: 20px;">
-        <details id="settings-details" open style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content;">
-          <summary style="cursor: pointer; font-weight: bold; color: #444; text-align: center;">Settings</summary>
-          <div id="controls" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px; align-items: flex-start; width: 100%; box-sizing: border-box;">
-          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <div>
+  <body class="app-shell">
+    <main class="app-main">
+      <section class="panel-grid">
+        <details id="settings-details" open class="panel settings-panel">
+          <summary class="panel-summary">Settings</summary>
+          <div id="controls" class="panel-content controls-content">
+          <div class="control-grid">
+            <div class="field-group">
               <label for="measures-per-line">Measures per Line:</label>
-              <select id="measures-per-line">
+              <select id="measures-per-line" class="control-input">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -25,9 +25,9 @@
                 <option value="8">8</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label for="lines">Lines:</label>
-              <select id="lines">
+              <select id="lines" class="control-input">
                 <option value="1" selected>1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -40,19 +40,19 @@
                 <option value="10">10</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label for="staff-type">Staff Type:</label>
-              <select id="staff-type">
+              <select id="staff-type" class="control-input">
                 <option value="grand" selected>Grand Staff</option>
                 <option value="treble">Treble Clef</option>
                 <option value="bass">Bass Clef</option>
               </select>
             </div>
           </div>
-          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <div>
+          <div class="control-grid">
+            <div class="field-group">
               <label for="notes-per-step">Notes per Step:</label>
-              <select id="notes-per-step">
+              <select id="notes-per-step" class="control-input">
                 <option value="1" selected>1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -65,27 +65,27 @@
                 <option value="10">10</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label for="min-note">Min Note:</label>
-              <select id="min-note"></select>
+              <select id="min-note" class="control-input"></select>
             </div>
-            <div>
+            <div class="field-group">
               <label for="max-note">Max Note:</label>
-              <select id="max-note"></select>
+              <select id="max-note" class="control-input"></select>
             </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div class="option-section">
             <label>Note Values:</label>
-            <div id="note-values" style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <label><input type="checkbox" value="w"> Whole</label>
-              <label><input type="checkbox" value="h"> Half</label>
-              <label><input type="checkbox" value="q" checked> Quarter</label>
-              <label><input type="checkbox" value="8"> Eighth</label>
-              <label><input type="checkbox" value="16"> Sixteenth</label>
+            <div id="note-values" class="option-grid">
+              <label class="option-chip"><input type="checkbox" value="w"> Whole</label>
+              <label class="option-chip"><input type="checkbox" value="h"> Half</label>
+              <label class="option-chip"><input type="checkbox" value="q" checked> Quarter</label>
+              <label class="option-chip"><input type="checkbox" value="8"> Eighth</label>
+              <label class="option-chip"><input type="checkbox" value="16"> Sixteenth</label>
             </div>
-            <div style="margin-top: 5px;">
+            <div class="field-group">
               <label for="max-reach">Max Hand Reach (relative to Octave):</label>
-              <select id="max-reach">
+              <select id="max-reach" class="control-input">
                 <option value="5">-8 (Major Third / 4 half steps)</option>
                 <option value="6">-7 (Perfect Fourth / 5 half steps)</option>
                 <option value="7">-6 (Tritone / 6 half steps)</option>
@@ -105,74 +105,77 @@
               </select>
             </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div class="option-section">
             <label>Key Signatures:</label>
-            <div id="key-signatures" style="display: flex; gap: 10px; flex-wrap: wrap; max-width: 800px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-              <!-- Checkboxes will be inserted here -->
+            <div id="key-signatures" class="option-grid key-signature-grid">
             </div>
-            <label style="display: flex; align-items: center; gap: 5px; margin-top: 5px; cursor: pointer;">
+            <label class="option-toggle">
               <input type="checkbox" id="adaptive-learning"> Adaptive Learning (Drill Areas of Difficulty)
             </label>
           </div>
-          <hr style="width: 100%; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div id="midi-status" style="padding: 10px; border: 1px solid #ccc; display: inline-block;">
+          <hr class="panel-divider">
+          <div class="status-row">
+            <div id="midi-status" class="status-card">
               MIDI: <span id="midi-device-name">No device connected</span>
-              <div id="midi-indicator" style="width: 15px; height: 15px; background-color: red; border-radius: 50%; display: inline-block; margin-left: 5px; vertical-align: middle;"></div>
+              <div id="midi-indicator" class="status-indicator"></div>
             </div>
-            <button id="reset-all-settings" style="cursor: pointer; padding: 5px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; color: #d32f2f;">Reset to Defaults</button>
+            <button id="reset-all-settings" class="action-button action-button-danger">Reset to Defaults</button>
           </div>
-          <details id="midi-notes-details" style="margin-bottom: 10px;">
-            <summary style="cursor: pointer; color: #666;">Show MIDI Notes</summary>
-            <div id="note-display" style="margin-top: 10px; font-size: 24px; font-weight: bold;">
+          <details id="midi-notes-details" class="subpanel">
+            <summary class="subpanel-summary">Show MIDI Notes</summary>
+            <div id="note-display" class="note-display">
               Note: <span id="current-note">-</span>
             </div>
           </details>
         </div>
         </details>
 
-        <details id="stats-details" style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #f9f9f9; width: fit-content; color: #777;">
-          <summary style="cursor: pointer; font-weight: bold; text-align: center;">Stats</summary>
-          <div id="stats-content" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; min-width: 150px;">
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Notes Played:</span> <span id="stats-played" style="font-weight: bold;">0</span>
+        <details id="stats-details" class="panel panel-muted stats-panel">
+          <summary class="panel-summary">Stats</summary>
+          <div id="stats-content" class="panel-content stats-grid">
+            <div class="stat-row">
+              <span>Notes Played:</span> <span id="stats-played">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Correct:</span> <span id="stats-correct" style="font-weight: bold; color: green;">0</span>
+            <div class="stat-row">
+              <span>Correct:</span> <span id="stats-correct" class="stat-value-success">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Wrong:</span> <span id="stats-wrong" style="font-weight: bold; color: #c00;">0</span>
+            <div class="stat-row">
+              <span>Wrong:</span> <span id="stats-wrong" class="stat-value-danger">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Accuracy:</span> <span id="stats-accuracy" style="font-weight: bold;">0%</span>
+            <div class="stat-row">
+              <span>Accuracy:</span> <span id="stats-accuracy">0%</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Current Streak:</span> <span id="stats-streak" style="font-weight: bold; color: green;">0</span>
+            <div class="stat-row">
+              <span>Current Streak:</span> <span id="stats-streak" class="stat-value-success">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-              <span>Best Streak:</span> <span id="stats-max-streak" style="font-weight: bold;">0</span>
+            <div class="stat-row">
+              <span>Best Streak:</span> <span id="stats-max-streak">0</span>
             </div>
-            <hr style="width: 100%; border: 0; border-top: 1px solid #eee; margin: 5px 0;">
-            <div style="display: flex; justify-content: space-between; gap: 20px; font-size: 0.9em;">
-              <span>Wrong Octave:</span> <span id="stats-wrong-octave" style="font-weight: bold;">0</span>
+            <hr class="panel-divider">
+            <div class="stat-row stat-row-subtle">
+              <span>Wrong Octave:</span> <span id="stats-wrong-octave">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px; font-size: 0.9em;">
-              <span>Key Sig Error:</span> <span id="stats-key-error" style="font-weight: bold;">0</span>
+            <div class="stat-row stat-row-subtle">
+              <span>Key Sig Error:</span> <span id="stats-key-error">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 20px; font-size: 0.9em;">
-              <span>Avg Time:</span> <span id="stats-avg-time" style="font-weight: bold;">0s</span>
+            <div class="stat-row stat-row-subtle">
+              <span>Avg Time:</span> <span id="stats-avg-time">0s</span>
             </div>
-            <button id="reset-stats" style="margin-top: 10px; cursor: pointer; padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">Reset Stats</button>
+            <button id="reset-stats" class="action-button">Reset Stats</button>
           </div>
         </details>
-      </div>
-    </div>
-    <div id="output" style="width: 100%; display: flex; justify-content: center;"></div>
-    <div id="keyboard-dock" style="position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; z-index: 20; pointer-events: none;">
-      <details id="piano-keyboard-details" open style="pointer-events: auto; width: min(100%, 960px); margin: 0 16px 12px; border: 1px solid #c7b9a3; border-radius: 18px; background: linear-gradient(180deg, #f8f1e2 0%, #ecdfc9 100%); box-shadow: 0 -14px 32px rgba(51, 35, 15, 0.2); overflow: hidden;">
-        <summary style="cursor: pointer; font-weight: bold; color: #4d3926; text-align: center; padding: 10px 16px; list-style: none;">On-Screen Piano</summary>
-        <div style="display: flex; justify-content: center; padding: 14px 18px 18px;">
-          <div id="piano-keyboard" style="width: 100%; overflow-x: auto; overflow-y: hidden; display: flex; justify-content: center;"></div>
+      </section>
+      <section class="output-shell">
+        <div id="output" class="score-output"></div>
+      </section>
+    </main>
+    <div id="keyboard-dock" class="keyboard-dock">
+      <details id="piano-keyboard-details" open class="keyboard-panel">
+        <summary class="keyboard-summary" aria-label="Keyboard">
+          <span class="keyboard-summary-label">Keyboard</span>
+        </summary>
+        <div class="keyboard-scroll">
+          <div id="piano-keyboard" class="keyboard-root"></div>
         </div>
       </details>
     </div>

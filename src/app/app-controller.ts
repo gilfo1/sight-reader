@@ -98,11 +98,11 @@ export async function initApp(): Promise<void> {
   }
 
   loadAccordionState();
+  initPianoKeyboard(() => handleStateChange(true));
   generateAndStoreScore();
   renderCurrentScore();
 
   initMidiHandler(handleStateChange);
-  initPianoKeyboard();
   setupEventListeners(() => handleStateChange(true));
 
   const resetButton = document.getElementById('reset-all-settings');
