@@ -9,7 +9,8 @@ import {
   getTargetNotesAtStep,
   getTotalSteps,
   recordCorrectNote,
-  recordWrongNote
+  recordWrongNote,
+  AppStats
 } from './state';
 import { getNoteValue } from '@/utils/theory';
 
@@ -36,6 +37,9 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
 
   if (!deviceNameEl || !indicatorEl || !noteDisplayEl) return;
 
+  let stepStartTime: number = Date.now();
+  let lastProcessedStep: number = -1;
+
   const updateStatus = (): void => {
     if (WebMidi.inputs.length > 0) {
       deviceNameEl.textContent = WebMidi.inputs[0]!.name;
@@ -61,6 +65,8 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
       const nextIndex = currentStepIndex + 1;
       setCurrentStepIndex(nextIndex);
       
+      stepStartTime = Date.now(); // Reset timer for next step
+      
       if (nextIndex >= getTotalSteps()) {
           ctx.onStateChange(true); 
       } else {
@@ -73,15 +79,21 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
   const onNoteOn = (e: NoteMessageEvent): void => {
     activeMidiNotes.add(e.note.identifier);
     
+    if (currentStepIndex !== lastProcessedStep) {
+        stepStartTime = Date.now();
+        lastProcessedStep = currentStepIndex;
+    }
+    
     const targetPitches = getTargetNotesAtStep(currentStepIndex);
     if (targetPitches.length > 0) {
       const info = getStepInfo(currentStepIndex)!;
       const measureData = musicData[info.measureIdx]!;
 
       if (targetPitches.includes(e.note.identifier)) {
-        recordCorrectNote(e.note.identifier, measureData.keySignature);
+        const timeTaken = Date.now() - stepStartTime;
+        recordCorrectNote(e.note.identifier, measureData.keySignature, timeTaken);
       } else {
-        recordWrongNote(targetPitches, measureData.keySignature);
+        recordWrongNote(e.note.identifier, targetPitches, measureData.keySignature);
         suppressedNotes.clear();
       }
     }

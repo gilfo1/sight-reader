@@ -11,6 +11,9 @@ const ui = {
   get accuracy() { return getEl<HTMLElement>('stats-accuracy'); },
   get streak() { return getEl<HTMLElement>('stats-streak'); },
   get maxStreak() { return getEl<HTMLElement>('stats-max-streak'); },
+  get wrongOctave() { return getEl<HTMLElement>('stats-wrong-octave'); },
+  get keyError() { return getEl<HTMLElement>('stats-key-error'); },
+  get avgTime() { return getEl<HTMLElement>('stats-avg-time'); },
   get resetButton() { return getEl<HTMLElement>('reset-stats'); }
 };
 
@@ -28,6 +31,13 @@ export function updateStatsUI(): void {
   
   if (ui.streak) ui.streak.textContent = stats.currentStreak.toString();
   if (ui.maxStreak) ui.maxStreak.textContent = stats.maxStreak.toString();
+  
+  if (ui.wrongOctave) ui.wrongOctave.textContent = stats.wrongOctaveCount.toString();
+  if (ui.keyError) ui.keyError.textContent = stats.keySignatureNotHonoredCount.toString();
+  if (ui.avgTime) {
+    const seconds = (stats.averageCorrectNoteTime / 1000).toFixed(2);
+    ui.avgTime.textContent = seconds + 's';
+  }
 }
 
 export function initStatsUI(): void {

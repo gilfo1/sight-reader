@@ -67,6 +67,14 @@ describe('Music Theory Utilities', () => {
         if (getEnharmonic('C#4', 'G', true) === 'C#4') original++;
       }
       expect(original).toBeGreaterThan(50);
+
+      // Test C Major (neutral, 50/50)
+      let cMajorFlats = 0;
+      for (let i = 0; i < 1000; i++) {
+        if (getEnharmonic('C#4', 'C', true) === 'Db4') cMajorFlats++;
+      }
+      expect(cMajorFlats).toBeGreaterThan(400);
+      expect(cMajorFlats).toBeLessThan(600);
     });
   });
 });

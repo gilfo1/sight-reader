@@ -114,5 +114,35 @@ describe('Adaptive Learning Music Generation', () => {
       // Prob(G) = 501/503 ~= 99%.
       expect(gCount).toBeGreaterThan(15);
     });
+
+    it('should balance multiple trouble keys proportionally', () => {
+      stats.troubleKeys['G'] = 50;
+      stats.troubleKeys['F'] = 50;
+      
+      const config: GeneratorConfig = {
+        measuresPerLine: 1,
+        linesCount: 100,
+        staffType: 'treble',
+        notesPerStep: 1,
+        minNote: 'C4',
+        maxNote: 'C5',
+        selectedNoteValues: ['q'],
+        selectedKeySignatures: ['C', 'G', 'F'],
+        isChromatic: false,
+        isAdaptive: true,
+        maxReach: 12
+      };
+
+      const data = generateScoreData(config);
+      const gCount = data.filter(m => m.keySignature === 'G').length;
+      const fCount = data.filter(m => m.keySignature === 'F').length;
+      const cCount = data.filter(m => m.keySignature === 'C').length;
+
+      // Weights: G=251, F=251, C=1. Total=503.
+      // Prob(G) ~ 50%, Prob(F) ~ 50%, Prob(C) ~ 0.2%
+      expect(gCount).toBeGreaterThan(30);
+      expect(fCount).toBeGreaterThan(30);
+      expect(cCount).toBeLessThan(10);
+    });
   });
 });

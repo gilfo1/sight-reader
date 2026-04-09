@@ -12,6 +12,9 @@ describe('Stats State', () => {
     expect(stats.wrongNotes).toBe(0);
     expect(stats.currentStreak).toBe(0);
     expect(stats.maxStreak).toBe(0);
+    expect(stats.wrongOctaveCount).toBe(0);
+    expect(stats.keySignatureNotHonoredCount).toBe(0);
+    expect(stats.averageCorrectNoteTime).toBe(0);
   });
 
   describe('Accuracy Calculation Logic', () => {
@@ -104,6 +107,9 @@ describe('Stats State', () => {
     stats.wrongNotes = 2;
     stats.currentStreak = 5;
     stats.maxStreak = 7;
+    stats.wrongOctaveCount = 3;
+    stats.keySignatureNotHonoredCount = 2;
+    stats.averageCorrectNoteTime = 1200;
 
     resetStats();
 
@@ -112,5 +118,8 @@ describe('Stats State', () => {
     expect(stats.wrongNotes).toBe(0);
     expect(stats.currentStreak).toBe(0);
     expect(stats.maxStreak).toBe(0);
+    expect(stats.wrongOctaveCount).toBe(0);
+    expect(stats.keySignatureNotHonoredCount).toBe(0);
+    expect(stats.averageCorrectNoteTime).toBe(0);
   });
 });
