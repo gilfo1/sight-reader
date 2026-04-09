@@ -1,6 +1,7 @@
 import { ALL_PIANO_NOTES, KEY_SIGNATURES } from '@/constants/music';
 import { getNoteValue } from '@/utils/theory';
 import { GeneratorConfig } from '@/engine/music-generator';
+import { loadFromStorage, saveToStorage } from '@/utils/storage';
 
 function getEl<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -84,6 +85,20 @@ export function updateNoteSelectors(): void {
   maxSelect.value = filtered.includes(prevMax) ? prevMax : (staffType === 'bass' ? 'C5' : 'C6');
 }
 
+export const DEFAULT_CONFIG: GeneratorConfig = {
+  measuresPerLine: 4,
+  notesPerStep: 1,
+  linesCount: 1,
+  staffType: 'grand',
+  minNote: 'C2',
+  maxNote: 'C6',
+  maxReach: 13,
+  selectedNoteValues: ['q'],
+  selectedKeySignatures: ['C'],
+  isChromatic: false,
+  isAdaptive: false
+};
+
 export function getUIConfig(): GeneratorConfig {
   const noteValuesContainer = ui.noteValues;
   let selectedNoteValues: string[] = ['q'];
@@ -115,6 +130,68 @@ export function getUIConfig(): GeneratorConfig {
   };
 }
 
+export function saveUIConfig(): void {
+  saveToStorage('generator-config', getUIConfig());
+}
+
+export function applyUIConfig(config: Partial<GeneratorConfig>): void {
+  if (config.measuresPerLine !== undefined && ui.measuresPerLine) ui.measuresPerLine.value = config.measuresPerLine.toString();
+  if (config.notesPerStep !== undefined && ui.notesPerStep) ui.notesPerStep.value = config.notesPerStep.toString();
+  if (config.linesCount !== undefined && ui.lines) ui.lines.value = config.linesCount.toString();
+  if (config.staffType !== undefined && ui.staffType) {
+    ui.staffType.value = config.staffType;
+    updateNoteSelectors();
+  }
+  if (config.minNote !== undefined && ui.minNote) ui.minNote.value = config.minNote;
+  if (config.maxNote !== undefined && ui.maxNote) ui.maxNote.value = config.maxNote;
+  if (config.maxReach !== undefined && ui.maxReach) ui.maxReach.value = config.maxReach.toString();
+  if (config.isAdaptive !== undefined && ui.adaptiveLearning) ui.adaptiveLearning.checked = config.isAdaptive;
+
+  if (config.selectedNoteValues !== undefined && ui.noteValues) {
+    ui.noteValues.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      (cb as HTMLInputElement).checked = config.selectedNoteValues!.includes((cb as HTMLInputElement).value);
+    });
+  }
+
+  if (config.selectedKeySignatures !== undefined && ui.keySignatures) {
+    ui.keySignatures.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      (cb as HTMLInputElement).checked = config.selectedKeySignatures!.includes((cb as HTMLInputElement).value);
+    });
+  }
+}
+
+export function saveAccordionState(): void {
+  const accordions = document.querySelectorAll('details');
+  const state: Record<string, boolean> = {};
+  accordions.forEach(acc => {
+    if (acc.id) {
+      state[acc.id] = acc.open;
+    }
+  });
+  saveToStorage('accordion-state', state);
+}
+
+export function loadAccordionState(): void {
+  const state = loadFromStorage<Record<string, boolean>>('accordion-state');
+  if (state) {
+    Object.keys(state).forEach(id => {
+      const acc = document.getElementById(id) as HTMLDetailsElement;
+      if (acc) {
+        acc.open = state[id]!;
+      }
+    });
+  }
+}
+
+export function resetAccordionState(): void {
+  const accordions = document.querySelectorAll('details');
+  accordions.forEach(acc => {
+    // Default: settings open, others closed
+    acc.open = acc.id === 'settings-details';
+  });
+  saveAccordionState();
+}
+
 export function setupEventListeners(onConfigChange: () => void): void {
   const staffTypeEl = ui.staffType;
   [
@@ -129,11 +206,26 @@ export function setupEventListeners(onConfigChange: () => void): void {
   ].forEach(el => {
     el?.addEventListener('change', () => {
       if (el === staffTypeEl) updateNoteSelectors();
+      saveUIConfig();
       onConfigChange();
     });
   });
 
   ui.noteValues?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', onConfigChange);
+    cb.addEventListener('change', () => {
+      saveUIConfig();
+      onConfigChange();
+    });
+  });
+
+  ui.keySignatures?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      saveUIConfig();
+      onConfigChange();
+    });
+  });
+
+  document.querySelectorAll('details').forEach(acc => {
+    acc.addEventListener('toggle', saveAccordionState);
   });
 }

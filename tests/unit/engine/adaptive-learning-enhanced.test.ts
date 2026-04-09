@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getRandomPitches, generateScoreData, GeneratorConfig } from '@/engine/music-generator';
-import { stats, resetStats, recordWrongNote, recordCorrectNote } from '@/engine/state';
+import { stats, resetStats, recordCorrectNote } from '@/engine/state';
 
 describe('Enhanced Adaptive Learning', () => {
   beforeEach(() => {

@@ -82,8 +82,8 @@ describe('User Interactions and Dynamic Controls', () => {
 
   it('should toggle accordion states', () => {
     const settings = document.querySelector('details') as HTMLDetailsElement;
-    expect(settings.open).toBe(false);
-    settings.open = true;
     expect(settings.open).toBe(true);
+    settings.open = false;
+    expect(settings.open).toBe(false);
   });
 });

@@ -1,5 +1,4 @@
-import { SCALES } from '@/constants/music';
-import { getNoteValue } from '@/utils/theory';
+import { loadFromStorage, saveToStorage } from '@/utils/storage';
 
 // Global state for music data and progress
 export interface Measure {
@@ -33,40 +32,31 @@ export interface AppStats {
   keySignatureMissedNotes: Record<string, number>; // Specific notes missed by key sig
 }
 
-export const stats: AppStats = {
-  notesPlayed: 0,
-  correctNotes: 0,
-  wrongNotes: 0,
-  currentStreak: 0,
-  maxStreak: 0,
-  wrongOctaveCount: 0,
-  keySignatureNotHonoredCount: 0,
-  totalCorrectNoteTime: 0,
-  averageCorrectNoteTime: 0,
-  troubleNotes: {},
-  troubleOctaves: {},
-  troubleKeys: {},
-  slowNoteTimes: {},
-  wrongOctaveNotes: {},
-  keySignatureMissedNotes: {},
-};
+function getDefaultStats(): AppStats {
+  return {
+    notesPlayed: 0,
+    correctNotes: 0,
+    wrongNotes: 0,
+    currentStreak: 0,
+    maxStreak: 0,
+    wrongOctaveCount: 0,
+    keySignatureNotHonoredCount: 0,
+    totalCorrectNoteTime: 0,
+    averageCorrectNoteTime: 0,
+    troubleNotes: {},
+    troubleOctaves: {},
+    troubleKeys: {},
+    slowNoteTimes: {},
+    wrongOctaveNotes: {},
+    keySignatureMissedNotes: {},
+  };
+}
+
+export const stats: AppStats = { ...getDefaultStats(), ...(loadFromStorage<AppStats>('app-stats') || {}) };
 
 export function resetStats(): void {
-  stats.notesPlayed = 0;
-  stats.correctNotes = 0;
-  stats.wrongNotes = 0;
-  stats.currentStreak = 0;
-  stats.maxStreak = 0;
-  stats.wrongOctaveCount = 0;
-  stats.keySignatureNotHonoredCount = 0;
-  stats.totalCorrectNoteTime = 0;
-  stats.averageCorrectNoteTime = 0;
-  stats.troubleNotes = {};
-  stats.troubleOctaves = {};
-  stats.troubleKeys = {};
-  stats.slowNoteTimes = {};
-  stats.wrongOctaveNotes = {};
-  stats.keySignatureMissedNotes = {};
+  Object.assign(stats, getDefaultStats());
+  saveToStorage('app-stats', stats);
 }
 
 export function recordCorrectNote(noteIdentifier: string, keySignature: string, timeMs?: number): void {
@@ -111,6 +101,7 @@ export function recordCorrectNote(noteIdentifier: string, keySignature: string, 
   if ((stats.keySignatureMissedNotes[noteIdentifier] || 0) > 0) {
     stats.keySignatureMissedNotes[noteIdentifier]!--;
   }
+  saveToStorage('app-stats', stats);
 }
 
 export function recordWrongNote(playedNote: string, targetPitches: string[], currentKey: string): void {
@@ -119,7 +110,6 @@ export function recordWrongNote(playedNote: string, targetPitches: string[], cur
   stats.currentStreak = 0;
 
   // Error detection
-  const playedValue = getNoteValue(playedNote);
   const playedName = playedNote.replace(/\d+/, '');
   const playedOctave = playedNote.match(/\d+/) ? playedNote.match(/\d+/)![0] : '';
 
@@ -127,7 +117,6 @@ export function recordWrongNote(playedNote: string, targetPitches: string[], cur
   let isKeySignatureNotHonored = false;
 
   for (const target of targetPitches) {
-    const targetValue = getNoteValue(target);
     const targetName = target.replace(/\d+/, '');
     const targetOctave = target.match(/\d+/) ? target.match(/\d+/)![0] : '';
 
@@ -177,6 +166,7 @@ export function recordWrongNote(playedNote: string, targetPitches: string[], cur
       }
     }
   });
+  saveToStorage('app-stats', stats);
 }
 
 export function setMusicData(data: Measure[]): void {

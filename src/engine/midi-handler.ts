@@ -9,8 +9,7 @@ import {
   getTargetNotesAtStep,
   getTotalSteps,
   recordCorrectNote,
-  recordWrongNote,
-  AppStats
+  recordWrongNote
 } from './state';
 import { getNoteValue } from '@/utils/theory';
 

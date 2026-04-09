@@ -24,10 +24,10 @@ describe('Accordions UI', () => {
     expect(stats?.querySelector('summary')?.textContent).toBe('Stats');
   });
 
-  it('both accordions should be collapsed by default', () => {
+  it('settings accordion should be open by default, stats collapsed', () => {
     const settings = document.getElementById('settings-details') as HTMLDetailsElement;
     const stats = document.getElementById('stats-details') as HTMLDetailsElement;
-    expect(settings.open).toBe(false);
+    expect(settings.open).toBe(true);
     expect(stats.open).toBe(false);
   });
 
@@ -68,11 +68,11 @@ describe('Accordions UI', () => {
   describe('Settings Accordion Functionality', () => {
     it('should allow toggling settings accordion', () => {
       const settings = document.getElementById('settings-details') as HTMLDetailsElement;
-      expect(settings.open).toBe(false);
-      settings.open = true;
       expect(settings.open).toBe(true);
       settings.open = false;
       expect(settings.open).toBe(false);
+      settings.open = true;
+      expect(settings.open).toBe(true);
     });
 
     it('should have all expected select elements in settings', () => {
