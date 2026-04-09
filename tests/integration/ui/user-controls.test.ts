@@ -5,7 +5,7 @@ import {
   initKeySignatures, 
   resetGameState,
   initMidiHandler
-} from '../../../src/main';
+} from '@/main';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi

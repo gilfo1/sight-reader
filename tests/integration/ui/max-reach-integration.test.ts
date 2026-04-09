@@ -45,7 +45,7 @@ describe('Max Hand Reach UI Integration', () => {
     // We need to check if musicData is updated. 
     
     // Let's use a more direct approach: check if the global musicData in state is updated.
-    const { musicData } = await import('../../../src/engine/state');
+    const { musicData } = await import('@/engine/state');
     const initialSnapshot = JSON.stringify(musicData);
     
     initApp();

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initMidiHandler, checkMatch, activeMidiNotes, resetGameState, currentStepIndex, setMusicData } from '../../../src/main';
+import { initMidiHandler, checkMatch, activeMidiNotes, resetGameState, currentStepIndex, setMusicData } from '@/main';
 import { WebMidi } from 'webmidi';
 
 // Mock WebMidi

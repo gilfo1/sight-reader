@@ -4,7 +4,7 @@ import {
   setMusicData, 
   resetGameState,
   initKeySignatures
-} from '../../src/main';
+} from '@/main';
 
 describe('Musical Rules Regression', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setMusicData, resetGameState, getStepInfo, getTotalSteps, currentStepIndex, setCurrentStepIndex } from '../../../src/engine/state';
+import { setMusicData, resetGameState, getStepInfo, getTotalSteps, currentStepIndex, setCurrentStepIndex } from '@/engine/state';
 
 describe('App State Engine', () => {
   beforeEach(() => {

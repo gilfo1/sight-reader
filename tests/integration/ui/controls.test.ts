@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { updateNoteSelectors, getUIConfig } from '../../../src/ui/controls';
+import { updateNoteSelectors, getUIConfig } from '@/ui/controls';
 
 describe('UI Controls', () => {
   beforeEach(() => {

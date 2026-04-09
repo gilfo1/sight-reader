@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getRandomPitches } from '../../src/engine/music-generator';
-import { getNoteValue } from '../../src/utils/theory';
+import { getRandomPitches } from '@/engine/music-generator';
+import { getNoteValue } from '@/utils/theory';
 
 describe('Chromatic and Enharmonic Regression', () => {
   it('should match MIDI values correctly for enharmonics', () => {

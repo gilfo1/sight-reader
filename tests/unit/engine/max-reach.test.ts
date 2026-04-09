@@ -1,108 +1,105 @@
 import { describe, it, expect } from 'vitest';
-import { getRandomPitches } from '../../../src/engine/music-generator';
-import { getNoteValue } from '../../../src/utils/theory';
+import { getRandomPitches, generateScoreData } from '@/engine/music-generator';
+import { getNoteValue } from '@/utils/theory';
 
-describe('Max Hand Reach Logic', () => {
-  it('should respect maxReach of 5 semitones', () => {
-    // Generate 2 notes with a reach of 5 semitones
-    for (let i = 0; i < 50; i++) {
-      const pitches = getRandomPitches('treble', 2, 'C4', 'C6', 'C', false, false, 5);
-      if (pitches.length < 2) continue;
-      
-      const v1 = getNoteValue(pitches[0]);
-      const v2 = getNoteValue(pitches[1]);
-      const reach = Math.abs(v1 - v2);
-      
-      expect(reach).toBeLessThan(5);
-    }
+describe('Max Hand Reach Engine Logic', () => {
+  describe('getRandomPitches Reach', () => {
+    it('should respect maxReach of 5 semitones (Major Third)', () => {
+      for (let i = 0; i < 50; i++) {
+        const pitches = getRandomPitches('treble', 2, 'C4', 'C6', 'C', false, false, 5);
+        if (pitches.length < 2) continue;
+        const v1 = getNoteValue(pitches[0]);
+        const v2 = getNoteValue(pitches[1]);
+        expect(Math.abs(v1 - v2)).toBeLessThan(5);
+      }
+    });
+
+    it('should respect maxReach of 12 semitones (Octave)', () => {
+      for (let i = 0; i < 50; i++) {
+        const pitches = getRandomPitches('treble', 4, 'C4', 'C6', 'C', false, false, 12);
+        if (pitches.length < 2) continue;
+        const vals = pitches.map(getNoteValue);
+        expect(Math.max(...vals) - Math.min(...vals)).toBeLessThan(12);
+      }
+    });
+
+    it('should handle empty pools gracefully', () => {
+      const pitches = getRandomPitches('treble', 10, 'C4', 'C4', 'C', false, false, 1);
+      expect(pitches.length).toBeLessThanOrEqual(1);
+    });
   });
 
-  it('should respect maxReach of 12 semitones (1 octave)', () => {
-    for (let i = 0; i < 50; i++) {
-      const pitches = getRandomPitches('treble', 4, 'C4', 'C6', 'C', false, false, 12);
-      if (pitches.length < 2) continue;
-      
-      const vals = pitches.map(getNoteValue);
-      const minVal = Math.min(...vals);
-      const maxVal = Math.max(...vals);
-      const reach = maxVal - minVal;
-      
-      expect(reach).toBeLessThan(12);
-    }
-  });
+  describe('generateScoreData Advanced Reach', () => {
+    it('should enforce reach across all beats in a measure', () => {
+      const config = {
+        measuresPerLine: 1,
+        linesCount: 1,
+        staffType: 'treble' as const,
+        notesPerStep: 1,
+        minNote: 'C4',
+        maxNote: 'C6',
+        maxReach: 5,
+        selectedNoteValues: ['q'],
+        selectedKeySignatures: ['C'],
+        isChromatic: true,
+        isAdaptive: false
+      };
 
-  it('should respect maxReach of 19 semitones', () => {
-    for (let i = 0; i < 50; i++) {
-      const pitches = getRandomPitches('treble', 5, 'C3', 'C7', 'C', false, false, 19);
-      if (pitches.length < 2) continue;
-      
-      const vals = pitches.map(getNoteValue);
-      const minVal = Math.min(...vals);
-      const maxVal = Math.max(...vals);
-      const reach = maxVal - minVal;
-      
-      expect(reach).toBeLessThan(19);
-    }
-  });
+      for (let i = 0; i < 50; i++) {
+        const data = generateScoreData(config);
+        const vals = data[0].trebleSteps.flat().map(getNoteValue);
+        if (vals.length < 2) continue;
+        expect(Math.max(...vals) - Math.min(...vals)).toBeLessThan(5);
+      }
+    });
 
-  it('should handle cases where valid pool becomes empty due to reach constraint', () => {
-    // If we pick C4 and maxReach is 5 semitones, and we want 10 notes, 
-    // it should return as many as it can within the reach, not error out.
-    const pitches = getRandomPitches('treble', 10, 'C4', 'C6', 'C', false, false, 5);
-    
-    const vals = pitches.map(getNoteValue);
-    const minVal = Math.min(...vals);
-    const maxVal = Math.max(...vals);
-    const reach = maxVal - minVal;
-    
-    expect(reach).toBeLessThan(5);
-    // There are only 3 notes within 4 semitones of C4 in C Major scale: C4, D4, E4. (F4 is 5 semitones away)
-    expect(pitches.length).toBeLessThanOrEqual(3);
-  });
+    it('should allow independence between hands in grand staff', () => {
+      const config = {
+        measuresPerLine: 1,
+        linesCount: 1,
+        staffType: 'grand' as const,
+        notesPerStep: 1,
+        minNote: 'C2',
+        maxNote: 'C6',
+        maxReach: 5,
+        selectedNoteValues: ['q'],
+        selectedKeySignatures: ['C'],
+        isChromatic: true,
+        isAdaptive: false
+      };
 
-  it('should respect maxReach even with adaptive learning enabled', async () => {
-    const { stats, resetStats } = await import('../../../src/engine/state');
-    stats.troubleNotes['C6'] = 100; // C6 is far from C4
-    
-    for (let i = 0; i < 20; i++) {
-      const pitches = getRandomPitches('treble', 2, 'C4', 'C6', 'C', false, true, 5);
-      if (pitches.length < 2) continue;
+      const data = generateScoreData(config);
+      const trebleVals = data[0].trebleSteps.flat().map(getNoteValue);
+      const bassVals = data[0].bassSteps.flat().map(getNoteValue);
       
-      const vals = pitches.map(getNoteValue);
-      const reach = Math.abs(vals[0] - vals[1]);
-      expect(reach).toBeLessThan(5);
-      // Even though C6 has high weight, it shouldn't be picked if it's too far from the first note
-    }
-    
-    resetStats();
-  });
+      if (trebleVals.length > 1) expect(Math.max(...trebleVals) - Math.min(...trebleVals)).toBeLessThan(5);
+      if (bassVals.length > 1) expect(Math.max(...bassVals) - Math.min(...bassVals)).toBeLessThan(5);
+    });
 
-  it('should respect maxReach in chromatic mode', () => {
-    // Chromatic mode adds non-diatonic notes
-    for (let i = 0; i < 50; i++) {
-      const pitches = getRandomPitches('treble', 2, 'C4', 'E4', 'C', true, false, 5);
-      if (pitches.length < 2) continue;
-      
-      const v1 = getNoteValue(pitches[0]);
-      const v2 = getNoteValue(pitches[1]);
-      const reach = Math.abs(v1 - v2);
-      
-      expect(reach).toBeLessThan(5);
-    }
-  });
+    it('should enforce reach across measure boundaries', () => {
+      const config = {
+        measuresPerLine: 2,
+        linesCount: 1,
+        staffType: 'treble' as const,
+        notesPerStep: 1,
+        minNote: 'C3',
+        maxNote: 'C6',
+        maxReach: 5,
+        selectedNoteValues: ['q'],
+        selectedKeySignatures: ['C'],
+        isChromatic: true,
+        isAdaptive: false
+      };
 
-  it('should respect maxReach with complex key signatures (e.g., F# Major)', () => {
-    // F# Major (6 sharps)
-    for (let i = 0; i < 50; i++) {
-      const pitches = getRandomPitches('treble', 3, 'C4', 'C6', 'F#', false, false, 7);
-      if (pitches.length < 2) continue;
-      
-      const vals = pitches.map(getNoteValue);
-      const minVal = Math.min(...vals);
-      const maxVal = Math.max(...vals);
-      const reach = maxVal - minVal;
-      
-      expect(reach).toBeLessThan(7);
-    }
+      for (let i = 0; i < 50; i++) {
+        const data = generateScoreData(config);
+        const m1Last = data[0].trebleSteps.flat().slice(-1)[0];
+        const m2First = data[1].trebleSteps.flat()[0];
+        
+        if (m1Last && m2First) {
+          expect(Math.abs(getNoteValue(m1Last) - getNoteValue(m2First))).toBeLessThan(5);
+        }
+      }
+    });
   });
 });

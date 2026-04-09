@@ -5,7 +5,7 @@ import {
   resetGameState,
   initKeySignatures,
   getUIConfig
-} from '../../../src/main';
+} from '@/main';
 
 describe('Staff Connectors', () => {
   beforeEach(() => {

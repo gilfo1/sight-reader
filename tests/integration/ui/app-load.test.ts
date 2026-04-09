@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetGameState } from '../../../src/engine/state';
+import { resetGameState } from '@/engine/state';
 
 describe('Application Initial Load', () => {
   beforeEach(() => {
@@ -26,14 +26,14 @@ describe('Application Initial Load', () => {
 
   it('should have the correct document title', async () => {
     // Importing main.ts should trigger setting the title
-    await import('../../../src/main');
+    await import('@/main');
     expect(document.title).toBe('sight-reader');
   });
 
   it('should render the score on load', async () => {
     // This is hard to test without actually importing main.ts and triggering its events.
     // But we can verify that the renderScore function works.
-    const { renderScore } = await import('../../../src/main');
+    const { renderScore } = await import('@/main');
     
     renderScore();
     const svg = document.querySelector('#output svg');

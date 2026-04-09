@@ -5,7 +5,7 @@ import {
   resetGameState,
   initKeySignatures,
   activeMidiNotes
-} from '../../../src/main';
+} from '@/main';
 
 describe('Staff Rendering and Layout Integration', () => {
   beforeEach(() => {

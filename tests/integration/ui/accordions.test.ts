@@ -6,7 +6,7 @@ describe('Accordions UI', () => {
   let html: string;
 
   beforeEach(() => {
-    html = fs.readFileSync(path.resolve(__dirname, '../../../index.html'), 'utf8');
+    html = fs.readFileSync(path.resolve(process.cwd(), 'index.html'), 'utf8');
     document.body.innerHTML = html;
   });
 

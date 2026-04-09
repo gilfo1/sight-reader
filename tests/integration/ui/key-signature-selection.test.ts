@@ -3,16 +3,15 @@ import { readFileSync } from 'fs';
 import { 
   initKeySignatures, 
   getUIConfig
-} from '../../../src/ui/controls';
-import { generateScoreData } from '../../../src/engine/music-generator';
+} from '@/ui/controls';
+import { generateScoreData } from '@/engine/music-generator';
 
 describe('Key Signature Selection UI', () => {
   beforeEach(() => {
     const html = readFileSync('./index.html', 'utf-8');
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    const bodyContent = doc.body.innerHTML;
-    document.body.innerHTML = bodyContent;
+    document.body.innerHTML = doc.body.innerHTML;
   });
 
   it('should only return selected keys in config', () => {

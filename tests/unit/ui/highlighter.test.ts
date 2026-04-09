@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Factory } from 'vexflow';
-import { renderScore } from '../../../src/rendering/score-renderer';
-import { Measure } from '../../../src/engine/state';
+import { renderScore } from '@/rendering/score-renderer';
+import { Measure } from '@/engine/state';
 
 describe('Highlighter Rendering', (): void => {
   beforeEach((): void => {

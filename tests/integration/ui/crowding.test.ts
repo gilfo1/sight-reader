@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Factory } from 'vexflow';
-import { renderScore, clearRenderCache } from '../../../src/rendering/score-renderer';
-import { Measure } from '../../../src/engine/state';
+import { renderScore, clearRenderCache } from '@/rendering/score-renderer';
+import { Measure } from '@/engine/state';
 
 describe('Measure Spacing and Crowding', (): void => {
   beforeEach((): void => {
