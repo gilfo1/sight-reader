@@ -16,10 +16,6 @@ export function loadFromStorage<T>(key: string): T | null {
   }
 }
 
-export function removeFromStorage(key: string): void {
-  localStorage.removeItem(key);
-}
-
 export function clearStorage(): void {
   localStorage.clear();
 }

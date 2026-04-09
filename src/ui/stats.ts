@@ -1,20 +1,17 @@
 import { stats, resetStats } from '@/engine/state';
-
-function getEl<T extends HTMLElement>(id: string): T {
-  return document.getElementById(id) as T;
-}
+import { getElementById } from '@/ui/dom';
 
 const ui = {
-  get played() { return getEl<HTMLElement>('stats-played'); },
-  get correct() { return getEl<HTMLElement>('stats-correct'); },
-  get wrong() { return getEl<HTMLElement>('stats-wrong'); },
-  get accuracy() { return getEl<HTMLElement>('stats-accuracy'); },
-  get streak() { return getEl<HTMLElement>('stats-streak'); },
-  get maxStreak() { return getEl<HTMLElement>('stats-max-streak'); },
-  get wrongOctave() { return getEl<HTMLElement>('stats-wrong-octave'); },
-  get keyError() { return getEl<HTMLElement>('stats-key-error'); },
-  get avgTime() { return getEl<HTMLElement>('stats-avg-time'); },
-  get resetButton() { return getEl<HTMLElement>('reset-stats'); }
+  get played() { return getElementById<HTMLElement>('stats-played'); },
+  get correct() { return getElementById<HTMLElement>('stats-correct'); },
+  get wrong() { return getElementById<HTMLElement>('stats-wrong'); },
+  get accuracy() { return getElementById<HTMLElement>('stats-accuracy'); },
+  get streak() { return getElementById<HTMLElement>('stats-streak'); },
+  get maxStreak() { return getElementById<HTMLElement>('stats-max-streak'); },
+  get wrongOctave() { return getElementById<HTMLElement>('stats-wrong-octave'); },
+  get keyError() { return getElementById<HTMLElement>('stats-key-error'); },
+  get avgTime() { return getElementById<HTMLElement>('stats-avg-time'); },
+  get resetButton() { return getElementById<HTMLElement>('reset-stats'); }
 };
 
 export function updateStatsUI(): void {

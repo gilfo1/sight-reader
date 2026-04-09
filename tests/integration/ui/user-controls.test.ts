@@ -7,21 +7,20 @@ import {
   initMidiHandler
 } from '@/main';
 import { WebMidi } from 'webmidi';
+import type { Input } from 'webmidi';
+
+interface MockWebMidiShape {
+  inputs: Input[];
+}
 
 // Mock WebMidi
 vi.mock('webmidi', () => {
-  const listeners: Record<string, any> = {};
   return {
     WebMidi: {
       enable: vi.fn().mockResolvedValue(true),
       inputs: [],
-      addListener: vi.fn((event: string, callback: any) => {
-        listeners[event] = callback;
-      }),
+      addListener: vi.fn(),
       removeListener: vi.fn(),
-      _trigger: (event: string, data: any) => {
-        if (listeners[event]) listeners[event](data);
-      }
     }
   };
 });
@@ -33,7 +32,6 @@ describe('User Interactions and Dynamic Controls', () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     document.body.innerHTML = doc.body.innerHTML;
-    // Copy attributes from body
     Array.from(doc.body.attributes).forEach(attr => {
       document.body.setAttribute(attr.name, attr.value);
     });
@@ -68,7 +66,7 @@ describe('User Interactions and Dynamic Controls', () => {
 
   it('should update MIDI indicator when a device connects', async () => {
     const mockInput = { name: 'Test Keyboard', addListener: vi.fn(), removeListener: vi.fn() };
-    (WebMidi as any).inputs = [mockInput];
+    (WebMidi as unknown as MockWebMidiShape).inputs = [mockInput as unknown as Input];
     
     initMidiHandler();
     await new Promise(resolve => setTimeout(resolve, 0));

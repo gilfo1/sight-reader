@@ -16,24 +16,19 @@ describe('Key Signature Selection UI', () => {
 
   it('should only return selected keys in config', () => {
     initKeySignatures(() => {});
-    const keyC: any = document.getElementById('key-C');
-    const keyBb: any = document.getElementById('key-Bb');
-    const keyB: any = document.getElementById('key-B');
-    const chromatic: any = document.getElementById('key-Chromatic');
+    const keyC = document.getElementById('key-C') as HTMLInputElement;
+    const keyBb = document.getElementById('key-Bb') as HTMLInputElement;
+    const keyB = document.getElementById('key-B') as HTMLInputElement;
+    const chromatic = document.getElementById('key-Chromatic') as HTMLInputElement;
 
     expect(keyC).not.toBeNull();
     expect(keyBb).not.toBeNull();
     expect(keyB).not.toBeNull();
     expect(chromatic).not.toBeNull();
 
-    // Deselect C (it's checked by default)
     keyC.checked = false;
-    
-    // Select Bb and Chromatic
     keyBb.checked = true;
     chromatic.checked = true;
-    
-    // Ensure B is NOT checked
     keyB.checked = false;
 
     const config = getUIConfig();
@@ -50,13 +45,13 @@ describe('Key Signature Selection UI', () => {
   });
   it('reproduction: C and Bb selected with Chromatic should only result in C or Bb signatures', () => {
     initKeySignatures(() => {});
+    document.querySelectorAll<HTMLInputElement>('#key-signatures input').forEach((checkbox) => {
+      checkbox.checked = false;
+    });
     
-    // Uncheck all first
-    document.querySelectorAll('#key-signatures input').forEach((cb: any) => cb.checked = false);
-    
-    const keyC: any = document.getElementById('key-C');
-    const keyBb: any = document.getElementById('key-Bb');
-    const chromatic: any = document.getElementById('key-Chromatic');
+    const keyC = document.getElementById('key-C') as HTMLInputElement;
+    const keyBb = document.getElementById('key-Bb') as HTMLInputElement;
+    const chromatic = document.getElementById('key-Chromatic') as HTMLInputElement;
     
     keyC.checked = true;
     keyBb.checked = true;

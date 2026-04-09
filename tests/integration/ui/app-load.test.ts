@@ -20,19 +20,14 @@ describe('Application Initial Load', () => {
       <div id="midi-indicator"></div>
       <div id="current-note"></div>
     `;
-    // We don't import main.ts directly here to avoid triggering its side effects
-    // but we can test the expected state after its "DOMContentLoaded" logic would run
   });
 
   it('should have the correct document title', async () => {
-    // Importing main.ts should trigger setting the title
     await import('@/main');
     expect(document.title).toBe('sight-reader');
   });
 
   it('should render the score on load', async () => {
-    // This is hard to test without actually importing main.ts and triggering its events.
-    // But we can verify that the renderScore function works.
     const { renderScore } = await import('@/main');
     
     renderScore();

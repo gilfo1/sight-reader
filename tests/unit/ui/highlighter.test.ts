@@ -3,6 +3,23 @@ import { Factory } from 'vexflow';
 import { renderScore } from '@/rendering/score-renderer';
 import { Measure } from '@/engine/state';
 
+interface RenderContextShape {
+  save: () => void;
+  restore: () => void;
+  setFillStyle: (value: string) => void;
+  fillRect: (...args: number[]) => void;
+  beginPath: () => void;
+  moveTo: (...args: number[]) => void;
+  lineTo: (...args: number[]) => void;
+  stroke: () => void;
+  fill: () => void;
+  closePath: () => void;
+  setStrokeStyle: (value: string) => void;
+  setFont: (font: string) => void;
+  fillText: (text: string, x: number, y: number) => void;
+  measureText: () => { width: number };
+}
+
 describe('Highlighter Rendering', (): void => {
   beforeEach((): void => {
     document.body.innerHTML = '<div id="output"></div>';
@@ -17,9 +34,8 @@ describe('Highlighter Rendering', (): void => {
       staffType: 'treble'
     }];
 
-    // Mock Factory to intercept fillRect
     const fillRectSpy = vi.fn();
-    const mockContext = {
+    const mockContext: RenderContextShape = {
       save: vi.fn(),
       restore: vi.fn(),
       setFillStyle: vi.fn(),
@@ -36,14 +52,8 @@ describe('Highlighter Rendering', (): void => {
       measureText: (): { width: number } => ({ width: 10 }),
     };
 
-    // We need to mock VexFlow Factory or at least the context it returns
-    // This is tricky because Factory is used inside renderScore
-    // Maybe we can spy on the canvas context instead if VexFlow uses a real canvas?
-    // In Vitest/JSDOM, it might be using a mock canvas.
-
-    // Let's try to use the real Factory but mock its context
     const originalGetContext = Factory.prototype.getContext;
-    Factory.prototype.getContext = () => mockContext as any;
+    Factory.prototype.getContext = () => mockContext as unknown as ReturnType<typeof Factory.prototype.getContext>;
 
     try {
       renderScore(document.getElementById('output')!, { 
@@ -60,9 +70,7 @@ describe('Highlighter Rendering', (): void => {
       });
 
       expect(fillRectSpy).toHaveBeenCalled();
-      let [x, y, width, height] = fillRectSpy.mock.calls[0];
-      
-      console.log('Highlight 1 (C4):', { x, y, width, height });
+      let [, , width] = fillRectSpy.mock.calls[0];
       expect(width).toBe(22);
 
       // Now with accidental
@@ -82,10 +90,7 @@ describe('Highlighter Rendering', (): void => {
       }, {
         getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
       });
-      [x, y, width, height] = fillRectSpy.mock.calls[0];
-      console.log('Highlight 2 (C#4):', { x, y, width, height });
-      // C#4 should be wider than C4 because of the accidental
-      // C4 was 22, C#4 should have modLeftPx > 0
+      [, , width] = fillRectSpy.mock.calls[0];
       expect(width).toBeGreaterThan(22);
       
     } finally {

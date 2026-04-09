@@ -1,33 +1,32 @@
-import { WebMidi, NoteMessageEvent, Input, PortEvent } from 'webmidi';
+import { WebMidi } from 'webmidi';
+import type { Input, NoteMessageEvent, PortEvent } from 'webmidi';
 import { 
   activeMidiNotes, 
-  suppressedNotes, 
   currentStepIndex,
-  setCurrentStepIndex,
-  musicData,
   getStepInfo,
   getTargetNotesAtStep,
   getTotalSteps,
+  musicData,
   recordCorrectNote,
-  recordWrongNote
+  recordWrongNote,
+  setCurrentStepIndex,
+  suppressedNotes,
 } from './state';
 import { getNoteValue } from '@/utils/theory';
 
+type MidiStateChangeHandler = (shouldRegenerate?: boolean) => void;
+
 export interface MIDIInitFunction {
-  (onStateChange?: (reg?: boolean) => void): void;
+  (onStateChange?: MidiStateChangeHandler): void;
   checkMatch?: () => void;
   updateStatus?: () => void;
   onNoteOn?: (e: NoteMessageEvent) => void;
   onNoteOff?: (e: NoteMessageEvent) => void;
 }
 
-export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?: boolean) => void): void {
-  const safeStateChange = (reg?: boolean): void => {
-    if (typeof onStateChange === 'function') onStateChange(reg);
-  };
-  
-  const ctx = {
-    onStateChange: safeStateChange
+export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiStateChangeHandler): void {
+  const notifyStateChange = (shouldRegenerate?: boolean): void => {
+    onStateChange?.(shouldRegenerate);
   };
 
   const deviceNameEl = document.getElementById('midi-device-name');
@@ -49,7 +48,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
       activeMidiNotes.clear();
       suppressedNotes.clear();
       noteDisplayEl.textContent = '-';
-      ctx.onStateChange();
+      notifyStateChange();
     }
   };
 
@@ -67,10 +66,10 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
       stepStartTime = Date.now(); // Reset timer for next step
       
       if (nextIndex >= getTotalSteps()) {
-          ctx.onStateChange(true); 
+          notifyStateChange(true); 
       } else {
           activeMidiNotes.forEach(n => suppressedNotes.add(n));
-          ctx.onStateChange();
+          notifyStateChange();
       }
     }
   };
@@ -99,7 +98,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
 
     noteDisplayEl.textContent = Array.from(activeMidiNotes).join(', ');
     checkMatch();
-    ctx.onStateChange();
+    notifyStateChange();
   };
 
   const onNoteOff = (e: NoteMessageEvent): void => {
@@ -107,7 +106,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
     suppressedNotes.delete(e.note.identifier);
     noteDisplayEl.textContent = activeMidiNotes.size === 0 ? '-' : Array.from(activeMidiNotes).join(', ');
     checkMatch();
-    ctx.onStateChange();
+    notifyStateChange();
   };
 
   initMidiHandler.checkMatch = checkMatch;
@@ -135,7 +134,10 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: (reg?:
       updateStatus();
     });
   }).catch((err: Error): void => {
-    console.error('MIDI could not be enabled:', err);
-    deviceNameEl.textContent = 'MIDI Error: ' + err.message;
+    deviceNameEl.textContent = err.message.includes('requestMIDIAccess')
+      ? 'MIDI unavailable'
+      : 'MIDI Error: ' + err.message;
+    indicatorEl.style.backgroundColor = 'red';
+    noteDisplayEl.textContent = '-';
   });
 };

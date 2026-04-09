@@ -1,20 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { initMidiHandler, checkMatch, activeMidiNotes, resetGameState, currentStepIndex, setMusicData } from '@/main';
 import { WebMidi } from 'webmidi';
+import type { Input, NoteMessageEvent } from 'webmidi';
+
+interface MockWebMidiShape {
+  inputs: Input[];
+  _trigger: (event: string, data: unknown) => void;
+}
 
 // Mock WebMidi
 vi.mock('webmidi', () => {
-  const listeners: Record<string, any> = {};
+  const listeners: Record<string, (data: unknown) => void> = {};
   return {
     WebMidi: {
       enable: vi.fn().mockResolvedValue(true),
       inputs: [],
-      addListener: vi.fn((event: string, callback: any) => {
+      addListener: vi.fn((event: string, callback: (data: unknown) => void) => {
         listeners[event] = callback;
       }),
       removeListener: vi.fn(),
-      // Helper to trigger events in tests
-      _trigger: (event: string, data: any) => {
+      _trigger: (event: string, data: unknown) => {
         if (listeners[event]) listeners[event](data);
       }
     }
@@ -38,7 +43,7 @@ describe('MIDI Workflow Integration', () => {
       <div id="output"></div>
     `;
     vi.clearAllMocks();
-    (WebMidi as any).inputs = [];
+    (WebMidi as unknown as MockWebMidiShape).inputs = [];
   });
 
   it('should initialize MIDI and update status when a device is connected', async () => {
@@ -56,10 +61,9 @@ describe('MIDI Workflow Integration', () => {
       addListener: vi.fn(),
       removeListener: vi.fn(),
     };
-    (WebMidi as any).inputs = [mockInput];
+    (WebMidi as unknown as MockWebMidiShape).inputs = [mockInput as unknown as Input];
     
-    // Trigger the "connected" event
-    (WebMidi as any)._trigger('connected', { port: mockInput });
+    (WebMidi as unknown as MockWebMidiShape)._trigger('connected', { port: mockInput });
 
     const deviceName = document.getElementById('midi-device-name')!;
     const indicator = document.getElementById('midi-indicator')!;
@@ -72,33 +76,33 @@ describe('MIDI Workflow Integration', () => {
     initMidiHandler();
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    let noteOnCallback: any;
-    let noteOffCallback: any;
+    let noteOnCallback: ((event: NoteMessageEvent) => void) | undefined;
+    let noteOffCallback: ((event: NoteMessageEvent) => void) | undefined;
     const mockInput = {
       name: 'Mock MIDI Keyboard',
       type: 'input',
-      addListener: vi.fn((event: string, cb: any) => {
-        if (event === 'noteon') noteOnCallback = cb;
-        if (event === 'noteoff') noteOffCallback = cb;
+      addListener: vi.fn((event: string, callback: (event: NoteMessageEvent) => void) => {
+        if (event === 'noteon') noteOnCallback = callback;
+        if (event === 'noteoff') noteOffCallback = callback;
       }),
       removeListener: vi.fn(),
     };
-    (WebMidi as any).inputs = [mockInput];
-    (WebMidi as any)._trigger('connected', { port: mockInput });
+    (WebMidi as unknown as MockWebMidiShape).inputs = [mockInput as unknown as Input];
+    (WebMidi as unknown as MockWebMidiShape)._trigger('connected', { port: mockInput });
 
     const noteDisplay = document.getElementById('current-note')!;
 
     // Note On
-    noteOnCallback({ note: { identifier: 'C4' } });
+    noteOnCallback?.({ note: { identifier: 'C4' } } as NoteMessageEvent);
     expect(noteDisplay.textContent).toBe('C4');
     expect(activeMidiNotes.has('C4')).toBe(true);
 
     // Another Note On
-    noteOnCallback({ note: { identifier: 'E4' } });
+    noteOnCallback?.({ note: { identifier: 'E4' } } as NoteMessageEvent);
     expect(noteDisplay.textContent).toBe('C4, E4');
 
     // Note Off
-    noteOffCallback({ note: { identifier: 'C4' } });
+    noteOffCallback?.({ note: { identifier: 'C4' } } as NoteMessageEvent);
     expect(noteDisplay.textContent).toBe('E4');
     expect(activeMidiNotes.has('C4')).toBe(false);
   });

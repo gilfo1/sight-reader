@@ -1,7 +1,6 @@
 import { Factory, Accidental, StaveNote, Voice, Stave, Beam, EasyScore, System } from 'vexflow';
-import { KEY_SIGNATURES } from '../constants/music';
-import { Measure } from '../engine/state';
-import { GeneratorConfig } from '../engine/music-generator';
+import { KEY_SIGNATURES } from '@/constants';
+import type { Measure, GeneratorConfig } from '@/engine';
 
 export interface RenderState {
   musicData: Measure[];
@@ -134,8 +133,8 @@ function calculateColumnWidths(
   hiddenDiv.style.display = 'none';
   document.body.appendChild(hiddenDiv);
 
-  const tempVf = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
-  const tempScore = tempVf.EasyScore();
+  const widthCalculator = new Factory({ renderer: { elementId: hiddenDiv.id, width: 5000, height: 5000 } });
+  const tempScore = widthCalculator.EasyScore();
 
   for (let m = 0; m < measuresPerLine; m++) {
     for (let l = 0; l < linesCount; l++) {
@@ -147,21 +146,21 @@ function calculateColumnWidths(
         bassSteps: [],
         staffType: 'grand' 
       } as Measure;
-      const system: System = tempVf.System({ x: 0, y: 0 });
+      const system: System = widthCalculator.System({ x: 0, y: 0 });
       const keySig = getValidKey(measureData.keySignature);
 
       if (staffType === 'treble' || staffType === 'grand') {
-        const v = getVoices(tempVf, tempScore, measureData, measureIdx, true, null, state, selectors);
+        const v = getVoices(widthCalculator, tempScore, measureData, measureIdx, true, null, state, selectors);
         configureStave(system.addStave({ voices: v }), true, m, keySig);
       }
       if (staffType === 'bass' || staffType === 'grand') {
-        const v = getVoices(tempVf, tempScore, measureData, measureIdx, false, null, state, selectors);
+        const v = getVoices(widthCalculator, tempScore, measureData, measureIdx, false, null, state, selectors);
         configureStave(system.addStave({ voices: v }), false, m, keySig);
       }
       
       system.format();
       colWidths[m] = Math.max(colWidths[m]!, (system as any).options.width + 30);
-      tempVf.reset();
+      widthCalculator.reset();
       hiddenDiv.innerHTML = '';
     }
   }

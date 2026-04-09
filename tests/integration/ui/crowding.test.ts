@@ -3,6 +3,14 @@ import { Factory } from 'vexflow';
 import { renderScore, clearRenderCache } from '@/rendering/score-renderer';
 import { Measure } from '@/engine/state';
 
+interface SystemOptionsShape {
+  options: {
+    width: number;
+    x: number;
+    y: number;
+  };
+}
+
 describe('Measure Spacing and Crowding', (): void => {
   beforeEach((): void => {
     document.body.innerHTML = '<div id="output"></div>';
@@ -23,8 +31,7 @@ describe('Measure Spacing and Crowding', (): void => {
       staffType: 'treble'
     }];
 
-    // Spy on Factory to see how wide the system is
-    const systemSpy = vi.spyOn(Factory.prototype as any, 'System');
+    const systemSpy = vi.spyOn(Factory.prototype as unknown as { System: () => SystemOptionsShape }, 'System');
     
     renderScore(document.getElementById('output')!, { 
       measuresPerLine: 1, 
@@ -40,13 +47,9 @@ describe('Measure Spacing and Crowding', (): void => {
     });
 
     expect(systemSpy).toHaveBeenCalled();
-    // The last call to System in renderScore is for the actual rendering
     const systemInstance = systemSpy.mock.results.find(r => r.type === 'return')?.value;
     if (systemInstance) {
-       // Check the width passed to System or calculated by it
        const width = systemInstance.options.width;
-       console.log('Crowded measure width:', width);
-       // With our fix (min width 200 and +30 padding), it should be quite wide
        expect(width).toBeGreaterThan(200);
     }
   });
@@ -59,7 +62,7 @@ describe('Measure Spacing and Crowding', (): void => {
       keySignature: 'C',
       staffType: 'treble'
     }];
-    const systemSpy = vi.spyOn(Factory.prototype as any, 'System');
+    const systemSpy = vi.spyOn(Factory.prototype as unknown as { System: () => SystemOptionsShape }, 'System');
     renderScore(document.getElementById('output')!, { staffType: 'treble' }, {
       musicData,
       currentStepIndex: 0,
@@ -69,16 +72,9 @@ describe('Measure Spacing and Crowding', (): void => {
       getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
     });
     const systemInstances = systemSpy.mock.results.filter(r => r.type === 'return').map(r => r.value);
-    // Rendered measures have x, y coordinates and the calculated width
     const actualRendered = systemInstances.filter(s => s.options.x !== 0 || s.options.y !== 0);
-    actualRendered.forEach((s, idx) => {
-      console.log(`Measure ${idx} width:`, s.options.width);
+    actualRendered.forEach((s) => {
       expect(s.options.width).toBeGreaterThanOrEqual(200);
     });
-  });
-
-  it('should not have overlapping notes in a crowded measure', (): void => {
-      // This is harder to test without a full layout engine, 
-      // but we can check if the calculated widths are reasonable.
   });
 });

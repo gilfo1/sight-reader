@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { saveToStorage, loadFromStorage, clearStorage, removeFromStorage } from '@/utils/storage';
+import { saveToStorage, loadFromStorage, clearStorage } from '@/utils/storage';
 
 describe('Storage Utility', () => {
   beforeEach(() => {
@@ -18,12 +18,6 @@ describe('Storage Utility', () => {
   it('should return null if key does not exist', () => {
     const loaded = loadFromStorage('non-existent');
     expect(loaded).toBeNull();
-  });
-
-  it('should remove an item', () => {
-    saveToStorage('key', 'val');
-    removeFromStorage('key');
-    expect(loadFromStorage('key')).toBeNull();
   });
 
   it('should clear all storage', () => {
