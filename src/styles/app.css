@@ -138,21 +138,29 @@ body.app-shell {
   color: #6f6f6f;
 }
 
+.icon-button[data-sound-mode="on"] {
+  color: #2f5d50;
+}
+
+.icon-button[data-sound-mode="reverb"] {
+  color: #255b78;
+}
+
 .sound-icon {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: inline-block;
 }
 
 .sound-icon-speaker {
   position: absolute;
   left: 1px;
-  top: 5px;
-  width: 6px;
-  height: 8px;
+  top: 6px;
+  width: 7px;
+  height: 10px;
   background: currentColor;
-  border-radius: 2px 0 0 2px;
+  border-radius: 2px 1px 1px 2px;
   transition:
     opacity 0.14s ease,
     color 0.14s ease;
@@ -161,12 +169,12 @@ body.app-shell {
 .sound-icon-speaker::after {
   content: "";
   position: absolute;
-  left: 5px;
+  left: 6px;
   top: 1px;
-  width: 4px;
-  height: 6px;
+  width: 6px;
+  height: 8px;
   background: currentColor;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 55% 50%);
+  clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 80%);
 }
 
 .sound-icon-wave {
@@ -176,29 +184,30 @@ body.app-shell {
   border-right-color: currentColor;
   border-radius: 50%;
   transform: translateY(-50%);
+  opacity: 0;
   transition:
     opacity 0.14s ease,
     transform 0.14s ease;
 }
 
-.sound-icon-wave-inner {
+.sound-icon-wave-primary {
   right: 3px;
-  width: 6px;
-  height: 10px;
+  width: 7px;
+  height: 11px;
 }
 
-.sound-icon-wave-outer {
+.sound-icon-wave-secondary {
   right: -1px;
   width: 10px;
-  height: 16px;
+  height: 17px;
 }
 
 .sound-icon-mute-slash {
   position: absolute;
-  left: 11px;
-  top: 2px;
-  width: 2px;
-  height: 16px;
+  left: 12px;
+  top: 1px;
+  width: 2.5px;
+  height: 19px;
   background: currentColor;
   border-radius: 999px;
   transform: rotate(35deg);
@@ -206,17 +215,56 @@ body.app-shell {
   transition: opacity 0.14s ease;
 }
 
+.sound-icon-reverb-badge {
+  position: absolute;
+  right: -2px;
+  top: -1px;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+.sound-icon-reverb-ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+}
+
+.sound-icon-reverb-ring-inner {
+  inset: 1.5px;
+  opacity: 0.95;
+}
+
+.sound-icon-reverb-ring-outer {
+  opacity: 0.45;
+}
+
 .icon-button:hover .sound-icon-wave,
 .icon-button:focus-visible .sound-icon-wave {
   transform: translateY(-50%) scale(1.05);
 }
 
-.icon-button[data-enabled="false"] .sound-icon-wave {
-  opacity: 0.18;
+.icon-button[data-sound-mode="on"] .sound-icon-wave-primary,
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-primary {
+  opacity: 0.92;
+}
+
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-secondary {
+  opacity: 0.78;
 }
 
 .icon-button[data-enabled="false"] .sound-icon-mute-slash {
   opacity: 1;
+}
+
+.icon-button[data-sound-mode="reverb"] .sound-icon-reverb-badge {
+  opacity: 0.82;
+  transform: scale(1);
 }
 
 .panel {

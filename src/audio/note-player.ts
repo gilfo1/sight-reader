@@ -1,4 +1,5 @@
 import { getNoteValue } from '@/utils/theory';
+import { DEFAULT_SOUND_MODE, getNextSoundMode, isSoundModeEnabled, SOUND_MODE, type SoundMode } from '@/audio/sound-mode';
 
 interface ActiveTone {
   gainNode: GainNode;
@@ -8,9 +9,15 @@ interface ActiveTone {
 
 const ATTACK_SECONDS = 0.01;
 const RELEASE_SECONDS = 0.05;
+const REVERB_DECAY_SECONDS = 1.1;
+const REVERB_DURATION_SECONDS = 1.6;
+const REVERB_WET_LEVEL = 0.24;
 const activeNotes = new Map<string, ActiveTone>();
 let audioContext: AudioContext | null = null;
-let soundEnabled = true;
+let dryOutputGain: GainNode | null = null;
+let reverbConvolver: ConvolverNode | null = null;
+let reverbOutputGain: GainNode | null = null;
+let soundMode: SoundMode = DEFAULT_SOUND_MODE;
 
 function getAudioContextConstructor(): typeof AudioContext | null {
   if (typeof globalThis === 'undefined') {
@@ -48,6 +55,49 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
+function createImpulseResponse(context: AudioContext, durationSeconds: number, decaySeconds: number): AudioBuffer {
+  const frameCount = Math.max(1, Math.floor(context.sampleRate * durationSeconds));
+  const impulse = context.createBuffer(2, frameCount, context.sampleRate);
+
+  for (let channelIndex = 0; channelIndex < impulse.numberOfChannels; channelIndex += 1) {
+    const channel = impulse.getChannelData(channelIndex);
+
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
+      const decay = Math.pow(1 - frameIndex / frameCount, decaySeconds);
+      channel[frameIndex] = (Math.random() * 2 - 1) * decay;
+    }
+  }
+
+  return impulse;
+}
+
+function resetAudioRouting(): void {
+  dryOutputGain = null;
+  reverbConvolver = null;
+  reverbOutputGain = null;
+}
+
+function ensureAudioRouting(context: AudioContext): void {
+  if (!dryOutputGain) {
+    dryOutputGain = context.createGain();
+    dryOutputGain.gain.value = 1;
+    dryOutputGain.connect(context.destination);
+  }
+
+  if (!reverbConvolver) {
+    reverbConvolver = context.createConvolver();
+    reverbConvolver.buffer = createImpulseResponse(context, REVERB_DURATION_SECONDS, REVERB_DECAY_SECONDS);
+  }
+
+  if (!reverbOutputGain) {
+    reverbOutputGain = context.createGain();
+    reverbOutputGain.gain.value = REVERB_WET_LEVEL;
+    reverbOutputGain.connect(context.destination);
+  }
+
+  reverbConvolver.connect(reverbOutputGain);
+}
+
 function teardownActiveTone(activeNote: ActiveTone): void {
   if (activeNote.releaseTimeoutId !== undefined) {
     clearTimeout(activeNote.releaseTimeoutId);
@@ -75,24 +125,41 @@ export function noteToFrequency(note: string): number {
 }
 
 export function isSoundEnabled(): boolean {
-  return soundEnabled;
+  return isSoundModeEnabled(soundMode);
 }
 
-export function setSoundEnabled(enabled: boolean): void {
-  soundEnabled = enabled;
+export function getSoundMode(): SoundMode {
+  return soundMode;
+}
 
-  if (!enabled) {
+export function setSoundMode(mode: SoundMode): void {
+  soundMode = mode;
+
+  if (!isSoundModeEnabled(mode)) {
     stopAllNotes();
   }
 }
 
+export function setSoundEnabled(enabled: boolean): void {
+  setSoundMode(enabled ? SOUND_MODE.ON : SOUND_MODE.OFF);
+}
+
+export function isReverbEnabled(): boolean {
+  return soundMode === SOUND_MODE.REVERB;
+}
+
+export function toggleSoundMode(): SoundMode {
+  const nextMode = getNextSoundMode(soundMode);
+  setSoundMode(nextMode);
+  return nextMode;
+}
+
 export function toggleSoundEnabled(): boolean {
-  setSoundEnabled(!soundEnabled);
-  return soundEnabled;
+  return isSoundModeEnabled(toggleSoundMode());
 }
 
 export function playNote(note: string): void {
-  if (!soundEnabled || activeNotes.has(note) || !canUseAudioContext()) {
+  if (!isSoundModeEnabled(soundMode) || activeNotes.has(note) || !canUseAudioContext()) {
     return;
   }
 
@@ -106,6 +173,8 @@ export function playNote(note: string): void {
   }
 
   try {
+    ensureAudioRouting(context);
+
     const oscillator = context.createOscillator();
     const gainNode = context.createGain();
     const now = context.currentTime;
@@ -118,7 +187,12 @@ export function playNote(note: string): void {
     gainNode.gain.exponentialRampToValueAtTime(0.18, now + ATTACK_SECONDS);
 
     oscillator.connect(gainNode);
-    gainNode.connect(context.destination);
+    gainNode.connect(dryOutputGain!);
+
+    if (soundMode === SOUND_MODE.REVERB && reverbConvolver) {
+      gainNode.connect(reverbConvolver);
+    }
+
     oscillator.start(now);
 
     activeNotes.set(note, { oscillator, gainNode });
@@ -153,4 +227,5 @@ export function stopNote(note: string): void {
 export function stopAllNotes(): void {
   Array.from(activeNotes.keys()).forEach(stopNote);
   audioContext = null;
+  resetAudioRouting();
 }

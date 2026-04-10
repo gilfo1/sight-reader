@@ -107,6 +107,10 @@ describe('Responsive Layout System', () => {
     expect(css).toContain('.icon-button');
     expect(css).toContain('.sound-icon-speaker');
     expect(css).toContain('.sound-icon-wave');
+    expect(css).toContain('.sound-icon-wave-primary');
+    expect(css).toContain('.sound-icon-wave-secondary');
+    expect(css).toContain('.sound-icon-reverb-badge');
+    expect(css).toContain('.sound-icon-reverb-ring');
     expect(css).toContain('.sound-icon-mute-slash');
   });
 

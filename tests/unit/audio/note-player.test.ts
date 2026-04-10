@@ -1,8 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isSoundEnabled, noteToFrequency, playNote, setSoundEnabled, stopAllNotes, stopNote, toggleSoundEnabled } from '@/audio/note-player';
+import {
+  getSoundMode,
+  isReverbEnabled,
+  isSoundEnabled,
+  noteToFrequency,
+  playNote,
+  setSoundEnabled,
+  setSoundMode,
+  stopAllNotes,
+  stopNote,
+  toggleSoundEnabled,
+  toggleSoundMode,
+} from '@/audio/note-player';
+import { SOUND_MODE } from '@/audio/sound-mode';
 
 interface MockGainNode {
   connect: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
   gain: {
     cancelScheduledValues: ReturnType<typeof vi.fn>;
     exponentialRampToValueAtTime: ReturnType<typeof vi.fn>;
@@ -13,6 +27,7 @@ interface MockGainNode {
 
 interface MockOscillatorNode {
   connect: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
   frequency: {
     setValueAtTime: ReturnType<typeof vi.fn>;
   };
@@ -23,17 +38,20 @@ interface MockOscillatorNode {
 }
 
 function installAudioContextMock() {
-  const gainNode: MockGainNode = {
+  const gainNodes: MockGainNode[] = [];
+  const createGainNode = (): MockGainNode => ({
     connect: vi.fn(),
+    disconnect: vi.fn(),
     gain: {
       cancelScheduledValues: vi.fn(),
       exponentialRampToValueAtTime: vi.fn(),
       setValueAtTime: vi.fn(),
       value: 0.18,
     },
-  };
+  });
   const oscillator: MockOscillatorNode = {
     connect: vi.fn(),
+    disconnect: vi.fn(),
     frequency: {
       setValueAtTime: vi.fn(),
     },
@@ -42,16 +60,31 @@ function installAudioContextMock() {
     stop: vi.fn(),
     type: 'sine',
   };
+  const convolver = {
+    buffer: null as AudioBuffer | null,
+    connect: vi.fn(),
+  };
+  const audioBuffer = {
+    getChannelData: vi.fn(() => new Float32Array(32)),
+    numberOfChannels: 2,
+  };
   const audioContext = {
-    createGain: vi.fn(() => gainNode),
+    createBuffer: vi.fn(() => audioBuffer),
+    createConvolver: vi.fn(() => convolver),
+    createGain: vi.fn(() => {
+      const gainNode = createGainNode();
+      gainNodes.push(gainNode);
+      return gainNode;
+    }),
     createOscillator: vi.fn(() => oscillator),
     currentTime: 1,
     destination: {},
     resume: vi.fn().mockResolvedValue(undefined),
+    sampleRate: 20,
   };
 
   vi.stubGlobal('AudioContext', vi.fn(() => audioContext));
-  return { audioContext, gainNode, oscillator };
+  return { audioBuffer, audioContext, convolver, gainNodes, oscillator };
 }
 
 describe('Note Player', () => {
@@ -76,10 +109,13 @@ describe('Note Player', () => {
 
   it('tracks whether sound is enabled', () => {
     expect(isSoundEnabled()).toBe(true);
-    expect(toggleSoundEnabled()).toBe(false);
+    expect(toggleSoundEnabled()).toBe(true);
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.OFF);
     expect(isSoundEnabled()).toBe(false);
     setSoundEnabled(true);
     expect(isSoundEnabled()).toBe(true);
+    expect(getSoundMode()).toBe(SOUND_MODE.ON);
   });
 
   it('does not create audio playback when sound is disabled', () => {
@@ -102,13 +138,13 @@ describe('Note Player', () => {
   });
 
   it('releases the sustained tone when the note stops', () => {
-    const { gainNode, oscillator } = installAudioContextMock();
+    const { gainNodes, oscillator } = installAudioContextMock();
 
     playNote('C4');
     stopNote('C4');
 
-    expect(gainNode.gain.cancelScheduledValues).toHaveBeenCalled();
-    expect(gainNode.gain.exponentialRampToValueAtTime).toHaveBeenCalled();
+    expect(gainNodes.at(-1)?.gain.cancelScheduledValues).toHaveBeenCalled();
+    expect(gainNodes.at(-1)?.gain.exponentialRampToValueAtTime).toHaveBeenCalled();
     expect(oscillator.stop).toHaveBeenCalled();
   });
 
@@ -129,5 +165,59 @@ describe('Note Player', () => {
     setSoundEnabled(false);
 
     expect(oscillator.stop).toHaveBeenCalled();
+  });
+
+  it('cycles through on, reverb, and off modes', () => {
+    expect(getSoundMode()).toBe(SOUND_MODE.ON);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(isReverbEnabled()).toBe(true);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.OFF);
+    expect(isSoundEnabled()).toBe(false);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.ON);
+    expect(isReverbEnabled()).toBe(false);
+  });
+
+  it('routes dry playback directly to the output when reverb is disabled', () => {
+    const { convolver, gainNodes } = installAudioContextMock();
+
+    setSoundMode(SOUND_MODE.ON);
+    playNote('C4');
+
+    expect(convolver.connect).toHaveBeenCalledTimes(1);
+    expect(gainNodes.at(-1)?.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('routes playback through the shared convolver when reverb is enabled', () => {
+    const { audioContext, convolver, gainNodes } = installAudioContextMock();
+
+    setSoundMode(SOUND_MODE.REVERB);
+    playNote('C4');
+
+    expect(audioContext.createConvolver).toHaveBeenCalledTimes(1);
+    expect(audioContext.createBuffer).toHaveBeenCalledTimes(1);
+    expect(gainNodes.at(-1)?.connect).toHaveBeenCalledTimes(2);
+    expect(gainNodes.at(-1)?.connect).toHaveBeenCalledWith(convolver);
+  });
+
+  it('reuses the shared reverb bus across notes', () => {
+    const { audioContext } = installAudioContextMock();
+
+    setSoundMode(SOUND_MODE.REVERB);
+    playNote('C4');
+    stopNote('C4');
+    playNote('D4');
+
+    expect(audioContext.createConvolver).toHaveBeenCalledTimes(1);
+    expect(audioContext.createBuffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to off when explicitly set and reports reverb correctly', () => {
+    setSoundMode(SOUND_MODE.OFF);
+    expect(isSoundEnabled()).toBe(false);
+    expect(isReverbEnabled()).toBe(false);
+
+    setSoundMode(SOUND_MODE.REVERB);
+    expect(isSoundEnabled()).toBe(true);
+    expect(isReverbEnabled()).toBe(true);
   });
 });

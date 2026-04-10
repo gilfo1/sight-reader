@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { initApp, resetGameState } from '@/main';
-import { isSoundEnabled } from '@/audio/note-player';
+import { getSoundMode, isSoundEnabled } from '@/audio/note-player';
+import { SOUND_MODE } from '@/audio/sound-mode';
 
 describe('Sound Toggle UI', () => {
   beforeEach(() => {
@@ -29,11 +30,18 @@ describe('Sound Toggle UI', () => {
 
     expect(toolbar).not.toBeNull();
     expect(soundToggle.dataset.enabled).toBe('true');
-    expect(soundToggle.getAttribute('aria-label')).toBe('Turn sound off');
+    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.ON);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on');
     expect(soundIcon.classList.contains('sound-icon')).toBe(true);
     expect(soundIcon.dataset.enabled).toBe('true');
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.ON);
     expect(soundIcon.querySelector('.sound-icon-speaker')).not.toBeNull();
     expect(soundIcon.querySelectorAll('.sound-icon-wave')).toHaveLength(2);
+    expect(soundIcon.querySelector('.sound-icon-wave-primary')).not.toBeNull();
+    expect(soundIcon.querySelector('.sound-icon-wave-secondary')).not.toBeNull();
+    expect(soundIcon.querySelector('.sound-icon-reverb-badge')).not.toBeNull();
+    expect(soundIcon.querySelectorAll('.sound-icon-reverb-ring')).toHaveLength(2);
+    expect(soundIcon.querySelector('.sound-icon-mute-slash')).not.toBeNull();
   });
 
   it('toggles sound state, icon, and persistence', async () => {
@@ -43,14 +51,40 @@ describe('Sound Toggle UI', () => {
     const soundIcon = document.getElementById('sound-toggle-icon') as HTMLSpanElement;
 
     soundToggle.click();
+    expect(isSoundEnabled()).toBe(true);
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on with reverb');
+    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
+
+    soundToggle.click();
     expect(isSoundEnabled()).toBe(false);
+    expect(getSoundMode()).toBe(SOUND_MODE.OFF);
     expect(soundToggle.dataset.enabled).toBe('false');
     expect(soundIcon.dataset.enabled).toBe('false');
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound off');
     expect(soundIcon.querySelector('.sound-icon-mute-slash')).not.toBeNull();
-    expect(JSON.parse(localStorage.getItem('sound-enabled') ?? 'true')).toBe(false);
+    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.OFF);
 
     soundToggle.click();
     expect(isSoundEnabled()).toBe(true);
+    expect(getSoundMode()).toBe(SOUND_MODE.ON);
     expect(soundIcon.dataset.enabled).toBe('true');
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.ON);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on');
+  });
+
+  it('loads the reverb state from persisted storage on app init', async () => {
+    localStorage.setItem('sound-mode', JSON.stringify(SOUND_MODE.REVERB));
+
+    await initApp();
+
+    const soundToggle = document.getElementById('sound-toggle') as HTMLButtonElement;
+    const soundIcon = document.getElementById('sound-toggle-icon') as HTMLSpanElement;
+
+    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on with reverb');
   });
 });

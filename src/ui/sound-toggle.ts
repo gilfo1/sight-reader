@@ -1,7 +1,9 @@
-import { isSoundEnabled, setSoundEnabled, toggleSoundEnabled } from '@/audio/note-player';
+import { DEFAULT_SOUND_MODE, isValidSoundMode, SOUND_MODE, type SoundMode } from '@/audio/sound-mode';
+import { getSoundMode, setSoundMode, toggleSoundMode } from '@/audio/note-player';
 import { loadFromStorage, saveToStorage } from '@/utils/storage';
 
-const SOUND_ENABLED_STORAGE_KEY = 'sound-enabled';
+const SOUND_MODE_STORAGE_KEY = 'sound-mode';
+const LEGACY_SOUND_ENABLED_STORAGE_KEY = 'sound-enabled';
 
 function getSoundToggleButton(): HTMLButtonElement | null {
   return document.getElementById('sound-toggle') as HTMLButtonElement | null;
@@ -19,17 +21,40 @@ export function updateSoundToggleUI(): void {
     return;
   }
 
-  const enabled = isSoundEnabled();
-  button.dataset.enabled = String(enabled);
-  button.setAttribute('aria-label', enabled ? 'Turn sound off' : 'Turn sound on');
-  button.title = enabled ? 'Turn sound off' : 'Turn sound on';
-  icon.dataset.enabled = String(enabled);
+  const soundMode = getSoundMode();
+  const labels: Record<SoundMode, string> = {
+    [SOUND_MODE.OFF]: 'Sound off',
+    [SOUND_MODE.ON]: 'Sound on',
+    [SOUND_MODE.REVERB]: 'Sound on with reverb',
+  };
+
+  button.dataset.enabled = String(soundMode !== SOUND_MODE.OFF);
+  button.dataset.soundMode = soundMode;
+  button.setAttribute('aria-label', labels[soundMode]);
+  button.title = labels[soundMode];
+  icon.dataset.enabled = String(soundMode !== SOUND_MODE.OFF);
+  icon.dataset.soundMode = soundMode;
 }
 
 export function resetSoundToggle(): void {
-  setSoundEnabled(true);
-  saveToStorage(SOUND_ENABLED_STORAGE_KEY, true);
+  setSoundMode(DEFAULT_SOUND_MODE);
+  saveToStorage(SOUND_MODE_STORAGE_KEY, DEFAULT_SOUND_MODE);
   updateSoundToggleUI();
+}
+
+function loadStoredSoundMode(): SoundMode {
+  const storedMode = loadFromStorage<unknown>(SOUND_MODE_STORAGE_KEY);
+
+  if (isValidSoundMode(storedMode)) {
+    return storedMode;
+  }
+
+  const storedEnabled = loadFromStorage<boolean>(LEGACY_SOUND_ENABLED_STORAGE_KEY);
+  if (typeof storedEnabled === 'boolean') {
+    return storedEnabled ? SOUND_MODE.ON : SOUND_MODE.OFF;
+  }
+
+  return DEFAULT_SOUND_MODE;
 }
 
 export function initSoundToggle(): void {
@@ -39,13 +64,12 @@ export function initSoundToggle(): void {
     return;
   }
 
-  const storedEnabled = loadFromStorage<boolean>(SOUND_ENABLED_STORAGE_KEY);
-  setSoundEnabled(storedEnabled ?? true);
+  setSoundMode(loadStoredSoundMode());
   updateSoundToggleUI();
 
   button.onclick = () => {
-    const enabled = toggleSoundEnabled();
-    saveToStorage(SOUND_ENABLED_STORAGE_KEY, enabled);
+    const soundMode = toggleSoundMode();
+    saveToStorage(SOUND_MODE_STORAGE_KEY, soundMode);
     updateSoundToggleUI();
   };
 }
