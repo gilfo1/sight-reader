@@ -8,8 +8,9 @@ const STAFF_NOTE_RANGE_STORAGE_KEY = 'staff-note-ranges';
 const NATURAL_PIANO_NOTES = ALL_PIANO_NOTES.filter((note) => !note.includes('#'));
 const NOTE_RANGE_WIDTH = 244;
 const NOTE_RANGE_PADDING_X = 16;
-const NOTE_RANGE_SINGLE_HEIGHT = 220;
-const NOTE_RANGE_GRAND_HEIGHT = 280;
+const NOTE_RANGE_SINGLE_HEIGHT = 280;
+const NOTE_RANGE_GRAND_HEIGHT = 380;
+const NOTE_RANGE_HOVER_COLOR = '#255b78';
 
 export type StaffType = 'grand' | 'treble' | 'bass';
 export type NoteRangeBound = 'lower' | 'upper';
@@ -26,10 +27,10 @@ interface StaffNoteRanges {
 }
 
 interface PreviewLayout {
-  lowerHandles: Array<{ clef: 'treble' | 'bass'; x: number; y: number }>;
+  lowerHandles: Array<{ clef: 'treble' | 'bass'; x: number; y: number; note: string }>;
   staves: Partial<Record<'treble' | 'bass', { bottomLineY: number; stepPx: number }>>;
   staffType: StaffType;
-  upperHandles: Array<{ clef: 'treble' | 'bass'; x: number; y: number }>;
+  upperHandles: Array<{ clef: 'treble' | 'bass'; x: number; y: number; note: string }>;
 }
 
 interface WidthOverrideVoice extends Voice {
@@ -48,12 +49,13 @@ const STAFF_LABELS: Record<StaffType, string> = {
 };
 
 const DEFAULT_STAFF_RANGES: StaffNoteRanges = {
-  bass: { minNote: 'C1', maxNote: 'C5' },
+  bass: { minNote: 'E1', maxNote: 'C5' },
   grand: { minNote: 'C2', maxNote: 'C6' },
   treble: { minNote: 'C3', maxNote: 'C6' },
 };
 
-const GRAND_STAFF_CLEF_SPLIT_NOTE = 'C4';
+const GRAND_STAFF_VISUAL_SPLIT_NOTE = 'C4';
+const GRAND_STAFF_LOGICAL_SPLIT_NOTE = 'C4';
 
 const ui = {
   get maxNote() { return getElementById<HTMLInputElement>('max-note'); },
@@ -66,7 +68,74 @@ const ui = {
 };
 
 let activeDragTarget: { bound: NoteRangeBound; clef: 'treble' | 'bass' } | null = null;
+let dragYOffset = 0;
+let draggedHandleY = 0;
+let currentBoundBeingProcessed: NoteRangeBound | null = null;
 let currentPreviewLayout: PreviewLayout | null = null;
+let listenersBound = false;
+let renderRequested = false;
+let availableNotesCache: string[] | null = null;
+let lastStaffTypeForCache: StaffType | null = null;
+
+const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
+  if (!activeDragTarget) {
+    return;
+  }
+
+  const clientY = 'touches' in event ? (event.touches[0]?.clientY ?? 0) : (event as MouseEvent).clientY;
+  const staffType = getCurrentStaffType();
+  
+  // Update handle position in DOM immediately for smooth visual feedback
+  const visual = ui.visual;
+  const rect = visual?.getBoundingClientRect();
+
+  // Adjust targetY by the initial drag offset to find the closest note
+  const targetYWithOffset = Math.round(clientY - dragYOffset);
+    
+  // On grand staff, the clef might change during drag if we don't fix it to the active target's clef.
+  // However, findClosestNoteForClientY already filters notes by the target's clef.
+  const draggedNote = findClosestNoteForClientY(staffType, activeDragTarget.clef, targetYWithOffset, activeDragTarget.bound);
+  
+  // Snap visual handle to the actual note position
+  if (rect && currentPreviewLayout) {
+    const noteY = getPreviewYForNote(activeDragTarget.clef, draggedNote, currentPreviewLayout);
+    const handle = visual?.querySelector(`.note-range-handle-${activeDragTarget.bound}`) as HTMLElement;
+    if (handle) {
+      handle.style.top = `${noteY}px`;
+    }
+  }
+
+  // Update the stored range and trigger partial UI update
+  const storedRanges = getStoredStaffNoteRanges();
+  const currentRange = storedRanges[staffType];
+
+  setCurrentStaffNoteRange(
+    activeDragTarget.bound === 'lower'
+      ? { minNote: draggedNote, maxNote: currentRange.maxNote }
+      : { minNote: currentRange.minNote, maxNote: draggedNote },
+    true,
+    true,
+  );
+};
+
+const handleUp = (_event: MouseEvent | PointerEvent | TouchEvent): void => {
+  // If it's a touch event, it might not have coordinates on touchend/touchcancel
+  // but we just want to stop dragging.
+  stopDragging();
+};
+
+function stopDragging(): void {
+  activeDragTarget = null;
+  renderRequested = false;
+  currentBoundBeingProcessed = null;
+  const visual = ui.visual;
+  if (visual) {
+    visual.classList.remove('note-range-visual-dragging');
+    const staffType = getCurrentStaffType();
+    const range = getStoredStaffNoteRanges()[staffType];
+    renderVexFlowPreview(staffType, range);
+  }
+}
 
 function getNormalizedStaffType(value: string | null | undefined): StaffType {
   if (value === 'treble' || value === 'bass') {
@@ -81,7 +150,7 @@ function getCurrentStaffType(): StaffType {
 }
 
 function getGrandStaffPreviewClef(note: string): 'treble' | 'bass' {
-  return getNoteValue(note) < getNoteValue(GRAND_STAFF_CLEF_SPLIT_NOTE) ? 'bass' : 'treble';
+  return getNoteValue(note) < getNoteValue(GRAND_STAFF_VISUAL_SPLIT_NOTE) ? 'bass' : 'treble';
 }
 
 function getDefaultRangeForStaff(staffType: StaffType): NoteRange {
@@ -101,15 +170,29 @@ function createMiniRendererElementId(): string {
 }
 
 export function getAvailableRangeForStaff(staffType: StaffType): string[] {
+  if (availableNotesCache && lastStaffTypeForCache === staffType) {
+    return availableNotesCache;
+  }
+
+  // Common limits for all staff types to prevent notes from going too far off screen
+  // Highest: A6 (about 4 ledger lines above treble staff)
+  // Lowest: E1 (under 4 ledger lines below bass staff)
+  const GLOBAL_MIN = 'E1';
+  const GLOBAL_MAX = 'A6';
+
+  let result: string[];
   if (staffType === 'treble') {
-    return NATURAL_PIANO_NOTES.filter((note) => getNoteValue(note) >= getNoteValue('C3') && getNoteValue(note) <= getNoteValue('C6'));
+    result = NATURAL_PIANO_NOTES.filter((note) => getNoteValue(note) >= getNoteValue('C3') && getNoteValue(note) <= getNoteValue(GLOBAL_MAX));
+  } else if (staffType === 'bass') {
+    result = NATURAL_PIANO_NOTES.filter((note) => getNoteValue(note) >= getNoteValue(GLOBAL_MIN) && getNoteValue(note) <= getNoteValue('C5'));
+  } else {
+    // Grand staff: combine the limits
+    result = NATURAL_PIANO_NOTES.filter((note) => getNoteValue(note) >= getNoteValue(GLOBAL_MIN) && getNoteValue(note) <= getNoteValue(GLOBAL_MAX));
   }
 
-  if (staffType === 'bass') {
-    return NATURAL_PIANO_NOTES.filter((note) => getNoteValue(note) >= getNoteValue('C1') && getNoteValue(note) <= getNoteValue('C5'));
-  }
-
-  return NATURAL_PIANO_NOTES;
+  availableNotesCache = result;
+  lastStaffTypeForCache = staffType;
+  return result;
 }
 
 export function clampNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRange>): NoteRange {
@@ -194,7 +277,7 @@ function renderSummary(range: NoteRange): void {
 }
 
 function getNaturalStepIndex(note: string): number {
-  const match = note.match(/^([A-G])(-?\d+)$/);
+  const match = note.match(/^([A-Ga-g])(-?\d+)$/);
   if (!match) {
     return 0;
   }
@@ -202,19 +285,23 @@ function getNaturalStepIndex(note: string): number {
   const [, letter, octaveText] = match;
   const octave = Number.parseInt(octaveText, 10);
   const stepOrder = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-  return (octave * 7) + stepOrder.indexOf(letter);
+  return (octave * 7) + stepOrder.indexOf(letter.toUpperCase());
 }
 
 function getPreviewYForNote(clef: 'treble' | 'bass', note: string, previewLayout: PreviewLayout): number {
-  const stave = previewLayout.staves[clef] ?? previewLayout.staves.treble ?? previewLayout.staves.bass;
+  const stave = previewLayout.staves[clef];
 
   if (!stave) {
     return 0;
   }
 
   const { bottomLineY, stepPx } = stave;
-  const anchorIndex = clef === 'treble' ? getNaturalStepIndex('E4') : getNaturalStepIndex('G2');
-  return bottomLineY - ((getNaturalStepIndex(note) - anchorIndex) * stepPx);
+  const bottomLineNote = clef === 'treble' ? 'E4' : 'G2';
+  const bottomLineIndex = getNaturalStepIndex(bottomLineNote);
+  const noteIndex = getNaturalStepIndex(note);
+  const steps = noteIndex - bottomLineIndex;
+  
+  return bottomLineY - (steps * stepPx);
 }
 
 function createPreviewNote(score: EasyScore, note: string, clef: 'treble' | 'bass'): StaveNote {
@@ -225,31 +312,98 @@ function createPreviewNote(score: EasyScore, note: string, clef: 'treble' | 'bas
 function getStaveMetrics(stave: Stave): { bottomLineY: number; stepPx: number } {
   const options = (stave as unknown as { options?: { spacing_between_lines_px?: number } }).options;
   const spacingBetweenLines = options?.spacing_between_lines_px ?? 10;
-
+  // bottomLineY is absolute relative to the SVG/renderer origin
+  const bottomLineY = stave.getYForLine(4);
+  
   return {
-    bottomLineY: stave.getYForLine(4),
+    bottomLineY,
     stepPx: spacingBetweenLines / 2,
   };
 }
 
-function getNoteCenterX(noteRef: StaveNote | null): number {
-  if (!noteRef) {
-    return NOTE_RANGE_WIDTH / 2;
+
+function getRenderedNoteElement(noteRef: StaveNote | null): SVGElement | null {
+  const svgElement = (noteRef as (StaveNote & { getSVGElement?: (suffix?: string) => SVGElement | undefined }) | null)?.getSVGElement?.();
+
+  if (svgElement instanceof SVGElement) {
+    return svgElement;
   }
 
-  const metrics = noteRef.getMetrics();
-  const noteWidth = metrics?.notePx ?? noteRef.getGlyphWidth() ?? 16;
-  return noteRef.getAbsoluteX() + (noteWidth / 2);
+  return null;
 }
 
-function getNoteCenterY(noteRef: StaveNote | null): number {
-  const boundingBox = noteRef?.getBoundingBox();
-
-  if (!boundingBox) {
-    return 0;
+function setRenderedNoteHoverState(noteElement: SVGElement | null, isHovered: boolean): void {
+  if (!noteElement) {
+    return;
   }
 
-  return boundingBox.getY() + (boundingBox.getH() / 2);
+  noteElement.classList.toggle('note-range-note-hovered', isHovered);
+  noteElement.setAttribute('data-note-range-hovered', String(isHovered));
+
+  const drawableElements = noteElement.querySelectorAll<SVGElement>('path, ellipse, line, polygon, rect');
+
+  // Helper to highlight an element and its siblings if they look like ledger lines
+  const highlightElements = (el: SVGElement, hovered: boolean): void => {
+    if (hovered) {
+      if ((el as HTMLElement).dataset.noteRangeOriginalStroke === undefined) {
+        (el as HTMLElement).dataset.noteRangeOriginalStroke = el.getAttribute('stroke') ?? '';
+      }
+      if ((el as HTMLElement).dataset.noteRangeOriginalFill === undefined) {
+        (el as HTMLElement).dataset.noteRangeOriginalFill = el.getAttribute('fill') ?? '';
+      }
+      el.setAttribute('stroke', NOTE_RANGE_HOVER_COLOR);
+      el.setAttribute('fill', NOTE_RANGE_HOVER_COLOR);
+    } else {
+      const originalStroke = (el as HTMLElement).dataset.noteRangeOriginalStroke ?? '';
+      const originalFill = (el as HTMLElement).dataset.noteRangeOriginalFill ?? '';
+      if (originalStroke) el.setAttribute('stroke', originalStroke);
+      else el.removeAttribute('stroke');
+      if (originalFill) el.setAttribute('fill', originalFill);
+      else el.removeAttribute('fill');
+    }
+  };
+
+  // VexFlow 4+ often renders notes as <g class="vf-stavenote">
+  // Ledger lines might be in the same group or siblings.
+  if (noteElement.tagName.toLowerCase() === 'g') {
+    // 1. Highlight all children
+    drawableElements.forEach((el) => highlightElements(el, isHovered));
+
+    // 2. Look for siblings that might be ledger lines (usually paths or rects)
+    // We only want to highlight siblings if the note actually needs ledger lines.
+    // However, we don't have easy access to the note name here.
+    // Let's check if the sibling is close enough vertically to the note.
+    const noteBox = (noteElement as unknown as { getBoundingBox?: () => { y: number; height: number } }).getBoundingBox 
+      ? (noteElement as unknown as { getBoundingBox: () => { y: number; height: number } }).getBoundingBox() 
+      : (noteElement.getBBox ? noteElement.getBBox() : { y: 0, height: 0 });
+    const noteCenterY = noteBox.y + noteBox.height / 2;
+
+    let sibling = noteElement.nextElementSibling;
+    while (sibling && (sibling.tagName.toLowerCase() === 'path' || sibling.tagName.toLowerCase() === 'rect')) {
+      if (sibling.classList.contains('vf-stavenote')) break;
+      const siblingBox = (sibling as SVGGraphicsElement).getBBox ? (sibling as SVGGraphicsElement).getBBox() : { y: 0, height: 0 };
+      const siblingCenterY = siblingBox.y + siblingBox.height / 2;
+      // Ledger lines should be within ~35px of the note head (3-4 ledger lines distance)
+      if (Math.abs(siblingCenterY - noteCenterY) < 35) {
+        highlightElements(sibling as SVGElement, isHovered);
+      }
+      sibling = sibling.nextElementSibling;
+    }
+
+    let prevSibling = noteElement.previousElementSibling;
+    while (prevSibling && (prevSibling.tagName.toLowerCase() === 'path' || prevSibling.tagName.toLowerCase() === 'rect')) {
+      if (prevSibling.classList.contains('vf-stavenote')) break;
+      const siblingBox = (prevSibling as SVGGraphicsElement).getBBox ? (prevSibling as SVGGraphicsElement).getBBox() : { y: 0, height: 0 };
+      const siblingCenterY = siblingBox.y + siblingBox.height / 2;
+      if (Math.abs(siblingCenterY - noteCenterY) < 35) {
+        highlightElements(prevSibling as SVGElement, isHovered);
+      }
+      prevSibling = prevSibling.previousElementSibling;
+    }
+  } else {
+    highlightElements(noteElement, isHovered);
+    drawableElements.forEach((el) => highlightElements(el, isHovered));
+  }
 }
 
 function createStackedWholeNoteVoices(
@@ -258,21 +412,9 @@ function createStackedWholeNoteVoices(
   notes: string[],
 ): { noteRefs: StaveNote[]; voices: Voice[] } {
   const noteRefs = notes.map((note) => createPreviewNote(score, note, clef));
-  const voices = noteRefs.map((noteRef, index) => {
+  const voices = noteRefs.map((noteRef) => {
     const voice = new Voice({ numBeats: 4, beatValue: 4 }).setMode(Voice.Mode.SOFT).addTickables([noteRef]);
-
-    if (index > 0) {
-      const anchorRef = noteRefs[0]!;
-      const originalDraw = noteRef.draw.bind(noteRef);
-      noteRef.draw = function draw(): void {
-        if (anchorRef.getTickContext() && noteRef.getTickContext()) {
-          noteRef.setXShift(anchorRef.getAbsoluteX() - noteRef.getAbsoluteX());
-        }
-        originalDraw();
-      };
-      (voice as WidthOverrideVoice).getWidth = (): number => 0;
-    }
-
+    (voice as WidthOverrideVoice).getWidth = (): number => 0;
     return voice;
   });
 
@@ -306,7 +448,7 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
   const system = vf.System({
     width: NOTE_RANGE_WIDTH - (NOTE_RANGE_PADDING_X * 2),
     x: NOTE_RANGE_PADDING_X,
-    y: staffType === 'grand' ? 26 : 32,
+    y: 40,
   });
 
   let trebleRefs: StaveNote[] = [];
@@ -322,11 +464,14 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
 
     if (clef === 'treble') {
       trebleRefs = noteRefs;
-      staves.treble = getStaveMetrics(stave);
     } else {
       bassRefs = noteRefs;
-      staves.bass = getStaveMetrics(stave);
     }
+    
+    // Explicitly associate noteRefs with the stave if they didn't have it
+    noteRefs.forEach(ref => {
+      (ref as any).setStave(stave);
+    });
   };
 
   if (staffType === 'grand') {
@@ -341,6 +486,61 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
   system.addConnector('singleLeft');
   system.addConnector('singleRight');
   system.format();
+
+  // Extract initial metrics
+  const stavesList = system.getStaves();
+  if (stavesList[0]) {
+    staves.treble = getStaveMetrics(stavesList[0]);
+  }
+  if (staffType === 'grand' && stavesList[1]) {
+    staves.bass = getStaveMetrics(stavesList[1]);
+  } else if (staffType === 'bass' && stavesList[0]) {
+    staves.bass = getStaveMetrics(stavesList[0]);
+  }
+
+  // Refine metrics using actual note positions if available
+  const calibrateFromNotes = (clef: 'treble' | 'bass', refs: StaveNote[]): void => {
+    if (refs.length === 0) return;
+
+    const noteRef = refs[0];
+    const noteName = (noteRef as any).keys[0].replace('/', '');
+    
+    // getYs() returns relative to stave in some cases, absolute in others.
+    // In VexFlow 5 with System, it's usually absolute after format.
+    const actualY = (noteRef as any).getYs ? (noteRef as any).getYs()[0] : null;
+    
+    if (typeof actualY === 'number' && staves[clef]) {
+      const stepPx = staves[clef]!.stepPx;
+      const bottomLineNote = clef === 'treble' ? 'E4' : 'G2';
+      const bottomLineIndex = getNaturalStepIndex(bottomLineNote);
+      const noteIndex = getNaturalStepIndex(noteName);
+      const steps = noteIndex - bottomLineIndex;
+      
+      staves[clef]!.bottomLineY = actualY + (steps * stepPx);
+    }
+  };
+
+  calibrateFromNotes('treble', trebleRefs);
+  calibrateFromNotes('bass', bassRefs);
+
+  // Center each note individually in the stave
+  const centerNotes = (refs: StaveNote[]): void => {
+    const targetX = (NOTE_RANGE_WIDTH / 2) - 10; // Center minus half of whole note head width
+    refs.forEach(ref => {
+      // In VexFlow, getAbsoluteX() includes current x_shift.
+      // We want newAbsoluteX = targetX.
+      // currentAbsoluteX = base + currentShift.
+      // So base = currentAbsoluteX - currentShift.
+      // newShift = targetX - base = targetX - (currentAbsoluteX - currentShift).
+      const currentShift = ref.getXShift();
+      const currentAbsoluteX = ref.getAbsoluteX();
+      const base = currentAbsoluteX - currentShift;
+      ref.setXShift(targetX - base);
+    });
+  };
+  centerNotes(trebleRefs);
+  centerNotes(bassRefs);
+
   vf.draw();
 
   const previewLayout: PreviewLayout = {
@@ -350,26 +550,27 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     upperHandles: [],
   };
 
-  const addHandle = (bound: NoteRangeBound, clef: 'treble' | 'bass', noteRef: StaveNote | null, note: string): void => {
+  const addHandle = (bound: NoteRangeBound, clef: 'treble' | 'bass', note: string): void => {
     const target = bound === 'lower' ? previewLayout.lowerHandles : previewLayout.upperHandles;
+    const centerY = getPreviewYForNote(clef, note, previewLayout);
+    target.length = 0;
     target.push({
       clef,
-      x: getNoteCenterX(noteRef),
-      y: getNoteCenterY(noteRef) || getPreviewYForNote(clef, note, previewLayout),
+      x: NOTE_RANGE_WIDTH / 2,
+      y: centerY,
+      note,
     });
   };
 
   if (staffType === 'grand') {
-    addHandle('lower', getGrandStaffPreviewClef(range.minNote), getGrandStaffPreviewClef(range.minNote) === 'treble' ? trebleRefs[0] ?? null : bassRefs[0] ?? null, range.minNote);
+    const minClef = getGrandStaffPreviewClef(range.minNote);
+    addHandle('lower', minClef, range.minNote);
 
     const upperClef = getGrandStaffPreviewClef(range.maxNote);
-    const upperRefs = upperClef === 'treble' ? trebleRefs : bassRefs;
-    const upperIndex = upperClef === getGrandStaffPreviewClef(range.minNote) ? 1 : 0;
-    addHandle('upper', upperClef, upperRefs[upperIndex] ?? upperRefs[0] ?? null, range.maxNote);
+    addHandle('upper', upperClef, range.maxNote);
   } else {
-    const noteRefs = staffType === 'treble' ? trebleRefs : bassRefs;
-    addHandle('lower', staffType, noteRefs[0] ?? null, range.minNote);
-    addHandle('upper', staffType, noteRefs[1] ?? noteRefs[0] ?? null, range.maxNote);
+    addHandle('lower', staffType, range.minNote);
+    addHandle('upper', staffType, range.maxNote);
   }
 
   currentPreviewLayout = previewLayout;
@@ -377,9 +578,60 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
   const overlay = document.createElement('div');
   overlay.className = 'note-range-overlay';
   overlay.dataset.staffType = staffType;
+  overlay.style.height = `${rendererHeight}px`;
 
-  const createHandle = (bound: NoteRangeBound, handleLayout: { clef: 'treble' | 'bass'; x: number; y: number }, note: string): HTMLButtonElement => {
+  const createHandle = (
+    bound: NoteRangeBound,
+    handleLayout: { clef: 'treble' | 'bass'; x: number; y: number },
+    note: string,
+    noteElement: SVGElement | null,
+  ): HTMLButtonElement => {
     const handle = document.createElement('button');
+  const startDrag = (event: Event): void => {
+    // In some browsers/environments, we need to make sure we don't start multiple drags
+    if (activeDragTarget) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Calculate initial Y offset from note center to mouse/touch position
+    let clientY = 0;
+    if ('touches' in event && (event as TouchEvent).touches.length > 0) {
+      clientY = (event as TouchEvent).touches[0].clientY;
+    } else if (event instanceof MouseEvent || event instanceof PointerEvent) {
+      clientY = (event as MouseEvent).clientY;
+    }
+
+    const visual = ui.visual;
+    const rect = visual?.getBoundingClientRect();
+    const handleY = handleLayout.y + (rect?.top ?? 0);
+    // If the handle was rendered for a different note than what's currently in state,
+    // we need to adjust the dragYOffset to prevent a jump.
+    const currentNote = bound === 'lower' ? getStoredStaffNoteRanges()[staffType].minNote : getStoredStaffNoteRanges()[staffType].maxNote;
+    let adjustedHandleY = handleY;
+    if (currentNote !== handleLayout.note && currentPreviewLayout) {
+      const actualNoteY = getPreviewYForNote(handleLayout.clef, currentNote, currentPreviewLayout);
+      adjustedHandleY = actualNoteY + (rect?.top ?? 0);
+    }
+    dragYOffset = clientY - adjustedHandleY;
+    
+    // We want the handle to stay EXACTLY under the mouse where we clicked it
+    // but the snapping logic needs to know the "target" center of the note.
+    
+    activeDragTarget = { bound, clef: handleLayout.clef };
+    ui.visual?.classList.add('note-range-visual-dragging');
+    setHovered(true);
+
+    // Initial update to provide immediate feedback
+    handleMove(event as any);
+  };
+    const setHovered = (isHovered: boolean): void => {
+      if (activeDragTarget && activeDragTarget.bound === bound && !isHovered) {
+        // Don't remove hover if we are dragging this bound
+        return;
+      }
+      setRenderedNoteHoverState(noteElement, isHovered);
+    };
 
     handle.type = 'button';
     handle.className = `note-range-handle note-range-handle-${bound}`;
@@ -389,20 +641,62 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     handle.setAttribute('aria-label', `${bound === 'lower' ? 'Lower' : 'Upper'} note ${note}`);
     handle.style.left = `${handleLayout.x}px`;
     handle.style.top = `${handleLayout.y}px`;
+    handle.style.width = '40px';
+    handle.style.height = '40px';
+    handle.style.marginLeft = '-20px';
+    handle.style.marginTop = '-20px';
+    handle.style.zIndex = bound === 'upper' ? '10' : '5';
+    handle.setAttribute('title', `${bound === 'lower' ? 'Lower' : 'Upper'} note ${note}`);
 
-    handle.addEventListener('mousedown', (event) => {
-      event.preventDefault();
-      activeDragTarget = { bound, clef: handleLayout.clef };
-    });
+    if (activeDragTarget && activeDragTarget.bound === bound) {
+      setHovered(true);
+    }
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('pointerdown', startDrag);
+    handle.addEventListener('mouseenter', () => setHovered(true));
+    handle.addEventListener('mouseleave', () => setHovered(false));
+    handle.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      setHovered(true);
+      startDrag(e);
+    }, { passive: false });
+    handle.addEventListener('touchend', () => setHovered(false));
+    handle.addEventListener('focus', () => setHovered(true));
+    handle.addEventListener('blur', () => setHovered(false));
 
     return handle;
   };
 
+  const lowerNoteElement = staffType === 'grand'
+    ? getRenderedNoteElement(getGrandStaffPreviewClef(range.minNote) === 'treble' ? trebleRefs[0] ?? null : bassRefs[0] ?? null)
+    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
+  const upperNoteElement = staffType === 'grand'
+    ? getRenderedNoteElement((getGrandStaffPreviewClef(range.maxNote) === 'treble' ? trebleRefs : bassRefs)[
+      getGrandStaffPreviewClef(range.maxNote) === getGrandStaffPreviewClef(range.minNote) ? 1 : 0
+    ] ?? null)
+    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[1] ?? (staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
+
   previewLayout.lowerHandles.forEach((handleLayout) => {
-    overlay.appendChild(createHandle('lower', handleLayout, range.minNote));
+    const handle = createHandle('lower', handleLayout, range.minNote, lowerNoteElement);
+    overlay.appendChild(handle);
+    if (activeDragTarget && activeDragTarget.bound === 'lower') {
+      setRenderedNoteHoverState(lowerNoteElement, true);
+      // Sync drag offset if we are dragging this bound
+      if (currentBoundBeingProcessed === 'lower') {
+        draggedHandleY = handleLayout.y;
+      }
+    }
   });
   previewLayout.upperHandles.forEach((handleLayout) => {
-    overlay.appendChild(createHandle('upper', handleLayout, range.maxNote));
+    const handle = createHandle('upper', handleLayout, range.maxNote, upperNoteElement);
+    overlay.appendChild(handle);
+    if (activeDragTarget && activeDragTarget.bound === 'upper') {
+      setRenderedNoteHoverState(upperNoteElement, true);
+      // Sync drag offset if we are dragging this bound
+      if (currentBoundBeingProcessed === 'upper') {
+        draggedHandleY = handleLayout.y;
+      }
+    }
   });
   visual.appendChild(overlay);
 }
@@ -417,48 +711,97 @@ function updateRangeUI(staffType: StaffType, range: NoteRange): void {
   }
 }
 
-function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass', clientY: number): string {
-  const notes = getAvailableRangeForStaff(staffType);
-  const rect = ui.visual?.getBoundingClientRect();
-  const top = rect && rect.height > 0 ? rect.top : 0;
-  const targetY = clientY - top;
+function updateRangeUIWithoutReRender(staffType: StaffType, range: NoteRange): void {
+  syncHiddenInputs(range);
+  renderSummary(range);
+
+  if (ui.selectedStaffLabel) {
+    ui.selectedStaffLabel.textContent = `${STAFF_LABELS[staffType]} range`;
+  }
+}
+
+function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass', clientY: number, bound: NoteRangeBound): string {
+  const allNotes = getAvailableRangeForStaff(staffType);
+  const storedRanges = getStoredStaffNoteRanges();
+  const currentRange = storedRanges[staffType];
+  
+  let notes = allNotes;
+  
+  // On Grand Staff, the bass clef handle should only select notes up to the split point,
+  // and the treble handle should only select notes from the split point upwards.
+  // This prevents the handles from 'jumping' across staves.
+  if (staffType === 'grand') {
+    if (clef === 'bass') {
+      notes = allNotes.filter(note => getNoteValue(note) < getNoteValue(GRAND_STAFF_LOGICAL_SPLIT_NOTE));
+    } else {
+      notes = allNotes.filter(note => getNoteValue(note) >= getNoteValue(GRAND_STAFF_LOGICAL_SPLIT_NOTE));
+    }
+  }
+
+  // Also ensure that minNote doesn't exceed maxNote and vice versa during drag.
+  // We allow them to be equal, but not cross.
+  if (bound === 'lower') {
+    const maxVal = getNoteValue(currentRange.maxNote);
+    notes = notes.filter(note => getNoteValue(note) <= maxVal);
+  } else {
+    const minVal = getNoteValue(currentRange.minNote);
+    notes = notes.filter(note => getNoteValue(note) >= minVal);
+  }
+
+  if (notes.length === 0) return (bound === 'lower' ? currentRange.minNote : currentRange.maxNote);
+
+  const visualElement = ui.visual;
+  const rect = visualElement?.getBoundingClientRect();
+  const targetY = (rect && rect.height > 0) ? clientY - rect.top : clientY;
   const previewLayout = currentPreviewLayout;
 
   if (!previewLayout || !previewLayout.staves[clef]) {
-    return notes[0]!;
+    // Fallback for tests or when layout is missing: simple linear interpolation
+    const height = (rect && rect.height > 0) ? rect.height : 300;
+    const percentage = Math.max(0, Math.min(1, targetY / height));
+    // index 0 is LOWEST, index last is HIGHEST
+    // top (0) -> HIGHEST (last)
+    // bottom (height) -> LOWEST (0)
+    const index = Math.round((1 - percentage) * (notes.length - 1));
+    return notes[index]!;
   }
 
-  return notes.reduce((closest, note) => {
-    const bestDistance = Math.abs(getPreviewYForNote(clef, closest, previewLayout) - targetY);
-    const noteDistance = Math.abs(getPreviewYForNote(clef, note, previewLayout) - targetY);
-    return noteDistance < bestDistance ? note : closest;
-  }, notes[0]!);
+  // Optimization: use a for loop with early-exit
+  let closestNote = notes[0]!;
+  let minDistance = Infinity;
+
+  // Use a simple loop for better performance during drag
+  for (let i = 0; i < notes.length; i++) {
+    const note = notes[i];
+    const noteY = getPreviewYForNote(clef, note, previewLayout);
+    const distance = Math.abs(noteY - targetY);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestNote = note;
+    } else if (distance > minDistance) {
+      // Since noteY is monotonic with note index, once the distance starts increasing,
+      // we've passed the closest note.
+      break;
+    }
+  }
+
+  return closestNote;
 }
 
 function bindPointerListeners(): void {
-  window.onmousemove = (event: MouseEvent) => {
-    if (!activeDragTarget) {
-      return;
-    }
+  if (listenersBound) {
+    return;
+  }
 
-    const staffType = getCurrentStaffType();
-    const draggedNote = findClosestNoteForClientY(staffType, activeDragTarget.clef, event.clientY);
-    const currentRange = clampNoteRangeForStaff(staffType, {
-      minNote: ui.minNote?.value,
-      maxNote: ui.maxNote?.value,
-    });
-
-    setCurrentStaffNoteRange(
-      activeDragTarget.bound === 'lower'
-        ? { minNote: draggedNote, maxNote: currentRange.maxNote }
-        : { minNote: currentRange.minNote, maxNote: draggedNote },
-      true,
-    );
-  };
-
-  window.onmouseup = () => {
-    activeDragTarget = null;
-  };
+  window.addEventListener('mousemove', handleMove, { passive: false });
+  window.addEventListener('pointermove', handleMove, { passive: false });
+  window.addEventListener('touchmove', handleMove, { passive: false });
+  window.addEventListener('mouseup', handleUp);
+  window.addEventListener('pointerup', handleUp);
+  window.addEventListener('touchend', handleUp);
+  window.addEventListener('touchcancel', handleUp);
+  
+  listenersBound = true;
 }
 
 export function setNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRange>): void {
@@ -471,14 +814,37 @@ export function setNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRa
   }
 }
 
-export function setCurrentStaffNoteRange(range: Partial<NoteRange>, notifyChange = false): void {
+export function setCurrentStaffNoteRange(range: Partial<NoteRange>, notifyChange = false, skipReRender = false): void {
   const staffType = getCurrentStaffType();
   const nextRange = clampNoteRangeForStaff(staffType, range);
   const storedRanges = getStoredStaffNoteRanges();
 
+  // If the range hasn't changed, but we are skipping re-render (dragging), 
+  // we still might want to keep the handle moving which is already handled in handleMove.
+  // But we MUST check if the logical note has changed.
+  if (storedRanges[staffType].minNote === nextRange.minNote && storedRanges[staffType].maxNote === nextRange.maxNote) {
+    return;
+  }
+
   storedRanges[staffType] = nextRange;
   saveStoredStaffNoteRanges(storedRanges);
-  updateRangeUI(staffType, nextRange);
+
+  if (skipReRender) {
+    updateRangeUIWithoutReRender(staffType, nextRange);
+    
+    // Throttle rendering during dragging
+    if (!renderRequested) {
+      renderRequested = true;
+      requestAnimationFrame(() => {
+        if (activeDragTarget) {
+          renderVexFlowPreview(staffType, nextRange);
+        }
+        renderRequested = false;
+      });
+    }
+  } else {
+    updateRangeUI(staffType, nextRange);
+  }
 
   if (notifyChange) {
     dispatchRangeChange();
