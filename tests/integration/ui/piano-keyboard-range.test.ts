@@ -31,8 +31,8 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('forces the effective note range to the keyboard range while open', async () => {
     await initApp();
 
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
-    const maxNote = document.getElementById('max-note') as HTMLSelectElement;
+    const minNote = document.getElementById('min-note') as HTMLInputElement;
+    const maxNote = document.getElementById('max-note') as HTMLInputElement;
     const keyboardRange = getKeyboardRange();
     minNote.value = 'A0';
     maxNote.value = 'C8';
@@ -46,8 +46,8 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('restores the settings range when the keyboard accordion is closed', async () => {
     await initApp();
 
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
-    const maxNote = document.getElementById('max-note') as HTMLSelectElement;
+    const minNote = document.getElementById('min-note') as HTMLInputElement;
+    const maxNote = document.getElementById('max-note') as HTMLInputElement;
     const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     minNote.value = 'A0';
     maxNote.value = 'C8';
@@ -72,8 +72,8 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('returns to the configured range after the keyboard is closed', async () => {
     await initApp();
 
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
-    const maxNote = document.getElementById('max-note') as HTMLSelectElement;
+    const minNote = document.getElementById('min-note') as HTMLInputElement;
+    const maxNote = document.getElementById('max-note') as HTMLInputElement;
     const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     minNote.value = 'A0';
     maxNote.value = 'B0';

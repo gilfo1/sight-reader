@@ -10,8 +10,13 @@ describe('Application Initial Load', () => {
       <select id="lines"><option value="1">1</option></select>
       <select id="staff-type"><option value="grand">Grand Staff</option></select>
       <select id="notes-per-step"><option value="1">1</option></select>
-      <select id="min-note"><option value="C4">C4</option></select>
-      <select id="max-note"><option value="C5">C5</option></select>
+      <div id="note-range-selector">
+        <span id="note-range-selected-staff"></span>
+        <div id="note-range-visual"></div>
+        <div id="note-range-value-summary"></div>
+      </div>
+      <input id="min-note" type="hidden" value="C4">
+      <input id="max-note" type="hidden" value="C5">
       <div id="note-values">
         <input type="checkbox" value="q" checked>
       </div>

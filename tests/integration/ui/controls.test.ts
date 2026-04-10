@@ -1,16 +1,23 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { updateNoteSelectors, getUIConfig } from '@/ui/controls';
+import { setCurrentStaffNoteRange } from '@/ui/note-range';
 
 describe('UI Controls', () => {
   beforeEach(() => {
+    localStorage.clear();
     document.body.innerHTML = `
       <select id="staff-type">
         <option value="treble">Treble</option>
         <option value="bass">Bass</option>
         <option value="grand" selected>Grand Staff</option>
       </select>
-      <select id="min-note"></select>
-      <select id="max-note"></select>
+      <div id="note-range-selector">
+        <span id="note-range-selected-staff"></span>
+        <div id="note-range-visual"></div>
+        <div id="note-range-value-summary"></div>
+      </div>
+      <input id="min-note" type="hidden" value="C2">
+      <input id="max-note" type="hidden" value="C6">
       <select id="measures-per-line"><option value="4">4</option></select>
       <select id="notes-per-step"><option value="1">1</option></select>
       <select id="lines"><option value="1">1</option></select>
@@ -44,8 +51,8 @@ describe('UI Controls', () => {
 
   it('should update note selectors based on staff type', () => {
     updateNoteSelectors();
-    const minSelect: any = document.getElementById('min-note');
-    const maxSelect: any = document.getElementById('max-note');
+    const minSelect = document.getElementById('min-note') as HTMLInputElement;
+    const maxSelect = document.getElementById('max-note') as HTMLInputElement;
     
     // Default for Grand Staff is C2 - C6
     expect(minSelect.value).toBe('C2');
@@ -59,31 +66,31 @@ describe('UI Controls', () => {
 
     (document.getElementById('staff-type') as any).value = 'bass';
     updateNoteSelectors();
-    // It should preserve C3 because C3 is in bass range (C1-C5)
-    expect(minSelect.value).toBe('C3');
+    expect(minSelect.value).toBe('C1');
+    expect(maxSelect.value).toBe('C5');
+  });
 
-    // Now set something out of range for bass, then switch to bass
-    (document.getElementById('staff-type') as any).value = 'treble';
+  it('should remember each staff type range separately', () => {
+    (document.getElementById('staff-type') as any).value = 'grand';
     updateNoteSelectors();
-    minSelect.value = 'C6'; // C6 is in treble, not in bass
+    const minSelect = document.getElementById('min-note') as HTMLInputElement;
+    const maxSelect = document.getElementById('max-note') as HTMLInputElement;
+
+    setCurrentStaffNoteRange({ minNote: 'E1', maxNote: 'E5' });
+
     (document.getElementById('staff-type') as any).value = 'bass';
     updateNoteSelectors();
     expect(minSelect.value).toBe('C1');
-  });
+    expect(maxSelect.value).toBe('C5');
 
-  it('should preserve selected note if it is still within range when staff type changes', () => {
     (document.getElementById('staff-type') as any).value = 'grand';
     updateNoteSelectors();
-    const minSelect: any = document.getElementById('min-note');
-    minSelect.value = 'E2';
-    
-    (document.getElementById('staff-type') as any).value = 'bass';
-    updateNoteSelectors();
-    // E2 is valid in bass (C1-C5), so it should be preserved
-    expect(minSelect.value).toBe('E2');
+    expect(minSelect.value).toBe('E1');
+    expect(maxSelect.value).toBe('E5');
   });
 
   it('should extract config from UI correctly', () => {
+    updateNoteSelectors();
     const config = getUIConfig();
     expect(config.measuresPerLine).toBe(4);
     expect(config.staffType).toBe('grand');
@@ -92,6 +99,8 @@ describe('UI Controls', () => {
     expect(config.maxReach).toBe(13);
     expect(config.isChromatic).toBe(false);
     expect(config.isAdaptive).toBe(false);
+    expect(config.minNote).toBe('C2');
+    expect(config.maxNote).toBe('C6');
   });
 
   it('should have all expected max reach options in the UI', () => {

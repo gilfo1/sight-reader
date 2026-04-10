@@ -151,13 +151,19 @@
                 <option value="10">10</option>
               </select>
             </div>
-            <div class="field-group">
-              <label for="min-note">Min Note:</label>
-              <select id="min-note" class="control-input"></select>
-            </div>
-            <div class="field-group">
-              <label for="max-note">Max Note:</label>
-              <select id="max-note" class="control-input"></select>
+            <div class="field-group field-group-note-range">
+              <label for="note-range-selector">Note Range:</label>
+              <div id="note-range-selector" class="note-range-selector" role="group" aria-describedby="note-range-selected-staff">
+                <div class="note-range-selector-header">
+                  <span id="note-range-selected-staff" class="note-range-selected-staff">Grand staff range</span>
+                </div>
+                <div class="note-range-selector-body">
+                  <div id="note-range-visual" class="note-range-visual" aria-hidden="true"></div>
+                </div>
+                <div id="note-range-value-summary" class="note-range-value-summary">c2 - c6</div>
+                <input id="min-note" type="hidden" value="C2" />
+                <input id="max-note" type="hidden" value="C6" />
+              </div>
             </div>
           </div>
           <div class="option-section">

@@ -23,8 +23,13 @@ describe('Settings Workflow Integration', () => {
         <option value="1" selected>1</option>
         <option value="2">2</option>
       </select>
-      <select id="min-note"></select>
-      <select id="max-note"></select>
+      <div id="note-range-selector">
+        <span id="note-range-selected-staff"></span>
+        <div id="note-range-visual"></div>
+        <div id="note-range-value-summary"></div>
+      </div>
+      <input id="min-note" type="hidden" value="C2">
+      <input id="max-note" type="hidden" value="C6">
       <div id="note-values">
         <input type="checkbox" value="q" checked>
       </div>
@@ -61,7 +66,7 @@ describe('Settings Workflow Integration', () => {
     controls.setupEventListeners(onConfigChange);
 
     const staffSelect = document.getElementById('staff-type') as HTMLSelectElement;
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
+    const minNote = document.getElementById('min-note') as HTMLInputElement;
     
     // Initial (grand)
     expect(minNote.value).toBe('C2');
@@ -70,7 +75,6 @@ describe('Settings Workflow Integration', () => {
     staffSelect.dispatchEvent(new Event('change'));
 
     expect(onConfigChange).toHaveBeenCalled();
-    // In treble, min note should be C3
     expect(minNote.value).toBe('C3');
   });
 

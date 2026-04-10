@@ -6,6 +6,7 @@ import {
   resetGameState
 } from '@/main';
 import { loadFromStorage, saveToStorage } from '@/utils/storage';
+import { setCurrentStaffNoteRange } from '@/ui/note-range';
 
 describe('UI Persistence Integration', () => {
   beforeEach(() => {
@@ -120,18 +121,48 @@ describe('UI Persistence Integration', () => {
 
   it('should persist min and max note selections', async () => {
     await initApp();
-    
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
-    const maxNote = document.getElementById('max-note') as HTMLSelectElement;
-    
-    minNote.value = 'A0';
-    maxNote.value = 'C8';
-    minNote.dispatchEvent(new Event('change'));
-    maxNote.dispatchEvent(new Event('change'));
+
+    setCurrentStaffNoteRange({ minNote: 'A0', maxNote: 'C8' }, true);
     
     const saved = loadFromStorage<any>('generator-config');
     expect(saved.minNote).toBe('A0');
     expect(saved.maxNote).toBe('C8');
+    expect((document.getElementById('note-range-value-summary') as HTMLElement).textContent).toBe('a0 - c8');
+  });
+
+  it('should persist note ranges separately for each staff type', async () => {
+    await initApp();
+
+    const staffType = document.getElementById('staff-type') as HTMLSelectElement;
+    setCurrentStaffNoteRange({ minNote: 'D1', maxNote: 'F5' }, true);
+
+    staffType.value = 'treble';
+    staffType.dispatchEvent(new Event('change'));
+    setCurrentStaffNoteRange({ minNote: 'E3', maxNote: 'C5' }, true);
+
+    staffType.value = 'bass';
+    staffType.dispatchEvent(new Event('change'));
+    setCurrentStaffNoteRange({ minNote: 'D1', maxNote: 'F2' }, true);
+
+    document.body.innerHTML = new DOMParser().parseFromString(readFileSync('./index.html', 'utf-8'), 'text/html').body.innerHTML;
+    await initApp();
+
+    const reloadedStaffType = document.getElementById('staff-type') as HTMLSelectElement;
+    const reloadedMinNote = document.getElementById('min-note') as HTMLInputElement;
+    const reloadedMaxNote = document.getElementById('max-note') as HTMLInputElement;
+
+    expect(reloadedMinNote.value).toBe('D1');
+    expect(reloadedMaxNote.value).toBe('F2');
+
+    reloadedStaffType.value = 'treble';
+    reloadedStaffType.dispatchEvent(new Event('change'));
+    expect(reloadedMinNote.value).toBe('E3');
+    expect(reloadedMaxNote.value).toBe('C5');
+
+    reloadedStaffType.value = 'grand';
+    reloadedStaffType.dispatchEvent(new Event('change'));
+    expect(reloadedMinNote.value).toBe('D1');
+    expect(reloadedMaxNote.value).toBe('F5');
   });
 
   it('should persist chromatic setting', async () => {

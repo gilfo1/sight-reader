@@ -37,8 +37,15 @@ describe('Responsive Layout System', () => {
   it('makes the settings fields responsive through reusable control grids', () => {
     expect(doc.querySelectorAll('.control-grid').length).toBeGreaterThanOrEqual(2);
     expect(doc.querySelectorAll('.field-group').length).toBeGreaterThanOrEqual(6);
+    expect(doc.querySelector('.field-group-note-range')).not.toBeNull();
+    expect(doc.getElementById('note-range-selector')).not.toBeNull();
     expect(css).toContain('.control-grid');
     expect(css).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));');
+    expect(css).toContain('.field-group-note-range');
+    expect(css).toContain('.note-range-selector');
+    expect(css).toContain('.note-range-renderer');
+    expect(css).toContain('.note-range-handle');
+    expect(css).toContain('.note-range-value-summary');
   });
 
   it('keeps the score and keyboard horizontally scrollable on small screens', () => {

@@ -11,8 +11,13 @@ describe('Performance and Stress Regression', () => {
         <select id="notes-per-step"><option value="10">10</option></select>
         <select id="lines"><option value="10">10</option></select>
         <select id="staff-type"><option value="grand">Grand Staff</option></select>
-        <select id="min-note"><option value="A0">A0</option></select>
-        <select id="max-note"><option value="C8">C8</option></select>
+        <div id="note-range-selector">
+          <span id="note-range-selected-staff"></span>
+          <div id="note-range-visual"></div>
+          <div id="note-range-value-summary"></div>
+        </div>
+        <input id="min-note" type="hidden" value="A0">
+        <input id="max-note" type="hidden" value="C8">
         <div id="note-values"><input type="checkbox" value="q" checked></div>
         <div id="key-signatures"></div>
       </div>

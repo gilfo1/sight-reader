@@ -41,18 +41,20 @@ describe('User Interactions and Dynamic Controls', () => {
 
   it('should filter note ranges based on staff type', () => {
     const staffType = document.getElementById('staff-type') as HTMLSelectElement;
-    const minNote = document.getElementById('min-note') as HTMLSelectElement;
+    const minNote = document.getElementById('min-note') as HTMLInputElement;
+    const maxNote = document.getElementById('max-note') as HTMLInputElement;
     
     // Treble Clef: range C3-C6
     staffType.value = 'treble';
     updateNoteSelectors();
-    expect(minNote.options[0]!.value).toBe('C3');
+    expect(minNote.value).toBe('C3');
+    expect(maxNote.value).toBe('C6');
     
     // Bass Clef: range C1-C5
     staffType.value = 'bass';
     updateNoteSelectors();
-    expect(minNote.options[0]!.value).toBe('C1');
-    expect(minNote.options[minNote.options.length - 1]!.value).toBe('C5');
+    expect(minNote.value).toBe('C1');
+    expect(maxNote.value).toBe('C5');
   });
 
   it('should initialize key signature checkboxes correctly', () => {

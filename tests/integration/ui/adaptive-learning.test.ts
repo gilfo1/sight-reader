@@ -21,8 +21,13 @@ describe('Adaptive Learning Integration', () => {
     
     document.body.innerHTML = `
       <select id="staff-type"><option value="treble">Treble</option></select>
-      <select id="min-note"></select>
-      <select id="max-note"></select>
+      <div id="note-range-selector">
+        <span id="note-range-selected-staff"></span>
+        <div id="note-range-visual"></div>
+        <div id="note-range-value-summary"></div>
+      </div>
+      <input id="min-note" type="hidden" value="C4">
+      <input id="max-note" type="hidden" value="C5">
       <select id="measures-per-line"><option value="1">1</option></select>
       <select id="notes-per-step"><option value="1">1</option></select>
       <select id="lines"><option value="1">1</option></select>

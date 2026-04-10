@@ -30,7 +30,7 @@ describe('Initial DOM Structure', () => {
   it('should have all musical configuration selectors', () => {
     const ids = [
       'measures-per-line', 'lines', 'staff-type', 
-      'notes-per-step', 'min-note', 'max-note'
+      'notes-per-step', 'min-note', 'max-note', 'note-range-selector', 'note-range-visual'
     ];
     ids.forEach(id => {
       expect(doc.getElementById(id)).not.toBeNull();
