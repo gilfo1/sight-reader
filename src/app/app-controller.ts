@@ -26,13 +26,30 @@ import {
   updateNoteSelectors,
 } from '@/ui/controls';
 import { initStatsUI, updateStatsUI } from '@/ui/stats';
-import { initPianoKeyboard, releaseAllKeyboardNotes, updatePianoKeyboardActiveNotes } from '@/ui/piano-keyboard';
+import {
+  getKeyboardRange,
+  initPianoKeyboard,
+  isPianoKeyboardOpen,
+  releaseAllKeyboardNotes,
+  updatePianoKeyboardActiveNotes,
+} from '@/ui/piano-keyboard';
 import { closeSettingsModal, initSettingsModal } from '@/ui/settings-modal';
 import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
 
 function getGeneratorConfig(config?: Partial<GeneratorConfig>): GeneratorConfig {
-  return { ...getEffectiveUIConfig(), ...config };
+  const baseConfig = { ...getEffectiveUIConfig(), ...config };
+
+  if (isPianoKeyboardOpen()) {
+    const keyboardRange = getKeyboardRange();
+    return {
+      ...baseConfig,
+      minNote: keyboardRange.minNote,
+      maxNote: keyboardRange.maxNote,
+    };
+  }
+
+  return baseConfig;
 }
 
 function resetGameState(keepHeldNotes = false): void {

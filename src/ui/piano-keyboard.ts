@@ -44,7 +44,7 @@ function getKeyboardViewportWidth(): number {
 
 function loadKeyboardSizeMode(): KeyboardSizeMode {
   const storedMode = loadFromStorage<KeyboardSizeMode>(KEYBOARD_SIZE_MODE_STORAGE_KEY);
-  if (storedMode === 'large' || storedMode === 'medium' || storedMode === 'small') {
+  if (storedMode === 'large' || storedMode === 'medium' || storedMode === 'small' || storedMode === 'extra-small') {
     return storedMode;
   }
 
@@ -74,7 +74,7 @@ export function isPianoKeyboardOpen(): boolean {
 }
 
 export function getKeyboardSizeMode(): KeyboardSizeMode {
-  return currentSizeMode;
+  return getCurrentKeyboardRangeState().sizeMode;
 }
 
 export function getKeyboardLayout(): KeyboardNote[] {
@@ -187,7 +187,8 @@ function createKeyboardSizeToggle(layout: HTMLDivElement): HTMLButtonElement | n
   toggle.title = `Change keyboard size (${currentSizeMode} -> ${nextSizeMode})`;
   toggle.style.left = `${parseFloat(middleCKey.style.left) + (sizing.whiteKeyWidth / 2)}px`;
 
-  ['large', 'medium', 'small'].forEach((sizeMode) => {
+  const dashModes: KeyboardSizeMode[] = ['large', 'medium', 'small'];
+  dashModes.forEach((sizeMode) => {
     const dash = document.createElement('span');
     dash.className = 'piano-keyboard-size-dash';
     dash.dataset.sizeMode = sizeMode;

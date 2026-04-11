@@ -1074,6 +1074,10 @@ details[open] > .keyboard-summary .keyboard-summary-label {
   width: 6px;
 }
 
+.piano-keyboard-size-dash[data-size-mode="extra-small"] {
+  width: 4px;
+}
+
 .piano-keyboard-size-toggle:hover .piano-keyboard-size-dash,
 .piano-keyboard-size-toggle:focus-visible .piano-keyboard-size-dash {
   transform: translateY(1px);
@@ -1082,7 +1086,8 @@ details[open] > .keyboard-summary .keyboard-summary-label {
 
 .piano-keyboard-size-toggle[data-size-mode="large"] .piano-keyboard-size-dash[data-size-mode="large"],
 .piano-keyboard-size-toggle[data-size-mode="medium"] .piano-keyboard-size-dash[data-size-mode="medium"],
-.piano-keyboard-size-toggle[data-size-mode="small"] .piano-keyboard-size-dash[data-size-mode="small"] {
+.piano-keyboard-size-toggle[data-size-mode="small"] .piano-keyboard-size-dash[data-size-mode="small"],
+.piano-keyboard-size-toggle[data-size-mode="extra-small"] .piano-keyboard-size-dash[data-size-mode="extra-small"] {
   background: #19a34a;
   box-shadow: 0 0 0 1px rgba(25, 163, 74, 0.2), 0 0 10px rgba(25, 163, 74, 0.45);
   opacity: 1;

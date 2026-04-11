@@ -1,7 +1,7 @@
 import { ALL_PIANO_NOTES } from '@/constants/music';
 import { getNoteValue } from '@/utils/theory';
 
-export type KeyboardSizeMode = 'large' | 'medium' | 'small';
+export type KeyboardSizeMode = 'large' | 'medium' | 'small' | 'extra-small';
 
 export interface KeyboardSizing {
   blackKeyHeight: number;
@@ -22,7 +22,7 @@ export interface KeyboardRangeState extends KeyboardRange {
   whiteKeyCount: number;
 }
 
-export const DEFAULT_KEYBOARD_SIZE_MODE: KeyboardSizeMode = 'large';
+export const DEFAULT_KEYBOARD_SIZE_MODE: KeyboardSizeMode = 'small';
 export const KEYBOARD_CENTER_NOTE = 'C4';
 
 const WHITE_NOTES = ALL_PIANO_NOTES.filter((note) => !isBlackKey(note));
@@ -49,6 +49,13 @@ const KEYBOARD_SIZING: Record<KeyboardSizeMode, KeyboardSizing> = {
     blackKeyHeight: 92,
     blackKeyOffset: 10.5,
   },
+  'extra-small': {
+    whiteKeyWidth: 28,
+    whiteKeyHeight: 132,
+    blackKeyWidth: 17,
+    blackKeyHeight: 82,
+    blackKeyOffset: 8.5,
+  },
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -64,7 +71,10 @@ export function getKeyboardSizing(sizeMode: KeyboardSizeMode): KeyboardSizing {
 }
 
 export function getNextKeyboardSizeMode(sizeMode: KeyboardSizeMode): KeyboardSizeMode {
-  const currentIndex = KEYBOARD_SIZE_ORDER.indexOf(sizeMode);
+  const currentIndex = KEYBOARD_SIZE_ORDER.indexOf(sizeMode as any);
+  if (currentIndex === -1) {
+    return KEYBOARD_SIZE_ORDER[0]!;
+  }
   return KEYBOARD_SIZE_ORDER[(currentIndex + 1) % KEYBOARD_SIZE_ORDER.length]!;
 }
 
@@ -75,7 +85,17 @@ export function getKeyboardWhiteKeyCount(availableWidth: number, sizeMode: Keybo
 }
 
 export function getKeyboardRangeState(availableWidth: number, sizeMode: KeyboardSizeMode): KeyboardRangeState {
-  const whiteKeyCount = getKeyboardWhiteKeyCount(availableWidth, sizeMode);
+  let activeSizeMode = sizeMode;
+
+  // Responsively switch to 'extra-small' if 'small' cannot show 2 octaves (14 white keys)
+  if (sizeMode === 'small') {
+    const smallWhiteKeyWidth = KEYBOARD_SIZING.small.whiteKeyWidth;
+    if (availableWidth / smallWhiteKeyWidth < 14) {
+      activeSizeMode = 'extra-small';
+    }
+  }
+
+  const whiteKeyCount = getKeyboardWhiteKeyCount(availableWidth, activeSizeMode);
   const centerIndex = WHITE_NOTES.indexOf(KEYBOARD_CENTER_NOTE);
   const maxStartIndex = WHITE_NOTES.length - whiteKeyCount;
   const startIndex = clamp(centerIndex - Math.floor(whiteKeyCount / 2), 0, maxStartIndex);
@@ -92,7 +112,7 @@ export function getKeyboardRangeState(availableWidth: number, sizeMode: Keyboard
   return {
     minNote,
     maxNote,
-    sizeMode,
+    sizeMode: activeSizeMode,
     visibleNotes,
     whiteKeyCount,
   };

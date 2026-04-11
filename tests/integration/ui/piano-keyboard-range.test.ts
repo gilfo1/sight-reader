@@ -105,11 +105,12 @@ describe('On-Screen Piano Keyboard Range Override', () => {
     keyboardDetails.open = true;
     keyboardDetails.dispatchEvent(new Event('toggle'));
 
-    const largeRange = getKeyboardRange();
     const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
-    sizeToggle.click();
+    sizeToggle.click(); // large
+    const largeRange = getKeyboardRange();
+    sizeToggle.click(); // medium
     const mediumRange = getKeyboardRange();
-    sizeToggle.click();
+    sizeToggle.click(); // small
     const smallRange = getKeyboardRange();
 
     expect(getKeyboardSizeMode()).toBe('small');

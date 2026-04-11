@@ -56,10 +56,10 @@ describe('On-Screen Piano Keyboard', () => {
     details.dispatchEvent(new Event('toggle'));
     
     expect(keyboard).not.toBeNull();
-    expect(keyboard.dataset.sizeMode).toBe('large');
+    expect(keyboard.dataset.sizeMode).toBe('small');
     expect(keyboard.querySelectorAll('.piano-key').length).toBeGreaterThan(30);
     expect(Array.from(keyboard.querySelectorAll('.piano-key')).every((key) => key.textContent === '')).toBe(true);
-    expect(sizeToggle.dataset.sizeMode).toBe('large');
+    expect(sizeToggle.dataset.sizeMode).toBe('small');
     expect(sizeToggle.title).toContain('Change keyboard size');
     expect(sizeToggle.querySelectorAll('.piano-keyboard-size-dash')).toHaveLength(3);
     expect(parseFloat(sizeToggle.style.left)).toBeGreaterThan(parseFloat(middleCKey.style.left));
@@ -112,22 +112,22 @@ describe('On-Screen Piano Keyboard', () => {
     expect(activeMidiNotes.has('D4')).toBe(false);
   });
 
-  it('cycles through keyboard sizes and shows more keys each time', async () => {
+  it('cycles through keyboard sizes and shows fewer keys for larger sizes', async () => {
     await initApp();
 
     const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
+    const smallCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
+
+    sizeToggle.click(); // large
     const largeCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
 
-    sizeToggle.click();
+    sizeToggle.click(); // medium
     const mediumCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
-
-    sizeToggle.click();
-    const smallCount = document.querySelectorAll('#piano-keyboard-layout .piano-key').length;
 
     expect(largeCount).toBeLessThan(mediumCount);
     expect(mediumCount).toBeLessThan(smallCount);
-    expect(getKeyboardSizeMode()).toBe('small');
-    expect((document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement).dataset.sizeMode).toBe('small');
+    expect(getKeyboardSizeMode()).toBe('medium');
+    expect((document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement).dataset.sizeMode).toBe('medium');
   });
 
   it('rebuilds the keyboard with more notes when the viewport grows', async () => {
