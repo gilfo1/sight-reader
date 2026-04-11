@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { initApp, resetGameState } from '@/main';
+import { initApp, musicData, resetGameState } from '@/main';
+import { loadFromStorage } from '@/utils/storage';
 
 describe('Settings Modal', () => {
   beforeEach(() => {
@@ -121,5 +122,51 @@ describe('Settings Modal', () => {
     measures.dispatchEvent(new Event('change'));
 
     expect(JSON.parse(localStorage.getItem('generator-config') ?? '{}').measuresPerLine).toBe(6);
+  });
+
+  it('defers score regeneration until the modal closes', async () => {
+    await initApp();
+
+    const menuButton = document.getElementById('settings-menu-toggle') as HTMLButtonElement;
+    const closeButton = document.getElementById('settings-modal-close') as HTMLButtonElement;
+    const measures = document.getElementById('measures-per-line') as HTMLSelectElement;
+
+    expect(musicData).toHaveLength(4);
+
+    menuButton.click();
+    measures.value = '6';
+    measures.dispatchEvent(new Event('change'));
+
+    expect(loadFromStorage<any>('generator-config')?.measuresPerLine).toBe(6);
+    expect(musicData).toHaveLength(4);
+
+    closeButton.click();
+
+    expect(musicData).toHaveLength(6);
+  });
+
+  it('drops pending modal changes when reset to defaults is triggered', async () => {
+    await initApp();
+
+    const menuButton = document.getElementById('settings-menu-toggle') as HTMLButtonElement;
+    const modal = document.getElementById('settings-modal') as HTMLElement;
+    const measures = document.getElementById('measures-per-line') as HTMLSelectElement;
+    const resetButton = document.getElementById('reset-all-settings') as HTMLButtonElement;
+
+    expect(musicData).toHaveLength(4);
+
+    menuButton.click();
+    measures.value = '6';
+    measures.dispatchEvent(new Event('change'));
+
+    expect(loadFromStorage<any>('generator-config')?.measuresPerLine).toBe(6);
+    expect(musicData).toHaveLength(4);
+
+    resetButton.click();
+
+    expect(modal.hidden).toBe(true);
+    expect(measures.value).toBe('4');
+    expect(loadFromStorage<any>('generator-config')?.measuresPerLine).toBe(4);
+    expect(musicData).toHaveLength(4);
   });
 });
