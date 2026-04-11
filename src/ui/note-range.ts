@@ -69,7 +69,6 @@ const ui = {
 
 let activeDragTarget: { bound: NoteRangeBound; clef: 'treble' | 'bass' } | null = null;
 let dragYOffset = 0;
-let draggedHandleY = 0;
 let currentBoundBeingProcessed: NoteRangeBound | null = null;
 let currentPreviewLayout: PreviewLayout | null = null;
 let listenersBound = false;
@@ -345,17 +344,19 @@ function setRenderedNoteHoverState(noteElement: SVGElement | null, isHovered: bo
   // Helper to highlight an element and its siblings if they look like ledger lines
   const highlightElements = (el: SVGElement, hovered: boolean): void => {
     if (hovered) {
-      if ((el as HTMLElement).dataset.noteRangeOriginalStroke === undefined) {
-        (el as HTMLElement).dataset.noteRangeOriginalStroke = el.getAttribute('stroke') ?? '';
+      const elHtml = el as unknown as HTMLElement;
+      if (elHtml.dataset.noteRangeOriginalStroke === undefined) {
+        elHtml.dataset.noteRangeOriginalStroke = el.getAttribute('stroke') ?? '';
       }
-      if ((el as HTMLElement).dataset.noteRangeOriginalFill === undefined) {
-        (el as HTMLElement).dataset.noteRangeOriginalFill = el.getAttribute('fill') ?? '';
+      if (elHtml.dataset.noteRangeOriginalFill === undefined) {
+        elHtml.dataset.noteRangeOriginalFill = el.getAttribute('fill') ?? '';
       }
       el.setAttribute('stroke', NOTE_RANGE_HOVER_COLOR);
       el.setAttribute('fill', NOTE_RANGE_HOVER_COLOR);
     } else {
-      const originalStroke = (el as HTMLElement).dataset.noteRangeOriginalStroke ?? '';
-      const originalFill = (el as HTMLElement).dataset.noteRangeOriginalFill ?? '';
+      const elHtml = el as unknown as HTMLElement;
+      const originalStroke = elHtml.dataset.noteRangeOriginalStroke ?? '';
+      const originalFill = elHtml.dataset.noteRangeOriginalFill ?? '';
       if (originalStroke) el.setAttribute('stroke', originalStroke);
       else el.removeAttribute('stroke');
       if (originalFill) el.setAttribute('fill', originalFill);
@@ -373,9 +374,10 @@ function setRenderedNoteHoverState(noteElement: SVGElement | null, isHovered: bo
     // We only want to highlight siblings if the note actually needs ledger lines.
     // However, we don't have easy access to the note name here.
     // Let's check if the sibling is close enough vertically to the note.
+    const noteGraphicsElement = noteElement as unknown as SVGGraphicsElement;
     const noteBox = (noteElement as unknown as { getBoundingBox?: () => { y: number; height: number } }).getBoundingBox 
       ? (noteElement as unknown as { getBoundingBox: () => { y: number; height: number } }).getBoundingBox() 
-      : (noteElement.getBBox ? noteElement.getBBox() : { y: 0, height: 0 });
+      : (noteGraphicsElement.getBBox ? noteGraphicsElement.getBBox() : { y: 0, height: 0 });
     const noteCenterY = noteBox.y + noteBox.height / 2;
 
     let sibling = noteElement.nextElementSibling;
@@ -582,7 +584,7 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
 
   const createHandle = (
     bound: NoteRangeBound,
-    handleLayout: { clef: 'treble' | 'bass'; x: number; y: number },
+    handleLayout: { clef: 'treble' | 'bass'; x: number; y: number; note: string },
     note: string,
     noteElement: SVGElement | null,
   ): HTMLButtonElement => {
@@ -683,7 +685,7 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
       setRenderedNoteHoverState(lowerNoteElement, true);
       // Sync drag offset if we are dragging this bound
       if (currentBoundBeingProcessed === 'lower') {
-        draggedHandleY = handleLayout.y;
+        // No-op: draggedHandleY was unused
       }
     }
   });
@@ -694,7 +696,7 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
       setRenderedNoteHoverState(upperNoteElement, true);
       // Sync drag offset if we are dragging this bound
       if (currentBoundBeingProcessed === 'upper') {
-        draggedHandleY = handleLayout.y;
+        // No-op: draggedHandleY was unused
       }
     }
   });
