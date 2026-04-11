@@ -33,6 +33,13 @@ interface PreviewLayout {
   upperHandles: Array<{ clef: 'treble' | 'bass'; x: number; y: number; note: string }>;
 }
 
+interface CachedPreview {
+  html: string;
+  lowerNoteIndex: number;
+  previewLayout: PreviewLayout;
+  upperNoteIndex: number;
+}
+
 interface WidthOverrideVoice extends Voice {
   getWidth: () => number;
 }
@@ -76,6 +83,8 @@ let dragStaffType: StaffType | null = null;
 let dragVisualTop = 0;
 let availableNotesCache: string[] | null = null;
 let lastStaffTypeForCache: StaffType | null = null;
+const previewCache = new Map<string, CachedPreview>();
+const MAX_PREVIEW_CACHE_ENTRIES = 24;
 
 const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
   if (!activeDragTarget) {
@@ -276,6 +285,40 @@ function getCurrentRangeForStaff(staffType: StaffType): NoteRange {
   return getStoredStaffNoteRanges()[staffType];
 }
 
+function getPreviewCacheKey(staffType: StaffType, range: NoteRange): string {
+  return `${staffType}:${range.minNote}:${range.maxNote}`;
+}
+
+function getRenderedNoteIndex(noteElement: SVGElement | null, visual: HTMLElement): number {
+  if (!noteElement) {
+    return -1;
+  }
+
+  return Array.from(visual.querySelectorAll<SVGElement>('.vf-stavenote')).indexOf(noteElement);
+}
+
+function getCachedRenderedNote(visual: HTMLElement, index: number): SVGElement | null {
+  if (index < 0) {
+    return null;
+  }
+
+  return visual.querySelectorAll<SVGElement>('.vf-stavenote')[index] ?? null;
+}
+
+function storePreviewCache(key: string, entry: CachedPreview): void {
+  previewCache.delete(key);
+  previewCache.set(key, entry);
+
+  if (previewCache.size <= MAX_PREVIEW_CACHE_ENTRIES) {
+    return;
+  }
+
+  const oldestKey = previewCache.keys().next().value;
+  if (oldestKey) {
+    previewCache.delete(oldestKey);
+  }
+}
+
 function dispatchRangeChange(): void {
   ui.selector?.dispatchEvent(new Event('change', { bubbles: true }));
 }
@@ -455,6 +498,20 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     return;
   }
 
+  const cacheKey = getPreviewCacheKey(staffType, range);
+  const cachedPreview = previewCache.get(cacheKey);
+
+  if (cachedPreview) {
+    visual.innerHTML = cachedPreview.html;
+    visual.dataset.staffType = staffType;
+    currentPreviewLayout = cachedPreview.previewLayout;
+
+    const lowerNoteElement = getCachedRenderedNote(visual, cachedPreview.lowerNoteIndex);
+    const upperNoteElement = getCachedRenderedNote(visual, cachedPreview.upperNoteIndex);
+    renderPreviewOverlay(staffType, range, lowerNoteElement, upperNoteElement);
+    return;
+  }
+
   visual.innerHTML = '';
   visual.dataset.staffType = staffType;
 
@@ -602,6 +659,44 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
 
   currentPreviewLayout = previewLayout;
 
+  const lowerNoteElement = staffType === 'grand'
+    ? getRenderedNoteElement(getGrandStaffPreviewClef(range.minNote) === 'treble' ? trebleRefs[0] ?? null : bassRefs[0] ?? null)
+    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
+  const upperNoteElement = staffType === 'grand'
+    ? getRenderedNoteElement((getGrandStaffPreviewClef(range.maxNote) === 'treble' ? trebleRefs : bassRefs)[
+      getGrandStaffPreviewClef(range.maxNote) === getGrandStaffPreviewClef(range.minNote) ? 1 : 0
+    ] ?? null)
+    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[1] ?? (staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
+
+  const lowerNoteIndex = getRenderedNoteIndex(lowerNoteElement, visual);
+  const upperNoteIndex = getRenderedNoteIndex(upperNoteElement, visual);
+
+  storePreviewCache(cacheKey, {
+    html: visual.innerHTML,
+    lowerNoteIndex,
+    previewLayout,
+    upperNoteIndex,
+  });
+
+  renderPreviewOverlay(staffType, range, lowerNoteElement, upperNoteElement);
+}
+
+function renderPreviewOverlay(
+  staffType: StaffType,
+  range: NoteRange,
+  lowerNoteElement: SVGElement | null,
+  upperNoteElement: SVGElement | null,
+): void {
+  const visual = ui.visual;
+
+  if (!visual || !currentPreviewLayout) {
+    return;
+  }
+
+  visual.querySelector('.note-range-overlay')?.remove();
+
+  const rendererHeight = staffType === 'grand' ? NOTE_RANGE_GRAND_HEIGHT : NOTE_RANGE_SINGLE_HEIGHT;
+  const previewLayout = currentPreviewLayout;
   const overlay = document.createElement('div');
   overlay.className = 'note-range-overlay';
   overlay.dataset.staffType = staffType;
@@ -629,9 +724,8 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
         clientY = event.clientY;
       }
 
-      const visual = ui.visual;
-      const rect = visual?.getBoundingClientRect();
-      dragVisualTop = rect?.top ?? 0;
+      const rect = visual.getBoundingClientRect();
+      dragVisualTop = rect.top ?? 0;
       dragStaffType = staffType;
       dragRangeDraft = getStoredStaffNoteRanges()[staffType];
 
@@ -646,13 +740,12 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
 
       activeDragTarget = { bound, clef: handleLayout.clef };
       bindDragListeners();
-      ui.visual?.classList.add('note-range-visual-dragging');
+      visual.classList.add('note-range-visual-dragging');
       setHovered(true);
       handleMove(event as MouseEvent | PointerEvent | TouchEvent);
     };
     const setHovered = (isHovered: boolean): void => {
       if (activeDragTarget && activeDragTarget.bound === bound && !isHovered) {
-        // Don't remove hover if we are dragging this bound
         return;
       }
       setRenderedNoteHoverState(noteElement, isHovered);
@@ -691,15 +784,6 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
 
     return handle;
   };
-
-  const lowerNoteElement = staffType === 'grand'
-    ? getRenderedNoteElement(getGrandStaffPreviewClef(range.minNote) === 'treble' ? trebleRefs[0] ?? null : bassRefs[0] ?? null)
-    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
-  const upperNoteElement = staffType === 'grand'
-    ? getRenderedNoteElement((getGrandStaffPreviewClef(range.maxNote) === 'treble' ? trebleRefs : bassRefs)[
-      getGrandStaffPreviewClef(range.maxNote) === getGrandStaffPreviewClef(range.minNote) ? 1 : 0
-    ] ?? null)
-    : getRenderedNoteElement((staffType === 'treble' ? trebleRefs : bassRefs)[1] ?? (staffType === 'treble' ? trebleRefs : bassRefs)[0] ?? null);
 
   previewLayout.lowerHandles.forEach((handleLayout) => {
     const handle = createHandle('lower', handleLayout, range.minNote, lowerNoteElement);
