@@ -50,6 +50,16 @@ function updateSettingsModalUI(isOpen: boolean): void {
   menuButton.setAttribute('aria-expanded', String(isOpen));
   document.body.classList.toggle('modal-open', isOpen);
   setBackgroundInteractivity(!isOpen);
+  if (isOpen) {
+    // Focus close button for accessibility
+    getSettingsModal()?.querySelector<HTMLElement>('#settings-modal-close')?.focus();
+  }
+}
+
+let hasChanges = false;
+
+export function markSettingsChanged(): void {
+  hasChanges = true;
 }
 
 export function isSettingsModalOpen(): boolean {
@@ -57,14 +67,19 @@ export function isSettingsModalOpen(): boolean {
 }
 
 export function openSettingsModal(): void {
+  hasChanges = false;
   updateSettingsModalUI(true);
 }
 
-export function closeSettingsModal(): void {
+export function closeSettingsModal(onApply?: () => void): void {
+  if (hasChanges && onApply) {
+    onApply();
+  }
+  hasChanges = false;
   updateSettingsModalUI(false);
 }
 
-export function initSettingsModal(): void {
+export function initSettingsModal(onApply?: () => void): void {
   const menuButton = getSettingsMenuButton();
   const closeButton = document.getElementById('settings-modal-close') as HTMLButtonElement | null;
   const backdrop = getSettingsBackdrop();
@@ -78,47 +93,24 @@ export function initSettingsModal(): void {
   updateSettingsModalUI(false);
   menuButton.onclick = () => {
     if (isSettingsModalOpen()) {
-      closeSettingsModal();
+      closeSettingsModal(onApply);
       return;
     }
 
     openSettingsModal();
   };
-  closeButton.onclick = () => closeSettingsModal();
-  backdrop.onclick = () => closeSettingsModal();
+  closeButton.onclick = () => closeSettingsModal(onApply);
+  backdrop.onclick = () => closeSettingsModal(onApply);
   modal.onclick = (event) => {
     if (event.target === modal) {
-      closeSettingsModal();
+      closeSettingsModal(onApply);
     }
   };
   modalPanel.onclick = (event) => event.stopPropagation();
 
-  const blockBackgroundInteraction = (event: Event) => {
-    if (!isSettingsModalOpen()) {
-      return;
-    }
-
-    const target = event.target as Node | null;
-    const shouldBlock = target !== null
-      && getBlockedBackgroundContainers().some((element) => element.contains(target));
-
-    if (!shouldBlock) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    if ('stopImmediatePropagation' in event) {
-      event.stopImmediatePropagation();
-    }
-  };
-
-  document.addEventListener('pointerdown', blockBackgroundInteraction, true);
-  document.addEventListener('click', blockBackgroundInteraction, true);
-
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && isSettingsModalOpen()) {
-      closeSettingsModal();
+      closeSettingsModal(onApply);
     }
   });
 }

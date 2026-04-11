@@ -33,7 +33,7 @@ import {
   releaseAllKeyboardNotes,
   updatePianoKeyboardActiveNotes,
 } from '@/ui/piano-keyboard';
-import { closeSettingsModal, initSettingsModal } from '@/ui/settings-modal';
+import { isSettingsModalOpen, initSettingsModal, closeSettingsModal } from '@/ui/settings-modal';
 import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
 
@@ -88,6 +88,10 @@ function regenerateScore(keepHeldNotes = false): void {
 }
 
 function handleStateChange(shouldRegenerate = false, keepHeldNotes = false): void {
+  if (isSettingsModalOpen()) {
+    return;
+  }
+
   if (shouldRegenerate) {
     regenerateScore(keepHeldNotes);
   }
@@ -124,7 +128,12 @@ export async function initApp(): Promise<void> {
   updateNoteSelectors();
   initKeySignatures(() => handleStateChange(true));
   initStatsUI();
-  initSettingsModal();
+  initSettingsModal(() => {
+    regenerateScore();
+    updatePianoKeyboardActiveNotes();
+    renderCurrentScore();
+    updateStatsUI();
+  });
   initSoundToggle();
 
   const savedConfig = loadFromStorage<Partial<GeneratorConfig>>('generator-config');

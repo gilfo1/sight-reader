@@ -167,6 +167,8 @@ export function applyUIConfig(config: Partial<GeneratorConfig>): void {
   }
 }
 
+import { markSettingsChanged } from '@/ui/settings-modal';
+
 export function setupEventListeners(onConfigChange: () => void): void {
   const fields: Array<HTMLElement | null> = [
     ui.measuresPerLine,
@@ -185,6 +187,7 @@ export function setupEventListeners(onConfigChange: () => void): void {
       }
 
       saveUIConfig();
+      markSettingsChanged();
       onConfigChange();
     });
   });
@@ -193,6 +196,7 @@ export function setupEventListeners(onConfigChange: () => void): void {
     container?.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
       checkbox.addEventListener('change', () => {
         saveUIConfig();
+        markSettingsChanged();
         onConfigChange();
       });
     });

@@ -530,6 +530,14 @@ body.app-shell {
   z-index: 39;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-backdrop[hidden] {
+  opacity: 0;
+  visibility: hidden;
+  display: block !important;
+  pointer-events: none;
 }
 
 .settings-modal {
@@ -542,11 +550,25 @@ body.app-shell {
   padding: 16px;
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.24);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.settings-modal[hidden] {
+  opacity: 0;
+  visibility: hidden;
+  display: flex !important;
+  pointer-events: none;
 }
 
 .settings-modal-panel {
   width: min(100%, 940px);
   margin-top: 8px;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transform: translateY(0);
+}
+
+.settings-modal[hidden] .settings-modal-panel {
+  transform: translateY(-20px);
 }
 
 .settings-modal-header {
