@@ -22,7 +22,7 @@ describe('Accordions UI', () => {
     const stats = document.getElementById('stats-details');
     expect(stats).not.toBeNull();
     expect(stats?.tagName.toLowerCase()).toBe('details');
-    expect(stats?.querySelector('summary')?.textContent).toBe('Stats');
+    expect(stats?.querySelector('summary .stats-icon')).not.toBeNull();
   });
 
   it('should have a bottom piano keyboard accordion', () => {
@@ -35,7 +35,7 @@ describe('Accordions UI', () => {
   });
 
   it('should use shared summary classes so accordion chevrons render consistently', () => {
-    expect(document.querySelector('#stats-details > .panel-summary')).not.toBeNull();
+    expect(document.querySelector('#stats-details > .stats-summary')).not.toBeNull();
     expect(document.querySelector('#piano-keyboard-details > .keyboard-summary')).not.toBeNull();
     expect(document.querySelector('#midi-notes-details > .subpanel-summary')).not.toBeNull();
   });
@@ -66,11 +66,11 @@ describe('Accordions UI', () => {
 
   it('should have correct styling for stats (unobtrusive)', () => {
     const stats = document.getElementById('stats-details');
-    expect(stats?.classList.contains('panel-muted')).toBe(true);
+    expect(stats?.classList.contains('stats-accordion')).toBe(true);
   });
 
-  it('should place the stats panel inside the responsive panel grid', () => {
-    const container = document.querySelector('.panel-grid');
+  it('should place the stats panel inside the toolbar', () => {
+    const container = document.querySelector('.app-toolbar');
     expect(container).not.toBeNull();
     expect(container?.contains(document.getElementById('stats-details'))).toBe(true);
   });

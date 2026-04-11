@@ -6,13 +6,19 @@ describe('Stats UI Integration', () => {
   beforeEach(() => {
     resetStats();
     document.body.innerHTML = `
-      <div id="stats-played">0</div>
-      <div id="stats-correct">0</div>
-      <div id="stats-wrong">0</div>
-      <div id="stats-accuracy">0%</div>
-      <div id="stats-streak">0</div>
-      <div id="stats-max-streak">0</div>
-      <button id="reset-stats">Reset</button>
+      <details id="stats-details">
+        <summary class="stats-summary"></summary>
+        <div id="stats-content" class="stats-container">
+          <button id="stats-close" class="stats-close">&times;</button>
+          <div id="stats-played">0</div>
+          <div id="stats-correct">0</div>
+          <div id="stats-wrong">0</div>
+          <div id="stats-accuracy">0%</div>
+          <div id="stats-streak">0</div>
+          <div id="stats-max-streak">0</div>
+          <button id="reset-stats">Reset</button>
+        </div>
+      </details>
     `;
     initStatsUI();
   });
@@ -45,6 +51,15 @@ describe('Stats UI Integration', () => {
 
     expect(stats.notesPlayed).toBe(0);
     expect(document.getElementById('stats-played')?.textContent).toBe('0');
+  });
+
+  it('should close stats when close button is clicked', () => {
+    const details = document.getElementById('stats-details') as HTMLDetailsElement;
+    details.open = true;
+    expect(details.open).toBe(true);
+
+    document.getElementById('stats-close')?.click();
+    expect(details.open).toBe(false);
   });
 
   it('should handle zero played notes for accuracy', () => {

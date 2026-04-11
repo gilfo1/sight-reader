@@ -17,13 +17,11 @@ describe('Responsive Layout System', () => {
     expect(css).toContain('@media (max-width: 640px)');
   });
 
-  it('defines chevron indicators for all accordion summary variants', () => {
-    expect(css).toContain('.panel-summary::after');
+  it('defines chevron indicators for accordion summary variants', () => {
     expect(css).toContain('.keyboard-summary::after');
     expect(css).toContain('.subpanel-summary::after');
     expect(css).toContain("border-right: 2px solid currentColor;");
     expect(css).toContain("border-bottom: 2px solid currentColor;");
-    expect(css).toContain('details[open] > .panel-summary::after');
     expect(css).toContain('details[open] > .keyboard-summary::after');
     expect(css).toContain('details[open] > .subpanel-summary::after');
   });
@@ -101,15 +99,16 @@ describe('Responsive Layout System', () => {
     expect(css).toContain('.piano-key-black.piano-key-active');
   });
 
-  it('positions a utility-row sound toggle above the stats panel', () => {
+  it('positions a toolbar with stats accordion and sound toggle', () => {
     expect(doc.querySelector('.app-toolbar')).not.toBeNull();
     expect(doc.querySelector('.toolbar-actions')).not.toBeNull();
-    expect(doc.querySelector('.side-panel-stack')).not.toBeNull();
+    expect(doc.getElementById('stats-details')).not.toBeNull();
     expect(doc.getElementById('settings-menu-toggle')).not.toBeNull();
     expect(doc.getElementById('sound-toggle')).not.toBeNull();
     expect(doc.querySelector('.sound-icon')).not.toBeNull();
     expect(css).toContain('.app-toolbar');
     expect(css).toContain('.toolbar-actions');
+    expect(css).toContain('.stats-accordion');
     expect(css).toContain('.menu-icon');
     expect(css).toContain('.icon-button');
     expect(css).toContain('.sound-icon-speaker');

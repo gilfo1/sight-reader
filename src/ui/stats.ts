@@ -11,7 +11,9 @@ const ui = {
   get wrongOctave() { return getElementById<HTMLElement>('stats-wrong-octave'); },
   get keyError() { return getElementById<HTMLElement>('stats-key-error'); },
   get avgTime() { return getElementById<HTMLElement>('stats-avg-time'); },
-  get resetButton() { return getElementById<HTMLElement>('reset-stats'); }
+  get resetButton() { return getElementById<HTMLElement>('reset-stats'); },
+  get closeButton() { return getElementById<HTMLElement>('stats-close'); },
+  get details() { return getElementById<HTMLDetailsElement>('stats-details'); }
 };
 
 function setTextContent(element: HTMLElement | null, value: string): void {
@@ -44,6 +46,12 @@ export function initStatsUI(): void {
   ui.resetButton?.addEventListener('click', () => {
     resetStats();
     updateStatsUI();
+  });
+  ui.closeButton?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (ui.details) {
+      ui.details.open = false;
+    }
   });
   updateStatsUI();
 }

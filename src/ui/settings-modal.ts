@@ -14,7 +14,9 @@ function getBlockedBackgroundContainers(): HTMLElement[] {
   const panelGrid = document.querySelector('.panel-grid') as HTMLElement | null;
   const outputShell = document.querySelector('.output-shell') as HTMLElement | null;
   const keyboardDock = document.getElementById('keyboard-dock') as HTMLElement | null;
-  return [panelGrid, outputShell, keyboardDock].filter((element): element is HTMLElement => element !== null);
+  const statsAccordion = document.getElementById('stats-details') as HTMLElement | null;
+  const toolbarActions = document.querySelector('.toolbar-actions') as HTMLElement | null;
+  return [panelGrid, outputShell, keyboardDock, statsAccordion, toolbarActions].filter((element): element is HTMLElement => element !== null);
 }
 
 function setBackgroundInteractivity(isInteractive: boolean): void {
