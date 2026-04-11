@@ -425,7 +425,7 @@ details[open] > .subpanel-summary::after {
 
 .note-range-visual {
   position: relative;
-  min-height: 400px;
+  min-height: 420px;
   border-radius: var(--radius-sm);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 244, 244, 0.98));
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -446,18 +446,6 @@ details[open] > .subpanel-summary::after {
   width: 244px;
   height: 380px;
   margin: 0 auto; /* Center horizontally */
-}
-
-.note-range-visual[data-staff-type='treble'] .note-range-renderer,
-.note-range-visual[data-staff-type='bass'] .note-range-renderer,
-.note-range-visual[data-staff-type='treble'] .note-range-overlay,
-.note-range-visual[data-staff-type='bass'] .note-range-overlay {
-  height: 280px;
-}
-
-.note-range-visual[data-staff-type='treble'],
-.note-range-visual[data-staff-type='bass'] {
-  min-height: 280px;
 }
 
 .note-range-overlay {

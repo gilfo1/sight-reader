@@ -8,7 +8,7 @@ const STAFF_NOTE_RANGE_STORAGE_KEY = 'staff-note-ranges';
 const NATURAL_PIANO_NOTES = ALL_PIANO_NOTES.filter((note) => !note.includes('#'));
 const NOTE_RANGE_WIDTH = 244;
 const NOTE_RANGE_PADDING_X = 16;
-const NOTE_RANGE_SINGLE_HEIGHT = 280;
+const NOTE_RANGE_SINGLE_HEIGHT = 380;
 const NOTE_RANGE_GRAND_HEIGHT = 380;
 const NOTE_RANGE_HOVER_COLOR = '#255b78';
 
@@ -450,7 +450,7 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
   const system = vf.System({
     width: NOTE_RANGE_WIDTH - (NOTE_RANGE_PADDING_X * 2),
     x: NOTE_RANGE_PADDING_X,
-    y: 40,
+    y: 100,
   });
 
   let trebleRefs: StaveNote[] = [];
