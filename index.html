@@ -23,57 +23,59 @@
           </span>
         </button>
 
-        <details id="stats-details" class="stats-accordion">
-          <summary class="stats-summary" title="Open Stats">
-            <svg class="stats-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 20V10"></path>
-              <path d="M12 20V4"></path>
-              <path d="M6 20V14"></path>
-            </svg>
-          </summary>
-          <div id="stats-content" class="stats-container">
-            <button id="stats-close" class="stats-close" aria-label="Close stats">&times;</button>
-            <div class="stat-item">
-              <span class="stat-label">Played</span>
-              <span id="stats-played" class="stat-value">0</span>
+        <div class="stats-accordion-wrapper">
+          <details id="stats-details" class="stats-accordion">
+            <summary class="stats-summary" title="Open Stats">
+              <svg class="stats-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 20V10"></path>
+                <path d="M12 20V4"></path>
+                <path d="M6 20V14"></path>
+              </svg>
+            </summary>
+            <div id="stats-content" class="stats-container">
+              <button id="stats-close" class="stats-close" aria-label="Close stats">&times;</button>
+              <div class="stat-item">
+                <span class="stat-label">Played</span>
+                <span id="stats-played" class="stat-value">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Correct</span>
+                <span id="stats-correct" class="stat-value stat-value-success">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Wrong</span>
+                <span id="stats-wrong" class="stat-value stat-value-danger">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Accuracy</span>
+                <span id="stats-accuracy" class="stat-value">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Streak</span>
+                <span id="stats-streak" class="stat-value stat-value-success">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Best</span>
+                <span id="stats-max-streak" class="stat-value">0</span>
+              </div>
+              <div class="stat-item stat-item-subtle">
+                <span class="stat-label">Octave Err</span>
+                <span id="stats-wrong-octave" class="stat-value">0</span>
+              </div>
+              <div class="stat-item stat-item-subtle">
+                <span class="stat-label">Key Err</span>
+                <span id="stats-key-error" class="stat-value">0</span>
+              </div>
+              <div class="stat-item stat-item-subtle">
+                <span class="stat-label">Avg Time</span>
+                <span id="stats-avg-time" class="stat-value">0s</span>
+              </div>
+              <div class="stat-actions">
+                <button id="reset-stats" class="reset-button" title="Reset Stats">Reset</button>
+              </div>
             </div>
-            <div class="stat-item">
-              <span class="stat-label">Correct</span>
-              <span id="stats-correct" class="stat-value stat-value-success">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Wrong</span>
-              <span id="stats-wrong" class="stat-value stat-value-danger">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Accuracy</span>
-              <span id="stats-accuracy" class="stat-value">0%</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Streak</span>
-              <span id="stats-streak" class="stat-value stat-value-success">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Best</span>
-              <span id="stats-max-streak" class="stat-value">0</span>
-            </div>
-            <div class="stat-item stat-item-subtle">
-              <span class="stat-label">Octave Err</span>
-              <span id="stats-wrong-octave" class="stat-value">0</span>
-            </div>
-            <div class="stat-item stat-item-subtle">
-              <span class="stat-label">Key Err</span>
-              <span id="stats-key-error" class="stat-value">0</span>
-            </div>
-            <div class="stat-item stat-item-subtle">
-              <span class="stat-label">Avg Time</span>
-              <span id="stats-avg-time" class="stat-value">0s</span>
-            </div>
-            <div class="stat-actions">
-              <button id="reset-stats" class="reset-button" title="Reset Stats">Reset</button>
-            </div>
-          </div>
-        </details>
+          </details>
+        </div>
 
         <div class="toolbar-actions">
           <button id="sound-toggle" type="button" class="icon-button" aria-label="Sound on with reverb" title="Sound on with reverb">
@@ -87,8 +89,7 @@
           </button>
         </div>
       </header>
-      <section class="panel-grid">
-      </section>
+      <section class="panel-grid"></section>
       <section class="output-shell">
         <div id="output" class="score-output"></div>
       </section>

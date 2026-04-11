@@ -15,9 +15,12 @@ describe('Stats UI Layout', () => {
   it('should have a stats accordion in the toolbar', () => {
     const toolbar = doc.querySelector('.app-toolbar');
     const statsAccordion = doc.getElementById('stats-details');
+    const statsWrapper = doc.querySelector('.stats-accordion-wrapper');
     expect(toolbar).not.toBeNull();
     expect(statsAccordion).not.toBeNull();
-    expect(toolbar?.contains(statsAccordion)).toBe(true);
+    expect(statsWrapper).not.toBeNull();
+    expect(toolbar?.contains(statsWrapper)).toBe(true);
+    expect(statsWrapper?.contains(statsAccordion)).toBe(true);
   });
 
   it('should have stats labels and values in items', () => {
@@ -49,19 +52,20 @@ describe('Stats UI Layout', () => {
 
   it('should have labels on top of values in CSS', () => {
     expect(css).toContain('.stat-item');
+    expect(css).toContain('display: flex;');
     expect(css).toContain('flex-direction: column;');
   });
 
-  it('should be vertically and horizontally centered in the toolbar', () => {
+  it('should be centered in the toolbar', () => {
     expect(css).toContain('.stats-accordion');
-    expect(css).toContain('position: absolute;');
-    expect(css).toContain('left: 50%;');
-    expect(css).toContain('top: 50%;');
-    expect(css).toContain('transform: translate(-50%, -50%);');
+    expect(css).toContain('position: relative;');
+    expect(css).toContain('.stats-accordion-wrapper');
+    expect(css).toContain('justify-content: center;');
+    expect(css).toContain('flex: 1;');
   });
 
-  it('should be responsive on mobile', () => {
-    expect(css).toContain('@media (max-width: 768px)');
-    expect(css).toContain('flex-wrap: wrap;');
+  it('should have a wide grid layout in narrow CSS', () => {
+    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?display:\s*grid;/);
+    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(90px,\s*1fr\)\);/);
   });
 });

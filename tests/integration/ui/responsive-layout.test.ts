@@ -13,7 +13,7 @@ describe('Responsive Layout System', () => {
   });
 
   it('defines responsive breakpoints for medium and small screens', () => {
-    expect(css).toContain('@media (max-width: 900px)');
+    expect(css).toContain('@media (max-width: 1024px)');
     expect(css).toContain('@media (max-width: 640px)');
   });
 

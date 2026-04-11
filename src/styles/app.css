@@ -64,14 +64,17 @@ body.app-shell {
   z-index: 40;
 }
 
+.stats-accordion-wrapper {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
 .stats-accordion {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
 }
 
 .stats-summary {
@@ -209,27 +212,95 @@ body.app-shell {
   border-color: var(--danger);
 }
 
-@media (max-width: 768px) {
-  .stats-container {
+@media (max-width: 1024px) {
+  .app-main {
+    gap: 12px;
+  }
+
+  .app-toolbar {
+    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding-bottom: 0;
+  }
+
+  .stats-accordion-wrapper {
+    order: 4;
+    flex: 1 0 100%;
     justify-content: center;
-    width: min(95vw, 600px);
-    gap: 12px 20px;
-    padding-right: 16px;
-    padding-top: 32px;
+  }
+
+  .stats-accordion {
+    display: flex;
+    position: relative;
+    width: 100%;
+  }
+
+  .stats-summary {
+    order: 0;
+    flex: none;
+    width: 40px;
+    position: absolute;
+    top: -56px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .icon-button-menu {
+    order: 1;
+    flex: none;
+  }
+
+  .toolbar-actions {
+    order: 3;
+    flex: none;
+    justify-content: flex-end;
+  }
+
+  .stats-container {
+    order: 0;
+    flex: none;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100vw;
+    margin: 4px calc(50% - 50vw);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    justify-content: center;
+    justify-items: center;
+    gap: 8px 12px;
+    padding: 30px 12px 8px 12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+    box-sizing: border-box;
+  }
+
+  .stat-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
   }
 
   .stats-close {
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     transform: none;
   }
   
   .stat-actions {
+    grid-column: 1 / -1;
     border-left: none;
     border-top: 1px solid var(--panel-border);
     padding-left: 0;
-    padding-top: 8px;
+    padding-top: 6px;
     margin-left: 0;
     width: 100%;
     justify-content: center;
@@ -249,6 +320,10 @@ body.app-shell {
   gap: 14px;
   justify-content: end;
   align-items: start;
+}
+
+.panel-grid:empty {
+  display: none;
 }
 
 .side-panel-stack {
@@ -998,9 +1073,13 @@ details[open] > .keyboard-summary .keyboard-summary-label {
   opacity: 1;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   :root {
     --keyboard-dock-space: 250px;
+  }
+
+  body.app-shell {
+    padding-inline: 16px;
   }
 
   .panel-grid {
@@ -1048,6 +1127,16 @@ details[open] > .keyboard-summary .keyboard-summary-label {
   .output-shell,
   .keyboard-panel {
     border-radius: 16px;
+  }
+
+  .stats-container {
+    width: 100vw;
+    margin: 4px calc(50% - 50vw);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
   }
 
   .settings-modal {
