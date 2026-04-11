@@ -42,13 +42,16 @@ describe('note range boundary conditions', () => {
     
     // Drag way up (clientY = -1000)
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: -1000 }));
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     
     const maxNote = getStoredStaffNoteRanges().treble.maxNote;
     expect(maxNote).toBe('C8');
     
     // Drag way down (below minNote C3)
     // Let's drag to clientY = 2000
+    upperHandle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: 150 }));
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: 2000 }));
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     const maxNoteAfterDown = getStoredStaffNoteRanges().treble.maxNote;
     expect(getNoteValue(maxNoteAfterDown)).toBeGreaterThanOrEqual(getNoteValue(getStoredStaffNoteRanges().treble.minNote));
   });
@@ -61,6 +64,7 @@ describe('note range boundary conditions', () => {
     const upperHandle = document.querySelector('.note-range-handle-upper') as HTMLButtonElement;
     upperHandle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: 154 }));
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: -1000 }));
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     // Upper handle (treble) should be capped at C8
     expect(getStoredStaffNoteRanges().grand.maxNote).toBe('C8');
   });

@@ -48,7 +48,7 @@ describe('note range drag performance and alignment', () => {
     };
   });
 
-  it('responds quickly to drag events (simulated)', async () => {
+  it('keeps drag updates lightweight until release', async () => {
     updateNoteRangeSelector();
     const upperHandle = document.querySelector('.note-range-handle-upper') as HTMLButtonElement;
     expect(upperHandle).not.toBeNull();
@@ -61,7 +61,6 @@ describe('note range drag performance and alignment', () => {
     const rect = visual.getBoundingClientRect();
     const initialHandleY = parseFloat(upperHandle.style.top) + rect.top;
 
-    // Mock requestAnimationFrame to track calls
     const rafSpy = vi.spyOn(window, 'requestAnimationFrame');
 
     upperHandle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: initialHandleY }));
@@ -70,7 +69,11 @@ describe('note range drag performance and alignment', () => {
     // In JSDOM with our new unified coordinates, higher notes have SMALLER Y.
     // To move from C6 (maxNote) to a lower note, we need to INCREASE clientY.
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: initialHandleY + 10 }));
-    expect(rafSpy).toHaveBeenCalled();
+    expect(rafSpy).not.toHaveBeenCalled();
+    expect(getStoredStaffNoteRanges().grand.maxNote).toBe('C6');
+
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    expect(getStoredStaffNoteRanges().grand.maxNote).not.toBe('C6');
     
     rafSpy.mockRestore();
   });
@@ -118,6 +121,7 @@ describe('note range drag performance and alignment', () => {
     
     // It should be capped at the split note (C4) or just below it.
     // getNoteValue('C4') = 60.
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     const finalNote = getStoredStaffNoteRanges().grand.minNote;
     expect(getNoteValue(finalNote)).toBeLessThan(getNoteValue('C4'));
   });

@@ -521,7 +521,6 @@ body.app-shell {
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
   overflow: hidden;
-  backdrop-filter: blur(14px);
 }
 
 .modal-backdrop {
@@ -529,7 +528,6 @@ body.app-shell {
   inset: 0;
   z-index: 39;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
@@ -565,6 +563,7 @@ body.app-shell {
   margin-top: 8px;
   transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
   transform: translateY(0);
+  will-change: transform;
 }
 
 .settings-modal[hidden] .settings-modal-panel {

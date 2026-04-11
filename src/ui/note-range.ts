@@ -69,10 +69,11 @@ const ui = {
 
 let activeDragTarget: { bound: NoteRangeBound; clef: 'treble' | 'bass' } | null = null;
 let dragYOffset = 0;
-let currentBoundBeingProcessed: NoteRangeBound | null = null;
 let currentPreviewLayout: PreviewLayout | null = null;
-let listenersBound = false;
-let renderRequested = false;
+let dragListenersBound = false;
+let dragRangeDraft: NoteRange | null = null;
+let dragStaffType: StaffType | null = null;
+let dragVisualTop = 0;
 let availableNotesCache: string[] | null = null;
 let lastStaffTypeForCache: StaffType | null = null;
 
@@ -82,11 +83,10 @@ const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
   }
 
   const clientY = 'touches' in event ? (event.touches[0]?.clientY ?? 0) : (event as MouseEvent).clientY;
-  const staffType = getCurrentStaffType();
+  const staffType = dragStaffType ?? getCurrentStaffType();
   
   // Update handle position in DOM immediately for smooth visual feedback
   const visual = ui.visual;
-  const rect = visual?.getBoundingClientRect();
 
   // Adjust targetY by the initial drag offset to find the closest note
   const targetYWithOffset = Math.round(clientY - dragYOffset);
@@ -96,7 +96,7 @@ const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
   const draggedNote = findClosestNoteForClientY(staffType, activeDragTarget.clef, targetYWithOffset, activeDragTarget.bound);
   
   // Snap visual handle to the actual note position
-  if (rect && currentPreviewLayout) {
+  if (currentPreviewLayout) {
     const noteY = getPreviewYForNote(activeDragTarget.clef, draggedNote, currentPreviewLayout);
     const handle = visual?.querySelector(`.note-range-handle-${activeDragTarget.bound}`) as HTMLElement;
     if (handle) {
@@ -104,17 +104,16 @@ const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
     }
   }
 
-  // Update the stored range and trigger partial UI update
-  const storedRanges = getStoredStaffNoteRanges();
-  const currentRange = storedRanges[staffType];
-
-  setCurrentStaffNoteRange(
+  const currentRange = getCurrentRangeForStaff(staffType);
+  const nextRange = clampNoteRangeForStaff(
+    staffType,
     activeDragTarget.bound === 'lower'
       ? { minNote: draggedNote, maxNote: currentRange.maxNote }
       : { minNote: currentRange.minNote, maxNote: draggedNote },
-    true,
-    true,
   );
+
+  dragRangeDraft = nextRange;
+  setCurrentStaffNoteRange(nextRange, false, true, false);
 };
 
 const handleUp = (_event: MouseEvent | PointerEvent | TouchEvent): void => {
@@ -124,15 +123,33 @@ const handleUp = (_event: MouseEvent | PointerEvent | TouchEvent): void => {
 };
 
 function stopDragging(): void {
+  const draftRange = dragRangeDraft;
+  const staffType = dragStaffType;
+  const hadActiveDrag = activeDragTarget !== null;
+
   activeDragTarget = null;
-  renderRequested = false;
-  currentBoundBeingProcessed = null;
+  dragRangeDraft = null;
+  dragStaffType = null;
+  dragVisualTop = 0;
+  unbindDragListeners();
+
   const visual = ui.visual;
-  if (visual) {
-    visual.classList.remove('note-range-visual-dragging');
-    const staffType = getCurrentStaffType();
-    const range = getStoredStaffNoteRanges()[staffType];
-    renderVexFlowPreview(staffType, range);
+  visual?.classList.remove('note-range-visual-dragging');
+
+  if (!hadActiveDrag || !staffType) {
+    return;
+  }
+
+  const storedRanges = getStoredStaffNoteRanges();
+  const previousRange = storedRanges[staffType];
+  const finalRange = draftRange ?? previousRange;
+
+  storedRanges[staffType] = finalRange;
+  saveStoredStaffNoteRanges(storedRanges);
+  updateRangeUI(staffType, finalRange);
+
+  if (previousRange.minNote !== finalRange.minNote || previousRange.maxNote !== finalRange.maxNote) {
+    dispatchRangeChange();
   }
 }
 
@@ -249,6 +266,14 @@ export function getStoredStaffNoteRanges(): StaffNoteRanges {
 
 function saveStoredStaffNoteRanges(ranges: StaffNoteRanges): void {
   saveToStorage(STAFF_NOTE_RANGE_STORAGE_KEY, ranges);
+}
+
+function getCurrentRangeForStaff(staffType: StaffType): NoteRange {
+  if (dragStaffType === staffType && dragRangeDraft) {
+    return dragRangeDraft;
+  }
+
+  return getStoredStaffNoteRanges()[staffType];
 }
 
 function dispatchRangeChange(): void {
@@ -589,44 +614,42 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     noteElement: SVGElement | null,
   ): HTMLButtonElement => {
     const handle = document.createElement('button');
-  const startDrag = (event: Event): void => {
-    // In some browsers/environments, we need to make sure we don't start multiple drags
-    if (activeDragTarget) return;
+    const startDrag = (event: Event): void => {
+      if (activeDragTarget) {
+        return;
+      }
 
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Calculate initial Y offset from note center to mouse/touch position
-    let clientY = 0;
-    if ('touches' in event && (event as TouchEvent).touches.length > 0) {
-      clientY = (event as TouchEvent).touches[0].clientY;
-    } else if (event instanceof MouseEvent || event instanceof PointerEvent) {
-      clientY = (event as MouseEvent).clientY;
-    }
+      event.preventDefault();
+      event.stopPropagation();
 
-    const visual = ui.visual;
-    const rect = visual?.getBoundingClientRect();
-    const handleY = handleLayout.y + (rect?.top ?? 0);
-    // If the handle was rendered for a different note than what's currently in state,
-    // we need to adjust the dragYOffset to prevent a jump.
-    const currentNote = bound === 'lower' ? getStoredStaffNoteRanges()[staffType].minNote : getStoredStaffNoteRanges()[staffType].maxNote;
-    let adjustedHandleY = handleY;
-    if (currentNote !== handleLayout.note && currentPreviewLayout) {
-      const actualNoteY = getPreviewYForNote(handleLayout.clef, currentNote, currentPreviewLayout);
-      adjustedHandleY = actualNoteY + (rect?.top ?? 0);
-    }
-    dragYOffset = clientY - adjustedHandleY;
-    
-    // We want the handle to stay EXACTLY under the mouse where we clicked it
-    // but the snapping logic needs to know the "target" center of the note.
-    
-    activeDragTarget = { bound, clef: handleLayout.clef };
-    ui.visual?.classList.add('note-range-visual-dragging');
-    setHovered(true);
+      let clientY = 0;
+      if ('touches' in event && (event as TouchEvent).touches.length > 0) {
+        clientY = (event as TouchEvent).touches[0].clientY;
+      } else if (event instanceof MouseEvent || event instanceof PointerEvent) {
+        clientY = event.clientY;
+      }
 
-    // Initial update to provide immediate feedback
-    handleMove(event as any);
-  };
+      const visual = ui.visual;
+      const rect = visual?.getBoundingClientRect();
+      dragVisualTop = rect?.top ?? 0;
+      dragStaffType = staffType;
+      dragRangeDraft = getStoredStaffNoteRanges()[staffType];
+
+      const handleY = handleLayout.y + dragVisualTop;
+      const currentNote = bound === 'lower' ? dragRangeDraft.minNote : dragRangeDraft.maxNote;
+      let adjustedHandleY = handleY;
+      if (currentNote !== handleLayout.note && currentPreviewLayout) {
+        const actualNoteY = getPreviewYForNote(handleLayout.clef, currentNote, currentPreviewLayout);
+        adjustedHandleY = actualNoteY + dragVisualTop;
+      }
+      dragYOffset = clientY - adjustedHandleY;
+
+      activeDragTarget = { bound, clef: handleLayout.clef };
+      bindDragListeners();
+      ui.visual?.classList.add('note-range-visual-dragging');
+      setHovered(true);
+      handleMove(event as MouseEvent | PointerEvent | TouchEvent);
+    };
     const setHovered = (isHovered: boolean): void => {
       if (activeDragTarget && activeDragTarget.bound === bound && !isHovered) {
         // Don't remove hover if we are dragging this bound
@@ -716,8 +739,7 @@ function updateRangeUIWithoutReRender(staffType: StaffType, range: NoteRange): v
 
 function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass', clientY: number, bound: NoteRangeBound): string {
   const allNotes = getAvailableRangeForStaff(staffType);
-  const storedRanges = getStoredStaffNoteRanges();
-  const currentRange = storedRanges[staffType];
+  const currentRange = getCurrentRangeForStaff(staffType);
   
   let notes = allNotes;
   
@@ -746,7 +768,8 @@ function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass'
 
   const visualElement = ui.visual;
   const rect = visualElement?.getBoundingClientRect();
-  const targetY = (rect && rect.height > 0) ? clientY - rect.top : clientY;
+  const top = dragStaffType === staffType && dragVisualTop !== 0 ? dragVisualTop : rect?.top ?? 0;
+  const targetY = (rect && rect.height > 0) ? clientY - top : clientY;
   const previewLayout = currentPreviewLayout;
 
   if (!previewLayout || !previewLayout.staves[clef]) {
@@ -782,8 +805,8 @@ function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass'
   return closestNote;
 }
 
-function bindPointerListeners(): void {
-  if (listenersBound) {
+function bindDragListeners(): void {
+  if (dragListenersBound) {
     return;
   }
 
@@ -795,7 +818,23 @@ function bindPointerListeners(): void {
   window.addEventListener('touchend', handleUp);
   window.addEventListener('touchcancel', handleUp);
   
-  listenersBound = true;
+  dragListenersBound = true;
+}
+
+function unbindDragListeners(): void {
+  if (!dragListenersBound) {
+    return;
+  }
+
+  window.removeEventListener('mousemove', handleMove);
+  window.removeEventListener('pointermove', handleMove);
+  window.removeEventListener('touchmove', handleMove);
+  window.removeEventListener('mouseup', handleUp);
+  window.removeEventListener('pointerup', handleUp);
+  window.removeEventListener('touchend', handleUp);
+  window.removeEventListener('touchcancel', handleUp);
+
+  dragListenersBound = false;
 }
 
 export function setNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRange>): void {
@@ -808,27 +847,23 @@ export function setNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRa
   }
 }
 
-export function setCurrentStaffNoteRange(range: Partial<NoteRange>, notifyChange = false, skipReRender = false): void {
+export function setCurrentStaffNoteRange(
+  range: Partial<NoteRange>,
+  notifyChange = false,
+  skipReRender = false,
+  persist = true,
+): void {
   const staffType = getCurrentStaffType();
   const nextRange = clampNoteRangeForStaff(staffType, range);
-  const storedRanges = getStoredStaffNoteRanges();
 
-  storedRanges[staffType] = nextRange;
-  saveStoredStaffNoteRanges(storedRanges);
+  if (persist) {
+    const storedRanges = getStoredStaffNoteRanges();
+    storedRanges[staffType] = nextRange;
+    saveStoredStaffNoteRanges(storedRanges);
+  }
 
   if (skipReRender) {
     updateRangeUIWithoutReRender(staffType, nextRange);
-    
-    // Throttle rendering during dragging
-    if (!renderRequested) {
-      renderRequested = true;
-      requestAnimationFrame(() => {
-        if (activeDragTarget) {
-          renderVexFlowPreview(staffType, nextRange);
-        }
-        renderRequested = false;
-      });
-    }
   } else {
     updateRangeUI(staffType, nextRange);
   }
@@ -839,7 +874,6 @@ export function setCurrentStaffNoteRange(range: Partial<NoteRange>, notifyChange
 }
 
 export function updateNoteRangeSelector(): void {
-  bindPointerListeners();
   const staffType = getCurrentStaffType();
   updateRangeUI(staffType, getStoredStaffNoteRanges()[staffType]);
 }
