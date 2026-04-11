@@ -156,7 +156,12 @@ export function addVoicesWithPlayed(
   const targetPitches = steps[stepIdx] ?? [];
 
   const pitches = Array.from(state.activeMidiNotes).filter((pitch) => {
-    if (state.suppressedNotes.has(pitch) && !targetPitches.includes(pitch)) {
+    // Only include notes that are NOT in the target notes for this step
+    if (targetPitches.includes(pitch)) {
+      return false;
+    }
+
+    if (state.suppressedNotes.has(pitch)) {
       return false;
     }
 
