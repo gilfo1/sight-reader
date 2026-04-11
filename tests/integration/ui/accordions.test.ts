@@ -40,11 +40,11 @@ describe('Accordions UI', () => {
     expect(document.querySelector('#midi-notes-details > .subpanel-summary')).not.toBeNull();
   });
 
-  it('stats is collapsed by default and piano accordion is open', () => {
+  it('stats and piano accordion are collapsed by default', () => {
     const stats = document.getElementById('stats-details') as HTMLDetailsElement;
     const keyboard = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     expect(stats.open).toBe(false);
-    expect(keyboard.open).toBe(true);
+    expect(keyboard.open).toBe(false);
   });
 
   it('settings modal should contain control elements', () => {

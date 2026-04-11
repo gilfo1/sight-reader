@@ -25,17 +25,17 @@ describe('sound toggle ui helpers', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the default on state metadata', () => {
+  it('renders the default reverb state metadata', () => {
     updateSoundToggleUI();
 
     const button = document.getElementById('sound-toggle') as HTMLButtonElement;
     const icon = document.getElementById('sound-toggle-icon') as HTMLSpanElement;
 
     expect(button.dataset.enabled).toBe('true');
-    expect(button.dataset.soundMode).toBe(SOUND_MODE.ON);
-    expect(button.getAttribute('aria-label')).toBe('Sound on');
-    expect(button.title).toBe('Sound on');
-    expect(icon.dataset.soundMode).toBe(SOUND_MODE.ON);
+    expect(button.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(button.getAttribute('aria-label')).toBe('Sound on with reverb');
+    expect(button.title).toBe('Sound on with reverb');
+    expect(icon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
     expect(icon.querySelector('.sound-icon-wave-primary')).not.toBeNull();
     expect(icon.querySelector('.sound-icon-wave-secondary')).not.toBeNull();
     expect(icon.querySelector('.sound-icon-wave-tertiary')).not.toBeNull();
@@ -112,7 +112,7 @@ describe('sound toggle ui helpers', () => {
 
     initSoundToggle();
 
-    expect(getSoundMode()).toBe(SOUND_MODE.ON);
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
   });
 
   it('cycles through all three states and persists each click', () => {
@@ -120,26 +120,26 @@ describe('sound toggle ui helpers', () => {
 
     const button = document.getElementById('sound-toggle') as HTMLButtonElement;
 
-    button.click();
-    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
-    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
-
-    button.click();
+    button.click(); // Reverb -> Off
     expect(getSoundMode()).toBe(SOUND_MODE.OFF);
     expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.OFF);
 
-    button.click();
+    button.click(); // Off -> On
     expect(getSoundMode()).toBe(SOUND_MODE.ON);
     expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.ON);
+
+    button.click(); // On -> Reverb
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
   });
 
   it('resets the toggle back to the default sound mode', () => {
-    setSoundMode(SOUND_MODE.REVERB);
+    setSoundMode(SOUND_MODE.OFF);
 
     resetSoundToggle();
 
-    expect(getSoundMode()).toBe(SOUND_MODE.ON);
-    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.ON);
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
   });
 
   it('does nothing when the toggle button is missing', () => {

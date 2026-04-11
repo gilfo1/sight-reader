@@ -30,11 +30,11 @@ describe('Sound Toggle UI', () => {
 
     expect(toolbar).not.toBeNull();
     expect(soundToggle.dataset.enabled).toBe('true');
-    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.ON);
-    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on');
+    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on with reverb');
     expect(soundIcon.classList.contains('sound-icon')).toBe(true);
     expect(soundIcon.dataset.enabled).toBe('true');
-    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.ON);
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
     expect(soundIcon.querySelector('.sound-icon-speaker')).not.toBeNull();
     expect(soundIcon.querySelectorAll('.sound-icon-wave')).toHaveLength(3);
     expect(soundIcon.querySelector('.sound-icon-wave-primary')).not.toBeNull();
@@ -48,14 +48,6 @@ describe('Sound Toggle UI', () => {
 
     const soundToggle = document.getElementById('sound-toggle') as HTMLButtonElement;
     const soundIcon = document.getElementById('sound-toggle-icon') as HTMLSpanElement;
-
-    soundToggle.click();
-    expect(isSoundEnabled()).toBe(true);
-    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
-    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.REVERB);
-    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
-    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on with reverb');
-    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
 
     soundToggle.click();
     expect(isSoundEnabled()).toBe(false);
@@ -72,6 +64,14 @@ describe('Sound Toggle UI', () => {
     expect(soundIcon.dataset.enabled).toBe('true');
     expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.ON);
     expect(soundToggle.getAttribute('aria-label')).toBe('Sound on');
+
+    soundToggle.click();
+    expect(isSoundEnabled()).toBe(true);
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.REVERB);
+    expect(soundToggle.getAttribute('aria-label')).toBe('Sound on with reverb');
+    expect(JSON.parse(localStorage.getItem('sound-mode') ?? 'null')).toBe(SOUND_MODE.REVERB);
   });
 
   it('loads the reverb state from persisted storage on app init', async () => {

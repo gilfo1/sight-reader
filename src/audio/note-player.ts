@@ -232,4 +232,5 @@ export function resetAudioPlayer(): void {
   stopAllNotes();
   audioContext = null;
   resetAudioRouting();
+  soundMode = DEFAULT_SOUND_MODE;
 }

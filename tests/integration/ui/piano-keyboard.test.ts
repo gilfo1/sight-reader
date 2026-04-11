@@ -49,7 +49,12 @@ describe('On-Screen Piano Keyboard', () => {
 
     expect(dock.classList.contains('keyboard-dock')).toBe(true);
     expect(details.classList.contains('keyboard-panel')).toBe(true);
-    expect(details.open).toBe(true);
+    expect(details.open).toBe(false);
+    
+    // Open it for the rest of the checks
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+    
     expect(keyboard).not.toBeNull();
     expect(keyboard.dataset.sizeMode).toBe('large');
     expect(keyboard.querySelectorAll('.piano-key').length).toBeGreaterThan(30);

@@ -31,6 +31,10 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('forces the effective note range to the keyboard range while open', async () => {
     await initApp();
 
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
+
     const minNote = document.getElementById('min-note') as HTMLInputElement;
     const maxNote = document.getElementById('max-note') as HTMLInputElement;
     const keyboardRange = getKeyboardRange();
@@ -46,9 +50,12 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('restores the settings range when the keyboard accordion is closed', async () => {
     await initApp();
 
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
+
     const minNote = document.getElementById('min-note') as HTMLInputElement;
     const maxNote = document.getElementById('max-note') as HTMLInputElement;
-    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     minNote.value = 'A0';
     maxNote.value = 'C8';
     keyboardDetails.open = false;
@@ -61,6 +68,10 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('generates only keyboard-playable notes while the keyboard is open', async () => {
     await initApp();
 
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
+
     const keyboardRange = getKeyboardRange();
     const pitches = collectPitches();
     pitches.forEach((pitch) => {
@@ -72,9 +83,12 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('returns to the configured range after the keyboard is closed', async () => {
     await initApp();
 
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
+
     const minNote = document.getElementById('min-note') as HTMLInputElement;
     const maxNote = document.getElementById('max-note') as HTMLInputElement;
-    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
     minNote.value = 'A0';
     maxNote.value = 'B0';
     keyboardDetails.open = false;
@@ -86,6 +100,10 @@ describe('On-Screen Piano Keyboard Range Override', () => {
 
   it('widens the playable range when the keyboard switches to smaller keys', async () => {
     await initApp();
+
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
 
     const largeRange = getKeyboardRange();
     const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
@@ -121,6 +139,10 @@ describe('On-Screen Piano Keyboard Range Override', () => {
   it('loads a saved keyboard size mode before generating the initial score', async () => {
     localStorage.setItem('keyboard-size-mode', JSON.stringify('small'));
     await initApp();
+
+    const keyboardDetails = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
+    keyboardDetails.open = true;
+    keyboardDetails.dispatchEvent(new Event('toggle'));
 
     const layout = document.getElementById('piano-keyboard-layout') as HTMLDivElement;
     const range = getKeyboardRange();

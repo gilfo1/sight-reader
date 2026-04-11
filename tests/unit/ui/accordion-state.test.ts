@@ -10,7 +10,7 @@ describe('Accordion State Helpers', () => {
     localStorage.clear();
     document.body.innerHTML = `
       <details id="stats-details"></details>
-      <details id="piano-keyboard-details" open></details>
+      <details id="piano-keyboard-details"></details>
     `;
   });
 
@@ -30,15 +30,15 @@ describe('Accordion State Helpers', () => {
     expect(keyboard.open).toBe(false);
   });
 
-  it('resets accordions to the default layout', () => {
+  it('resets accordions to the default layout (all collapsed)', () => {
     const stats = document.getElementById('stats-details') as HTMLDetailsElement;
     const keyboard = document.getElementById('piano-keyboard-details') as HTMLDetailsElement;
 
     stats.open = true;
-    keyboard.open = false;
+    keyboard.open = true;
     resetAccordionState();
 
     expect(stats.open).toBe(false);
-    expect(keyboard.open).toBe(true);
+    expect(keyboard.open).toBe(false);
   });
 });

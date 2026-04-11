@@ -90,7 +90,6 @@ function installAudioContextMock() {
 describe('Note Player', () => {
   beforeEach(() => {
     resetAudioPlayer();
-    setSoundEnabled(true);
     Object.defineProperty(window.navigator, 'userAgent', {
       configurable: true,
       value: 'UnitTestBrowser',
@@ -99,7 +98,6 @@ describe('Note Player', () => {
 
   afterEach(() => {
     resetAudioPlayer();
-    setSoundEnabled(true);
   });
 
   it('calculates note frequencies from note identifiers', () => {
@@ -109,13 +107,13 @@ describe('Note Player', () => {
 
   it('tracks whether sound is enabled', () => {
     expect(isSoundEnabled()).toBe(true);
-    expect(toggleSoundEnabled()).toBe(true);
-    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
-    expect(toggleSoundMode()).toBe(SOUND_MODE.OFF);
-    expect(isSoundEnabled()).toBe(false);
-    setSoundEnabled(true);
+    expect(toggleSoundEnabled()).toBe(false);
+    expect(getSoundMode()).toBe(SOUND_MODE.OFF);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.ON);
     expect(isSoundEnabled()).toBe(true);
-    expect(getSoundMode()).toBe(SOUND_MODE.ON);
+    setSoundEnabled(false);
+    expect(isSoundEnabled()).toBe(false);
+    expect(getSoundMode()).toBe(SOUND_MODE.OFF);
   });
 
   it('does not create audio playback when sound is disabled', () => {
@@ -167,14 +165,15 @@ describe('Note Player', () => {
     expect(oscillator.stop).toHaveBeenCalled();
   });
 
-  it('cycles through on, reverb, and off modes', () => {
-    expect(getSoundMode()).toBe(SOUND_MODE.ON);
-    expect(toggleSoundMode()).toBe(SOUND_MODE.REVERB);
-    expect(isReverbEnabled()).toBe(true);
+  it('cycles through off, on, and reverb modes', () => {
+    expect(getSoundMode()).toBe(SOUND_MODE.REVERB);
     expect(toggleSoundMode()).toBe(SOUND_MODE.OFF);
     expect(isSoundEnabled()).toBe(false);
     expect(toggleSoundMode()).toBe(SOUND_MODE.ON);
+    expect(isSoundEnabled()).toBe(true);
     expect(isReverbEnabled()).toBe(false);
+    expect(toggleSoundMode()).toBe(SOUND_MODE.REVERB);
+    expect(isReverbEnabled()).toBe(true);
   });
 
   it('routes dry playback directly to the output when reverb is disabled', () => {

@@ -6,7 +6,7 @@ export const SOUND_MODE = {
 
 export type SoundMode = (typeof SOUND_MODE)[keyof typeof SOUND_MODE];
 
-export const DEFAULT_SOUND_MODE: SoundMode = SOUND_MODE.ON;
+export const DEFAULT_SOUND_MODE: SoundMode = SOUND_MODE.REVERB;
 
 const SOUND_MODE_CYCLE: SoundMode[] = [SOUND_MODE.OFF, SOUND_MODE.ON, SOUND_MODE.REVERB];
 

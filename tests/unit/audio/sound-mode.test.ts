@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SOUND_MODE, getNextSoundMode, isSoundModeEnabled, isValidSoundMode, SOUND_MODE } from '@/audio/sound-mode';
 
 describe('sound mode helpers', () => {
-  it('uses on as the default mode', () => {
-    expect(DEFAULT_SOUND_MODE).toBe(SOUND_MODE.ON);
+  it('uses reverb as the default mode', () => {
+    expect(DEFAULT_SOUND_MODE).toBe(SOUND_MODE.REVERB);
   });
 
   it('cycles through the three sound modes in order', () => {
