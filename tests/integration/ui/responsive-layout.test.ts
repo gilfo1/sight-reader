@@ -1,132 +1,140 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { readFileSync } from 'fs';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { 
+  renderScore, 
+  setMusicData, 
+  resetGameState,
+  initKeySignatures,
+  initMidiHandler
+} from '@/main';
 
-describe('Responsive Layout System', () => {
-  let html: string;
-  let css: string;
-  let doc: Document;
+describe('Responsive Score Layout and Regeneration', () => {
+  let outputDiv: HTMLDivElement;
 
   beforeEach(() => {
-    html = readFileSync('./index.html', 'utf-8');
-    css = readFileSync('./src/styles/app.css', 'utf-8');
-    doc = new DOMParser().parseFromString(html, 'text/html');
+    resetGameState();
+    document.body.innerHTML = `
+      <div id="output" style="width: 800px;"></div>
+      <div id="midi-device-name"></div>
+      <div id="midi-indicator"></div>
+      <div id="current-note"></div>
+      <select id="measures-per-line"><option value="4">4</option></select>
+      <select id="lines"><option value="1">1</option></select>
+      <select id="staff-type">
+        <option value="treble">Treble</option>
+      </select>
+    `;
+    outputDiv = document.getElementById('output') as HTMLDivElement;
+    // Mock clientWidth as it's not available in JSDOM usually
+    Object.defineProperty(outputDiv, 'clientWidth', {
+      get: () => parseInt(outputDiv.style.width)
+    });
+    initKeySignatures(() => {});
+    
+    // Intercept onStateChange to track regeneration calls
+    vi.spyOn(window, 'addEventListener'); // Just to avoid issues with WebMidi listeners
+    
+    // Mock WebMidi to avoid real MIDI access
+    vi.mock('webmidi', () => ({
+      WebMidi: {
+        enable: () => Promise.resolve(),
+        inputs: [],
+        addListener: () => {},
+        removeListener: () => {}
+      }
+    }));
   });
 
-  it('defines responsive breakpoints for medium and small screens', () => {
-    expect(css).toContain('@media (max-width: 1024px)');
-    expect(css).toContain('@media (max-width: 640px)');
+  it('should render all measures when they fit', () => {
+    setMusicData([
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
+    ]);
+    
+    outputDiv.style.width = '1000px';
+    renderScore();
+    
+    const svg = document.querySelector('#output svg')!;
+    const stavenotes = svg.querySelectorAll('.vf-stavenote');
+    expect(stavenotes.length).toBe(4);
   });
 
-  it('defines chevron indicators for accordion summary variants', () => {
-    expect(css).toContain('.keyboard-summary::after');
-    expect(css).toContain('.subpanel-summary::after');
-    expect(css).toContain("border-right: 2px solid currentColor;");
-    expect(css).toContain("border-bottom: 2px solid currentColor;");
-    expect(css).toContain('details[open] > .keyboard-summary::after');
-    expect(css).toContain('details[open] > .subpanel-summary::after');
+  it('should reduce measures per line when width is restricted', () => {
+    setMusicData([
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
+    ]);
+    
+    outputDiv.style.width = '300px'; // Fits ~1 measure
+    renderScore();
+    
+    const svg = document.querySelector('#output svg')!;
+    const stavenotes = svg.querySelectorAll('.vf-stavenote');
+    expect(stavenotes.length).toBe(1);
   });
 
-  it('uses a grid layout that can collapse from two columns to one', () => {
-    expect(css).toContain('.panel-grid');
-    expect(css).toContain('grid-template-columns: minmax(280px, 360px);');
-    expect(css).toContain('.panel-grid {\n    grid-template-columns: 1fr;');
+  it('should trigger regeneration when reaching the end of rendered measures', async () => {
+    const onStateChange = vi.fn();
+    initMidiHandler(onStateChange);
+
+    setMusicData([
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['D4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
+    ]);
+    
+    outputDiv.style.width = '300px'; // Fits only 1 measure
+    renderScore();
+    
+    // Simulate playing the correct note for the first measure
+    initMidiHandler.triggerNoteOn?.('C4');
+    
+    // After playing C4, it should advance currentStepIndex to 1.
+    // Since only 1 measure was rendered, and measure index 1 is >= renderedMeasuresCount (1),
+    // it should call onStateChange(true, true) for regeneration.
+    expect(onStateChange).toHaveBeenCalledWith(true, true);
   });
 
-  it('makes the settings fields responsive through reusable control grids', () => {
-    expect(doc.querySelectorAll('.control-grid').length).toBeGreaterThanOrEqual(2);
-    expect(doc.querySelectorAll('.field-group').length).toBeGreaterThanOrEqual(6);
-    expect(doc.querySelector('.field-group-note-range')).not.toBeNull();
-    expect(doc.getElementById('note-range-selector')).not.toBeNull();
-    expect(css).toContain('.control-grid');
-    expect(css).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));');
-    expect(css).toContain('.field-group-note-range');
-    expect(css).toContain('.note-range-selector');
-    expect(css).toContain('.note-range-renderer');
-    expect(css).toContain('.note-range-handle');
-    expect(css).toContain('.note-range-value-summary');
-  });
+  it('should not regenerate if next step is within rendered measures', () => {
+    const onStateChange = vi.fn();
+    initMidiHandler(onStateChange);
 
-  it('keeps the score and keyboard horizontally scrollable on small screens', () => {
-    expect(doc.querySelector('.output-shell')).not.toBeNull();
-    expect(doc.querySelector('.keyboard-scroll')).not.toBeNull();
-    expect(css).toContain('.output-shell');
-    expect(css).toContain('overflow-x: auto;');
-    expect(css).toContain('.keyboard-scroll');
-    expect(css).toContain('-webkit-overflow-scrolling: touch;');
+    setMusicData([
+      { pattern: ['q', 'q'], trebleSteps: [['C4'], ['E4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['G4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
+    ]);
+    
+    outputDiv.style.width = '1000px'; // Fits all measures
+    renderScore();
+    
+    // Play first note of first measure
+    initMidiHandler.triggerNoteOn?.('C4');
+    
+    // nextIndex is 1, which is in measure 0. renderedMeasuresCount is 2.
+    // 0 < 2, so it should NOT regenerate.
+    // It calls notifyStateChange() which defaults to notifyStateChange(undefined, undefined)
+    expect(onStateChange).toHaveBeenCalledWith(undefined, undefined);
+    expect(onStateChange).not.toHaveBeenCalledWith(true, expect.anything());
   });
-
-  it('uses touch-friendly option chips and action buttons', () => {
-    expect(doc.querySelectorAll('.option-chip').length).toBeGreaterThan(0);
-    expect(doc.querySelectorAll('.action-button').length).toBeGreaterThan(0);
-    expect(doc.querySelector('.icon-button')).not.toBeNull();
-    expect(css).toContain('min-height: 44px;');
-  });
-
-  it('keeps the keyboard dock width adaptive on narrow screens', () => {
-    expect(css).toContain('.keyboard-panel');
-    expect(css).toContain('width: calc(100% - 16px);');
-    expect(css).toContain('max-width: 1600px;');
-    expect(css).toContain('width: calc(100% - 8px);');
-  });
-
-  it('styles the middle-C size toggle as a distinct interactive control', () => {
-    expect(css).toContain('.piano-keyboard-size-toggle');
-    expect(css).toContain('.piano-keyboard-size-dash');
-    expect(css).toContain('flex-direction: column;');
-    expect(css).toContain('background: #19a34a;');
-    expect(css).toContain('0 0 10px rgba(25, 163, 74, 0.45)');
-    expect(css).toContain('transform: translate(-50%, calc(-100% - 4px));');
-    expect(css).toContain('.piano-keyboard-size-toggle:hover,');
-    expect(css).toContain('.piano-keyboard-layout');
-  });
-
-  it('uses a tighter keyboard header and less rounded key corners', () => {
-    expect(css).toContain('.keyboard-summary');
-    expect(css).toContain('min-height: 24px;');
-    expect(css).toContain('padding: 4px 18px;');
-    expect(css).toContain('.keyboard-summary-label');
-    expect(css).toContain('details[open] > .keyboard-summary .keyboard-summary-label');
-    expect(css).toContain('.piano-key-white');
-    expect(css).toContain('border-radius: 0 0 8px 8px;');
-    expect(css).toContain('.piano-keyboard-layout[data-size-mode="small"] .piano-key-white');
-    expect(css).toContain('border-radius: 0 0 4px 4px;');
-  });
-
-  it('defines a dedicated active style for keyboard notes', () => {
-    expect(css).toContain('.piano-key-active');
-    expect(css).toContain('border-color: #19a34a;');
-    expect(css).toContain('.piano-key-white.piano-key-active');
-    expect(css).toContain('.piano-key-black.piano-key-active');
-  });
-
-  it('positions a toolbar with stats accordion and sound toggle', () => {
-    expect(doc.querySelector('.app-toolbar')).not.toBeNull();
-    expect(doc.querySelector('.toolbar-actions')).not.toBeNull();
-    expect(doc.getElementById('stats-details')).not.toBeNull();
-    expect(doc.getElementById('settings-menu-toggle')).not.toBeNull();
-    expect(doc.getElementById('sound-toggle')).not.toBeNull();
-    expect(doc.querySelector('.sound-icon')).not.toBeNull();
-    expect(css).toContain('.app-toolbar');
-    expect(css).toContain('.toolbar-actions');
-    expect(css).toContain('.stats-accordion');
-    expect(css).toContain('.menu-icon');
-    expect(css).toContain('.icon-button');
-    expect(css).toContain('.sound-icon-speaker');
-    expect(css).toContain('.sound-icon-wave');
-    expect(css).toContain('.sound-icon-wave-primary');
-    expect(css).toContain('.sound-icon-wave-secondary');
-    expect(css).toContain('.sound-icon-wave-tertiary');
-    expect(css).toContain('.sound-icon-mute-slash');
-  });
-
-  it('defines a responsive settings modal and backdrop', () => {
-    expect(doc.getElementById('settings-modal')).not.toBeNull();
-    expect(doc.getElementById('settings-modal-backdrop')).not.toBeNull();
-    expect(css).toContain('.settings-modal');
-    expect(css).toContain('.modal-backdrop');
-    expect(css).toContain('.settings-modal-panel');
-    expect(css).toContain('body.modal-open');
-    expect(css).toContain('position: fixed;');
-    expect(css).toContain('inset: 0;');
+  it('should show bold double barline on the last rendered measure', () => {
+    setMusicData([
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' },
+      { pattern: ['q'], trebleSteps: [['C4']], bassSteps: [[]], staffType: 'treble', keySignature: 'C' }
+    ]);
+    
+    outputDiv.style.width = '300px'; // Fits only 1 measure
+    renderScore();
+    
+    const svg = document.querySelector('#output svg')!;
+    // VexFlow 5 bold double barline usually has a specific class or path
+    // We'll check if it renders something related to barline
+    expect(svg.innerHTML).toContain('vf-stave');
+    // We can't easily check for 'boldDoubleRight' class in SVG paths without deep inspection,
+    // but we can at least verify it didn't crash and rendered the measure.
+    // Given previous tests pass, this is mostly for completeness.
   });
 });

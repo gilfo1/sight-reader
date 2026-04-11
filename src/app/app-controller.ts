@@ -50,6 +50,8 @@ function getRenderContext() {
   };
 }
 
+let lastRenderedMeasuresCount = 0;
+
 function renderCurrentScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>): void {
   const actualConfig = getGeneratorConfig(config);
 
@@ -57,7 +59,10 @@ function renderCurrentScore(outputDiv: HTMLElement | null = null, config?: Parti
     setMusicData(generateScoreData(actualConfig));
   }
 
-  drawScore(outputDiv, actualConfig, getRenderContext(), { getStepInfo });
+  lastRenderedMeasuresCount = drawScore(outputDiv, actualConfig, getRenderContext(), { 
+    getStepInfo,
+    getRenderedMeasuresCount: () => lastRenderedMeasuresCount
+  }) || 0;
 }
 
 function regenerateScore(keepHeldNotes = false): void {
@@ -94,6 +99,10 @@ export function generateAndStoreScore(config?: Partial<GeneratorConfig>): Measur
   return generatedScore;
 }
 
+export function getRenderedMeasuresCount(): number {
+  return lastRenderedMeasuresCount;
+}
+
 export async function initApp(): Promise<void> {
   updateNoteSelectors();
   initKeySignatures(() => handleStateChange(true));
@@ -113,6 +122,10 @@ export async function initApp(): Promise<void> {
 
   initMidiHandler(handleStateChange);
   setupEventListeners(() => handleStateChange(true));
+
+  window.addEventListener('resize', () => {
+    renderCurrentScore();
+  });
 
   const resetButton = document.getElementById('reset-all-settings');
   resetButton?.addEventListener('click', () => {

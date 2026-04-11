@@ -12,6 +12,7 @@ export {
   setMusicData,
   suppressedNotes,
 } from '@/engine/session-state';
+export { getRenderedMeasuresCount } from '@/app/app-controller';
 export {
   recordCorrectNote,
   recordWrongNote,

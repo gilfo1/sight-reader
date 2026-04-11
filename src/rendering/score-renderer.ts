@@ -11,6 +11,7 @@ export interface RenderState {
 
 export interface RenderSelectors {
   getStepInfo: (index: number) => StepLocation | null;
+  getRenderedMeasuresCount: () => number;
 }
 
 interface ShiftableStaveNote extends StaveNote {
@@ -187,7 +188,7 @@ function calculateColumnWidths(
       }
       
       system.format();
-      colWidths[m] = Math.max(colWidths[m]!, getSystemOptions(system).width + 30);
+      colWidths[m] = Math.max(colWidths[m]!, getSystemOptions(system).width);
       widthCalculator.reset();
       hiddenDiv.innerHTML = '';
     }
@@ -287,15 +288,15 @@ function drawBeams(vf: Factory, voicesToBeam: Voice[]): void {
   }
 }
 
-export function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>, state?: RenderState, selectors?: RenderSelectors): void {
+export function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>, state?: RenderState, selectors?: RenderSelectors): number {
   const currentNotes: StaveNote[] = [];
   const voicesToBeam: Voice[] = [];
   
   const div = outputDiv || document.getElementById('output');
   if (!div) return;
   
-  const measuresPerLine = config?.measuresPerLine || 4;
-  const linesCount = config?.linesCount || 1;
+  const baseMeasuresPerLine = config?.measuresPerLine || 4;
+  const baseLinesCount = config?.linesCount || 1;
   const staffType = config?.staffType || 'grand';
   
   const actualState = state ?? DEFAULT_RENDER_STATE;
@@ -306,13 +307,37 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
   div.innerHTML = '';
   if (!div.id) div.id = createRendererElementId('vexflow-output');
 
-  const currentParams = JSON.stringify({ musicData, measuresPerLine, linesCount, staffType });
+  const currentParams = JSON.stringify({ musicData, measuresPerLine: baseMeasuresPerLine, linesCount: baseLinesCount, staffType });
   if (lastRenderParams !== currentParams) {
-    cachedColWidths = calculateColumnWidths(measuresPerLine, linesCount, staffType, actualState, actualSelectors);
+    cachedColWidths = calculateColumnWidths(baseMeasuresPerLine, baseLinesCount, staffType, actualState, actualSelectors);
     lastRenderParams = currentParams;
   }
 
-  const colWidths = cachedColWidths || new Array(measuresPerLine).fill(150);
+  const baseColWidths = cachedColWidths || new Array(baseMeasuresPerLine).fill(150);
+  
+  // Responsive logic
+  const availableWidth = div.clientWidth || window.innerWidth;
+  const padding = 100; // Total horizontal padding
+  const effectiveWidth = availableWidth - padding;
+  
+  let measuresPerLine = 0;
+  let currentWidth = 0;
+  for (let i = 0; i < baseMeasuresPerLine; i++) {
+    const w = baseColWidths[i] || 150;
+    if (measuresPerLine > 0 && currentWidth + w > effectiveWidth + 50) { // Add small buffer
+      break;
+    }
+    currentWidth += w;
+    measuresPerLine++;
+  }
+  
+  if (measuresPerLine < 1) measuresPerLine = 1;
+  
+  const isResponsiveOverride = measuresPerLine < baseMeasuresPerLine;
+  const linesCount = isResponsiveOverride ? 1 : baseLinesCount;
+
+  const renderedMeasuresCount = linesCount * measuresPerLine;
+  const colWidths = baseColWidths.slice(0, measuresPerLine);
   const totalWidth = colWidths.reduce((a, b) => a + b, 0) + 100;
   const heightPerLine = staffType === 'grand' ? 250 : 150;
   const totalHeight = (linesCount * heightPerLine) + 100;
@@ -347,11 +372,17 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
         system.addConnector('singleLeft');
       }
       system.addConnector('singleRight');
-      if (measureIdx === musicData.length - 1) system.addConnector('boldDoubleRight');
+      
+      // Ensure the last rendered measure has the double ending bar
+      if (measureIdx === renderedMeasuresCount - 1 || measureIdx === musicData.length - 1) {
+        system.addConnector('boldDoubleRight');
+      }
+      
       system.format();
     }
   }
   vf.draw();
   drawBeams(vf, voicesToBeam);
   drawHighlight(vf, currentNotes);
+  return renderedMeasuresCount;
 }

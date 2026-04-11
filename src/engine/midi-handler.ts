@@ -6,7 +6,7 @@ import {
   currentStepIndex,
   getStepInfo,
   getTargetNotesAtStep,
-  getTotalSteps,
+  getRenderedMeasuresCount,
   musicData,
   recordCorrectNote,
   recordWrongNote,
@@ -70,7 +70,11 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
       
       stepStartTime = Date.now(); // Reset timer for next step
       
-      if (nextIndex >= getTotalSteps()) {
+      const nextStepInfo = getStepInfo(nextIndex);
+      const renderedMeasures = getRenderedMeasuresCount();
+      const shouldRegenerate = !nextStepInfo || (renderedMeasures > 0 && nextStepInfo.measureIdx >= renderedMeasures);
+
+      if (shouldRegenerate) {
           notifyStateChange(true, true); 
       } else {
           activeMidiNotes.forEach(n => suppressedNotes.add(n));
