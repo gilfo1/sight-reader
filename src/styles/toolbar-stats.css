@@ -1,0 +1,319 @@
+.app-toolbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  z-index: 40;
+}
+
+.stats-accordion-wrapper {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.stats-accordion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.stats-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.stats-summary:hover {
+  color: var(--text-main);
+  background: var(--app-bg);
+  border-color: var(--accent);
+}
+
+.stats-summary::-webkit-details-marker {
+  display: none;
+}
+
+.stats-summary::after {
+  display: none;
+}
+
+.stats-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--panel-shadow);
+  padding: 12px 36px 12px 16px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  white-space: nowrap;
+  z-index: 50;
+  pointer-events: all;
+}
+
+.stats-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s ease;
+}
+
+.stats-close:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.stat-value-success {
+  color: var(--success);
+}
+
+.stat-value-danger {
+  color: #c53326;
+}
+
+.stat-item-subtle {
+  opacity: 0.8;
+}
+
+.stat-actions {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--panel-border);
+  padding-left: 12px;
+  margin-left: 4px;
+}
+
+.reset-button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  color: var(--danger);
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+
+.icon-button-menu {
+  justify-self: start;
+}
+
+.menu-icon {
+  width: 18px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.menu-icon-line {
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: var(--panel-shadow);
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    transform 0.08s ease;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  background: #111111;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.icon-button[data-enabled="false"] {
+  color: #6f6f6f;
+}
+
+.icon-button[data-sound-mode="on"] {
+  color: #2f5d50;
+}
+
+.icon-button[data-sound-mode="reverb"] {
+  color: #255b78;
+}
+
+.sound-icon {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+}
+
+.sound-icon-speaker {
+  position: absolute;
+  left: 1px;
+  top: 7px;
+  width: 5px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.sound-icon-speaker::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: -4px;
+  width: 8px;
+  height: 16px;
+  background: currentColor;
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 70%);
+}
+
+.sound-icon-wave {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  border: 2px solid transparent;
+  border-right-color: currentColor;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.sound-icon-wave-primary {
+  width: 8px;
+  height: 8px;
+}
+
+.sound-icon-wave-secondary {
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+}
+
+.sound-icon-wave-tertiary {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+}
+
+.sound-icon-mute-slash {
+  position: absolute;
+  left: 1px;
+  top: 10px;
+  width: 18px;
+  height: 2px;
+  background: #ff4d4f;
+  border-radius: 1px;
+  transform: rotate(-45deg);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  z-index: 2;
+}
+
+.icon-button:hover .sound-icon-wave,
+.icon-button:focus-visible .sound-icon-wave {
+  transform: translateY(-50%) scale(1.1);
+}
+
+.icon-button[data-sound-mode="on"] .sound-icon-wave-primary,
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-primary {
+  opacity: 0.9;
+}
+
+.icon-button[data-sound-mode="on"] .sound-icon-wave-secondary,
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-secondary {
+  opacity: 0.7;
+}
+
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-tertiary {
+  opacity: 0.5;
+  animation: sound-reverb-vibrate 1s infinite alternate ease-in-out;
+}
+
+@keyframes sound-reverb-vibrate {
+  0% { transform: translateY(-50%) scale(1); opacity: 0.3; }
+  100% { transform: translateY(-50%) scale(1.15); opacity: 0.6; }
+}
+
+.icon-button[data-enabled="false"] .sound-icon-mute-slash {
+  opacity: 1;
+}
+
+.icon-button[data-enabled="false"] .sound-icon-speaker {
+  opacity: 0.6;
+}

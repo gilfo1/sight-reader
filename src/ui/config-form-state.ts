@@ -1,0 +1,136 @@
+import type { GeneratorConfig } from '@/engine/types';
+import { setCurrentStaffNoteRange, updateNoteRangeSelector } from '@/ui/note-range';
+import { getKeyboardRange, isPianoKeyboardOpen } from '@/ui/piano-keyboard';
+import { getElementById } from '@/ui/dom';
+
+export const GENERATOR_CONFIG_STORAGE_KEY = 'generator-config';
+
+export const DEFAULT_CONFIG: GeneratorConfig = {
+  measuresPerLine: 4,
+  notesPerStep: 1,
+  linesCount: 1,
+  staffType: 'grand',
+  minNote: 'C2',
+  maxNote: 'C6',
+  maxReach: 13,
+  selectedNoteValues: ['q'],
+  selectedKeySignatures: ['C'],
+  isChromatic: false,
+  isAdaptive: false,
+};
+
+export const ui = {
+  get measuresPerLine() { return getElementById<HTMLSelectElement>('measures-per-line'); },
+  get notesPerStep() { return getElementById<HTMLSelectElement>('notes-per-step'); },
+  get lines() { return getElementById<HTMLSelectElement>('lines'); },
+  get staffType() { return getElementById<HTMLSelectElement>('staff-type'); },
+  get minNote() { return getElementById<HTMLInputElement>('min-note'); },
+  get maxNote() { return getElementById<HTMLInputElement>('max-note'); },
+  get maxReach() { return getElementById<HTMLSelectElement>('max-reach'); },
+  get noteValues() { return getElementById<HTMLElement>('note-values'); },
+  get noteRangeSelector() { return getElementById<HTMLElement>('note-range-selector'); },
+  get keySignatures() { return getElementById<HTMLElement>('key-signatures'); },
+  get adaptiveLearning() { return getElementById<HTMLInputElement>('adaptive-learning'); },
+};
+
+function getCheckedValues(container: HTMLElement | null): string[] {
+  if (!container) {
+    return [];
+  }
+
+  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+    .map((checkbox) => (checkbox as HTMLInputElement).value);
+}
+
+export function updateNoteSelectors(): void {
+  if (!ui.minNote || !ui.maxNote) {
+    return;
+  }
+
+  updateNoteRangeSelector();
+}
+
+export function getUIConfig(): GeneratorConfig {
+  const selectedNoteValues = getCheckedValues(ui.noteValues);
+  const selectedKeySignatures = getCheckedValues(ui.keySignatures);
+
+  return {
+    measuresPerLine: parseInt(ui.measuresPerLine?.value ?? '4'),
+    notesPerStep: parseInt(ui.notesPerStep?.value ?? '1'),
+    linesCount: parseInt(ui.lines?.value ?? '1'),
+    staffType: ui.staffType?.value ?? 'grand',
+    minNote: ui.minNote?.value ?? 'C2',
+    maxNote: ui.maxNote?.value ?? 'C6',
+    maxReach: parseInt(ui.maxReach?.value ?? '12'),
+    selectedNoteValues: selectedNoteValues.length > 0 ? selectedNoteValues : ['q'],
+    selectedKeySignatures,
+    isChromatic: selectedKeySignatures.includes('Chromatic'),
+    isAdaptive: ui.adaptiveLearning?.checked ?? false,
+  };
+}
+
+export function getEffectiveUIConfig(): GeneratorConfig {
+  const config = getUIConfig();
+
+  if (!isPianoKeyboardOpen()) {
+    return config;
+  }
+
+  return {
+    ...config,
+    ...getKeyboardRange(),
+  };
+}
+
+export function applyUIConfig(config: Partial<GeneratorConfig>): void {
+  if (config.measuresPerLine !== undefined && ui.measuresPerLine) {
+    ui.measuresPerLine.value = config.measuresPerLine.toString();
+  }
+
+  if (config.notesPerStep !== undefined && ui.notesPerStep) {
+    ui.notesPerStep.value = config.notesPerStep.toString();
+  }
+
+  if (config.linesCount !== undefined && ui.lines) {
+    ui.lines.value = config.linesCount.toString();
+  }
+
+  if (config.staffType !== undefined && ui.staffType) {
+    ui.staffType.value = config.staffType;
+    updateNoteSelectors();
+  }
+
+  if (config.minNote !== undefined && ui.minNote) {
+    setCurrentStaffNoteRange({
+      minNote: config.minNote,
+      maxNote: config.maxNote ?? ui.maxNote?.value,
+    });
+  }
+
+  if (config.maxNote !== undefined && config.minNote === undefined && ui.maxNote) {
+    setCurrentStaffNoteRange({
+      minNote: ui.minNote?.value,
+      maxNote: config.maxNote,
+    });
+  }
+
+  if (config.maxReach !== undefined && ui.maxReach) {
+    ui.maxReach.value = config.maxReach.toString();
+  }
+
+  if (config.isAdaptive !== undefined && ui.adaptiveLearning) {
+    ui.adaptiveLearning.checked = config.isAdaptive;
+  }
+
+  if (config.selectedNoteValues !== undefined && ui.noteValues) {
+    ui.noteValues.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      (checkbox as HTMLInputElement).checked = config.selectedNoteValues!.includes((checkbox as HTMLInputElement).value);
+    });
+  }
+
+  if (config.selectedKeySignatures !== undefined && ui.keySignatures) {
+    ui.keySignatures.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      (checkbox as HTMLInputElement).checked = config.selectedKeySignatures!.includes((checkbox as HTMLInputElement).value);
+    });
+  }
+}

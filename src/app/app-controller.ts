@@ -1,22 +1,21 @@
 import { stopAllNotes } from '@/audio/note-player';
 import {
-  activeMidiNotes,
-  currentStepIndex,
-  getStepInfo,
-  musicData,
   resetSessionState,
   setMusicData,
-  suppressedNotes,
 } from '@/engine/session-state';
 import { initMidiHandler } from '@/engine/midi-handler';
-import { generateScoreData } from '@/engine/music-generator';
 import { resetStats } from '@/engine/state';
 import type { GeneratorConfig, Measure } from '@/engine/types';
-import { clearRenderCache, renderScore as drawScore } from '@/rendering/score-renderer';
+import { clearRenderCache } from '@/rendering/score-renderer';
+import {
+  generateAndStoreScoreData,
+  getRenderedMeasuresCount,
+  refreshRenderedUI,
+  renderCurrentScore,
+} from '@/app/app-controller-runtime';
 import {
   applyUIConfig,
   DEFAULT_CONFIG,
-  getEffectiveUIConfig,
   getUIConfig,
   initKeySignatures,
   loadAccordionState,
@@ -25,32 +24,14 @@ import {
   setupEventListeners,
   updateNoteSelectors,
 } from '@/ui/controls';
-import { initStatsUI, updateStatsUI } from '@/ui/stats';
+import { initStatsUI } from '@/ui/stats';
 import {
-  getKeyboardRange,
   initPianoKeyboard,
-  isPianoKeyboardOpen,
   releaseAllKeyboardNotes,
-  updatePianoKeyboardActiveNotes,
 } from '@/ui/piano-keyboard';
 import { isSettingsModalOpen, initSettingsModal, closeSettingsModal } from '@/ui/settings-modal';
 import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
-
-function getGeneratorConfig(config?: Partial<GeneratorConfig>): GeneratorConfig {
-  const baseConfig = { ...getEffectiveUIConfig(), ...config };
-
-  if (isPianoKeyboardOpen()) {
-    const keyboardRange = getKeyboardRange();
-    return {
-      ...baseConfig,
-      minNote: keyboardRange.minNote,
-      maxNote: keyboardRange.maxNote,
-    };
-  }
-
-  return baseConfig;
-}
 
 function resetGameState(keepHeldNotes = false): void {
   releaseAllKeyboardNotes();
@@ -58,33 +39,9 @@ function resetGameState(keepHeldNotes = false): void {
   clearRenderCache();
 }
 
-function getRenderContext() {
-  return {
-    musicData,
-    currentStepIndex,
-    activeMidiNotes,
-    suppressedNotes,
-  };
-}
-
-let lastRenderedMeasuresCount = 0;
-
-function renderCurrentScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>): void {
-  const actualConfig = getGeneratorConfig(config);
-
-  if (musicData.length === 0) {
-    setMusicData(generateScoreData(actualConfig));
-  }
-
-  lastRenderedMeasuresCount = drawScore(outputDiv, actualConfig, getRenderContext(), { 
-    getStepInfo,
-    getRenderedMeasuresCount: () => lastRenderedMeasuresCount
-  }) || 0;
-}
-
 function regenerateScore(keepHeldNotes = false): void {
   resetGameState(keepHeldNotes);
-  setMusicData(generateScoreData(getEffectiveUIConfig()));
+  generateAndStoreScoreData(setMusicData);
 }
 
 function handleStateChange(shouldRegenerate = false, keepHeldNotes = false): void {
@@ -96,9 +53,7 @@ function handleStateChange(shouldRegenerate = false, keepHeldNotes = false): voi
     regenerateScore(keepHeldNotes);
   }
 
-  updatePianoKeyboardActiveNotes();
-  renderCurrentScore();
-  updateStatsUI();
+  refreshRenderedUI(setMusicData);
 }
 
 export function resetAllToDefaults(): void {
@@ -114,14 +69,7 @@ export function resetAllToDefaults(): void {
 }
 
 export function generateAndStoreScore(config?: Partial<GeneratorConfig>): Measure[] {
-  const actualConfig = getGeneratorConfig(config);
-  const generatedScore = generateScoreData(actualConfig);
-  setMusicData(generatedScore);
-  return generatedScore;
-}
-
-export function getRenderedMeasuresCount(): number {
-  return lastRenderedMeasuresCount;
+  return generateAndStoreScoreData(setMusicData, config);
 }
 
 export async function initApp(): Promise<void> {
@@ -130,9 +78,7 @@ export async function initApp(): Promise<void> {
   initStatsUI();
   initSettingsModal(() => {
     regenerateScore();
-    updatePianoKeyboardActiveNotes();
-    renderCurrentScore();
-    updateStatsUI();
+    refreshRenderedUI(setMusicData);
   });
   initSoundToggle();
 
@@ -144,13 +90,13 @@ export async function initApp(): Promise<void> {
   loadAccordionState();
   initPianoKeyboard(() => handleStateChange(true));
   generateAndStoreScore();
-  renderCurrentScore();
+  renderCurrentScore(setMusicData);
 
   initMidiHandler(handleStateChange);
   setupEventListeners(() => handleStateChange(true));
 
   window.addEventListener('resize', () => {
-    renderCurrentScore();
+    renderCurrentScore(setMusicData);
   });
 
   const resetButton = document.getElementById('reset-all-settings');
@@ -161,4 +107,8 @@ export async function initApp(): Promise<void> {
   });
 }
 
-export { getUIConfig, initKeySignatures, renderCurrentScore as renderScore, resetGameState, clearRenderCache };
+function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>): void {
+  renderCurrentScore(setMusicData, outputDiv, config);
+}
+
+export { getUIConfig, initKeySignatures, renderScore, resetGameState, clearRenderCache, getRenderedMeasuresCount };

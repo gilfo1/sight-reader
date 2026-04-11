@@ -1,116 +1,18 @@
-import { getNoteValue } from '@/utils/theory';
 import { DEFAULT_SOUND_MODE, getNextSoundMode, isSoundModeEnabled, SOUND_MODE, type SoundMode } from '@/audio/sound-mode';
-
-interface ActiveTone {
-  gainNode: GainNode;
-  oscillator: OscillatorNode;
-  releaseTimeoutId?: number;
-}
-
-const ATTACK_SECONDS = 0.01;
 const RELEASE_SECONDS = 0.15;
-const REVERB_DECAY_SECONDS = 1.1;
-const REVERB_DURATION_SECONDS = 1.6;
-const REVERB_WET_LEVEL = 0.24;
+import {
+  canUseAudioContext,
+  createActiveTone,
+  ensureAudioRouting,
+  getAudioContext,
+  noteToFrequency,
+  resetAudioGraph,
+  teardownActiveTone,
+  type ActiveTone,
+} from '@/audio/note-player-audio';
+
 const activeNotes = new Map<string, ActiveTone>();
-let audioContext: AudioContext | null = null;
-let dryOutputGain: GainNode | null = null;
-let reverbConvolver: ConvolverNode | null = null;
-let reverbOutputGain: GainNode | null = null;
 let soundMode: SoundMode = DEFAULT_SOUND_MODE;
-
-function getAudioContextConstructor(): typeof AudioContext | null {
-  if (typeof globalThis === 'undefined') {
-    return null;
-  }
-
-  const globalAudio = globalThis as typeof globalThis & {
-    AudioContext?: typeof AudioContext;
-    webkitAudioContext?: typeof AudioContext;
-  };
-
-  return globalAudio.AudioContext ?? globalAudio.webkitAudioContext ?? null;
-}
-
-function canUseAudioContext(): boolean {
-  return getAudioContextConstructor() !== null && !window.navigator.userAgent.includes('jsdom');
-}
-
-function getAudioContext(): AudioContext | null {
-  if (audioContext) {
-    return audioContext;
-  }
-
-  const AudioContextConstructor = getAudioContextConstructor();
-  if (!AudioContextConstructor) {
-    return null;
-  }
-
-  try {
-    audioContext = new AudioContextConstructor();
-  } catch {
-    audioContext = null;
-  }
-
-  return audioContext;
-}
-
-function createImpulseResponse(context: AudioContext, durationSeconds: number, decaySeconds: number): AudioBuffer {
-  const frameCount = Math.max(1, Math.floor(context.sampleRate * durationSeconds));
-  const impulse = context.createBuffer(2, frameCount, context.sampleRate);
-
-  for (let channelIndex = 0; channelIndex < impulse.numberOfChannels; channelIndex += 1) {
-    const channel = impulse.getChannelData(channelIndex);
-
-    for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
-      const decay = Math.pow(1 - frameIndex / frameCount, decaySeconds);
-      channel[frameIndex] = (Math.random() * 2 - 1) * decay;
-    }
-  }
-
-  return impulse;
-}
-
-function resetAudioRouting(): void {
-  dryOutputGain = null;
-  reverbConvolver = null;
-  reverbOutputGain = null;
-}
-
-function ensureAudioRouting(context: AudioContext): void {
-  if (!dryOutputGain) {
-    dryOutputGain = context.createGain();
-    dryOutputGain.gain.value = 1;
-    dryOutputGain.connect(context.destination);
-  }
-
-  if (!reverbConvolver) {
-    reverbConvolver = context.createConvolver();
-    reverbConvolver.buffer = createImpulseResponse(context, REVERB_DURATION_SECONDS, REVERB_DECAY_SECONDS);
-  }
-
-  if (!reverbOutputGain) {
-    reverbOutputGain = context.createGain();
-    reverbOutputGain.gain.value = REVERB_WET_LEVEL;
-    reverbOutputGain.connect(context.destination);
-  }
-
-  reverbConvolver.connect(reverbOutputGain);
-}
-
-function teardownActiveTone(activeNote: ActiveTone): void {
-  if (activeNote.releaseTimeoutId !== undefined) {
-    clearTimeout(activeNote.releaseTimeoutId);
-  }
-
-  try {
-    activeNote.oscillator.disconnect();
-  } catch {}
-
-  try {
-    activeNote.gainNode.disconnect();
-  } catch {}
-}
 
 function cleanupActiveNote(note: string, activeNote: ActiveTone): void {
   if (activeNotes.get(note) === activeNote) {
@@ -118,10 +20,6 @@ function cleanupActiveNote(note: string, activeNote: ActiveTone): void {
   }
 
   teardownActiveTone(activeNote);
-}
-
-export function noteToFrequency(note: string): number {
-  return 440 * Math.pow(2, (getNoteValue(note) - 69) / 12);
 }
 
 export function isSoundEnabled(): boolean {
@@ -173,29 +71,16 @@ export function playNote(note: string): void {
   }
 
   try {
-    ensureAudioRouting(context);
+    const routing = ensureAudioRouting(context);
+    const activeTone = createActiveTone(context, note);
 
-    const oscillator = context.createOscillator();
-    const gainNode = context.createGain();
-    const now = context.currentTime;
+    activeTone.gainNode.connect(routing.dryOutputGain);
 
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(noteToFrequency(note), now);
-
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.18, now + ATTACK_SECONDS);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(dryOutputGain!);
-
-    if (soundMode === SOUND_MODE.REVERB && reverbConvolver) {
-      gainNode.connect(reverbConvolver);
+    if (soundMode === SOUND_MODE.REVERB) {
+      activeTone.gainNode.connect(routing.reverbConvolver);
     }
 
-    oscillator.start(now);
-
-    activeNotes.set(note, { oscillator, gainNode });
+    activeNotes.set(note, activeTone);
   } catch {
     activeNotes.delete(note);
   }
@@ -230,7 +115,8 @@ export function stopAllNotes(): void {
 
 export function resetAudioPlayer(): void {
   stopAllNotes();
-  audioContext = null;
-  resetAudioRouting();
+  resetAudioGraph();
   soundMode = DEFAULT_SOUND_MODE;
 }
+
+export { noteToFrequency };

@@ -1,0 +1,179 @@
+.keyboard-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.keyboard-panel {
+  pointer-events: auto;
+  width: calc(100% - 16px);
+  max-width: 1600px;
+  margin: 0 8px calc(12px + env(safe-area-inset-bottom));
+  border: 1px solid #8e8e8e;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #eaeaea 100%);
+  box-shadow: 0 -14px 32px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+
+.keyboard-summary {
+  min-height: 24px;
+  padding: 4px 18px;
+  color: #111111;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.keyboard-summary-label {
+  display: inline-block;
+}
+
+details[open] > .keyboard-summary .keyboard-summary-label {
+  display: none;
+}
+
+.keyboard-scroll {
+  display: flex;
+  justify-content: center;
+  padding: 18px 8px 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.keyboard-root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.piano-keyboard-layout {
+  position: relative;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.piano-key {
+  border: 1px solid #111111;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  user-select: none;
+  cursor: pointer;
+  touch-action: none;
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.08s ease,
+    box-shadow 0.14s ease;
+}
+
+.piano-key-white {
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.piano-key-black {
+  border-radius: 0 0 5px 5px;
+  box-shadow: 0 9px 18px rgba(0, 0, 0, 0.28);
+}
+
+.piano-key-active {
+  border-color: #19a34a;
+}
+
+.piano-key-white.piano-key-active {
+  box-shadow:
+    0 0 0 1px rgba(25, 163, 74, 0.18),
+    0 12px 24px rgba(10, 86, 37, 0.18);
+}
+
+.piano-key-black.piano-key-active {
+  box-shadow:
+    0 0 0 1px rgba(25, 163, 74, 0.28),
+    0 10px 18px rgba(5, 61, 25, 0.36);
+}
+
+.piano-keyboard-layout[data-size-mode="small"] .piano-key-white {
+  border-radius: 0 0 4px 4px;
+}
+
+.piano-keyboard-layout[data-size-mode="small"] .piano-key-black {
+  border-radius: 0 0 3px 3px;
+}
+
+.piano-keyboard-size-toggle {
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 4px));
+  width: 24px;
+  padding: 4px 0 3px;
+  border: 0;
+  background: transparent;
+  color: #111111;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.piano-keyboard-size-toggle:hover,
+.piano-keyboard-size-toggle:focus-visible {
+  transform: translate(-50%, calc(-100% - 6px)) scale(1.05);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
+}
+
+.piano-keyboard-size-dash {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: #111111;
+  transition:
+    background-color 0.14s ease,
+    width 0.14s ease,
+    transform 0.14s ease,
+    opacity 0.14s ease;
+}
+
+.piano-keyboard-size-dash[data-size-mode="large"] {
+  width: 18px;
+}
+
+.piano-keyboard-size-dash[data-size-mode="medium"] {
+  width: 12px;
+}
+
+.piano-keyboard-size-dash[data-size-mode="small"] {
+  width: 6px;
+}
+
+.piano-keyboard-size-dash[data-size-mode="extra-small"] {
+  width: 4px;
+}
+
+.piano-keyboard-size-toggle:hover .piano-keyboard-size-dash,
+.piano-keyboard-size-toggle:focus-visible .piano-keyboard-size-dash {
+  transform: translateY(1px);
+  opacity: 0.75;
+}
+
+.piano-keyboard-size-toggle[data-size-mode="large"] .piano-keyboard-size-dash[data-size-mode="large"],
+.piano-keyboard-size-toggle[data-size-mode="medium"] .piano-keyboard-size-dash[data-size-mode="medium"],
+.piano-keyboard-size-toggle[data-size-mode="small"] .piano-keyboard-size-dash[data-size-mode="small"],
+.piano-keyboard-size-toggle[data-size-mode="extra-small"] .piano-keyboard-size-dash[data-size-mode="extra-small"] {
+  background: #19a34a;
+  box-shadow: 0 0 0 1px rgba(25, 163, 74, 0.2), 0 0 10px rgba(25, 163, 74, 0.45);
+  opacity: 1;
+}

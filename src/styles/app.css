@@ -212,116 +212,6 @@ body.app-shell {
   border-color: var(--danger);
 }
 
-@media (max-width: 1024px) {
-  .app-main {
-    gap: 12px;
-  }
-
-  .app-toolbar {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 44px;
-    padding-bottom: 0;
-  }
-
-  .stats-accordion-wrapper {
-    order: 4;
-    flex: 1 0 100%;
-    justify-content: center;
-  }
-
-  .stats-accordion {
-    display: flex;
-    position: relative;
-    width: 100%;
-  }
-
-  .stats-summary {
-    order: 0;
-    flex: none;
-    width: 40px;
-    position: absolute;
-    top: -56px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .icon-button-menu {
-    order: 1;
-    flex: none;
-  }
-
-  .toolbar-actions {
-    order: 3;
-    flex: none;
-    justify-content: flex-end;
-  }
-
-  .stats-container {
-    order: 0;
-    flex: none;
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    width: 100vw;
-    margin: 4px calc(50% - 50vw);
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-    align-content: center;
-    align-items: center;
-    gap: 6px 10px;
-    padding: 24px 8px 6px 8px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    border-top: 1px solid var(--panel-border);
-    border-bottom: 1px solid var(--panel-border);
-    box-sizing: border-box;
-  }
-
-  .stat-item {
-    flex: 1 1 75px;
-    min-width: 75px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-
-  .stats-close {
-    top: 6px;
-    right: 6px;
-    transform: none;
-  }
-  
-  .stat-actions {
-    flex: 1 1 100%;
-    border-left: none;
-    border-top: 1px solid var(--panel-border);
-    padding-left: 0;
-    padding-top: 6px;
-    margin-left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-
-  .stat-item:nth-child(2), /* Played */
-  .stat-item:nth-child(3), /* Correct */
-  .stat-item:nth-child(4), /* Wrong */
-  .stat-item:nth-child(8), /* Octave Err */
-  .stat-item:nth-child(9) { /* Key Err */
-    display: none;
-  }
-}
-
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -474,7 +364,7 @@ body.app-shell {
   top: 10px;
   width: 18px;
   height: 2px;
-  background: #ff4d4f; /* Clearly indicate muted with a red slash */
+  background: #ff4d4f;
   border-radius: 1px;
   transform: rotate(-45deg);
   opacity: 0;
@@ -716,7 +606,7 @@ details[open] > .subpanel-summary::after {
   border: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
   padding: 20px 0;
-  display: block; /* Remove flexbox to prevent vertical shifting */
+  display: block;
 }
 
 .note-range-renderer,
@@ -730,12 +620,12 @@ details[open] > .subpanel-summary::after {
   position: relative;
   width: 244px;
   height: 380px;
-  margin: 0 auto; /* Center horizontally */
+  margin: 0 auto;
 }
 
 .note-range-overlay {
   position: absolute;
-  top: 20px; /* Match padding-top of note-range-visual */
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   width: 244px;
@@ -914,7 +804,6 @@ details[open] > .subpanel-summary::after {
   font-size: clamp(1.1rem, 2.8vw, 1.5rem);
   font-weight: 700;
 }
-
 
 .output-shell {
   width: 100%;
@@ -1115,6 +1004,113 @@ details[open] > .keyboard-summary .keyboard-summary-label {
 }
 
 @media (max-width: 1024px) {
+  .app-main {
+    gap: 12px;
+  }
+
+  .app-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding-bottom: 0;
+  }
+
+  .stats-accordion-wrapper {
+    order: 4;
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+
+  .stats-accordion {
+    display: flex;
+    position: relative;
+    width: 100%;
+  }
+
+  .stats-summary {
+    order: 0;
+    flex: none;
+    width: 40px;
+    position: absolute;
+    top: -56px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .icon-button-menu {
+    order: 1;
+    flex: none;
+  }
+
+  .toolbar-actions {
+    order: 3;
+    flex: none;
+    justify-content: flex-end;
+  }
+
+  .stats-container {
+    order: 0;
+    flex: none;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100vw;
+    margin: 4px calc(50% - 50vw);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-content: center;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 24px 8px 6px 8px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+    box-sizing: border-box;
+  }
+
+  .stat-item {
+    flex: 1 1 75px;
+    min-width: 75px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stats-close {
+    top: 6px;
+    right: 6px;
+    transform: none;
+  }
+
+  .stat-actions {
+    flex: 1 1 100%;
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    padding-left: 0;
+    padding-top: 6px;
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .stat-item:nth-child(2), /* Played */
+  .stat-item:nth-child(3), /* Correct */
+  .stat-item:nth-child(4), /* Wrong */
+  .stat-item:nth-child(8), /* Octave Err */
+  .stat-item:nth-child(9) { /* Key Err */
+    display: none;
+  }
+
   :root {
     --keyboard-dock-space: 250px;
   }
