@@ -32,7 +32,8 @@ describe('Measure Spacing and Crowding', (): void => {
       activeMidiNotes: new Set(),
       suppressedNotes: new Set()
     }, {
-      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
+      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i }),
+      getRenderedMeasuresCount: () => 1
     });
 
     const denseSvg = document.querySelector('#output svg') as SVGSVGElement;
@@ -55,7 +56,8 @@ describe('Measure Spacing and Crowding', (): void => {
       activeMidiNotes: new Set(),
       suppressedNotes: new Set()
     }, {
-      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
+      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i }),
+      getRenderedMeasuresCount: () => 1
     });
 
     const simpleSvg = document.querySelector('#output svg') as SVGSVGElement;
@@ -79,7 +81,8 @@ describe('Measure Spacing and Crowding', (): void => {
       activeMidiNotes: new Set(),
       suppressedNotes: new Set()
     }, {
-      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
+      getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i }),
+      getRenderedMeasuresCount: () => 1
     });
 
     const svg = document.querySelector('#output svg') as SVGSVGElement;

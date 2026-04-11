@@ -12,6 +12,8 @@ import {
 } from '@/rendering/score-renderer-helpers';
 import { DEFAULT_RENDER_STATE, type RenderSelectors, type RenderState } from '@/rendering/score-renderer-types';
 
+export { DEFAULT_RENDER_STATE, type RenderSelectors, type RenderState };
+
 let lastRenderParams: string | null = null;
 let cachedColWidths: number[] | null = null;
 
@@ -103,19 +105,27 @@ function calculateColumnWidths(
   return colWidths;
 }
 
-export function renderScore(outputDiv: HTMLElement | null = null, config?: Partial<GeneratorConfig>, state?: RenderState, selectors?: RenderSelectors): number {
+export function renderScore(
+  outputDiv: HTMLElement | null = null,
+  config?: Partial<GeneratorConfig>,
+  state?: RenderState,
+  selectors: RenderSelectors = {
+    getStepInfo: () => null,
+    getRenderedMeasuresCount: () => 0,
+  }
+): number {
   const currentNotes: StaveNote[] = [];
   const voicesToBeam: Voice[] = [];
   
   const div = outputDiv || document.getElementById('output');
-  if (!div) return;
+  if (!div) return 0;
   
   const baseMeasuresPerLine = config?.measuresPerLine || 4;
   const baseLinesCount = config?.linesCount || 1;
   const staffType = config?.staffType || 'grand';
   
   const actualState = state ?? DEFAULT_RENDER_STATE;
-  const actualSelectors = selectors ?? { getStepInfo: () => null };
+  const actualSelectors = selectors ?? { getStepInfo: () => null, getRenderedMeasuresCount: () => 0 };
 
   const { musicData } = actualState;
 

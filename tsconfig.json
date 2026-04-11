@@ -18,11 +18,20 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "tests/**/*.ts", "vitest.config.js"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "electron/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

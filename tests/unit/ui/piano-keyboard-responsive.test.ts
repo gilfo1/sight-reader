@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKeyboardRangeState, WHITE_NOTES } from '@/ui/piano-keyboard-layout';
+import { getKeyboardRangeState } from '@/ui/piano-keyboard-layout';
 
 describe('Piano Keyboard Layout Responsive Logic', () => {
   it('clamps minimum white key count to 7 for very narrow widths', () => {

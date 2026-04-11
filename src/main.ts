@@ -7,6 +7,8 @@ import {
   renderScore,
   resetAllToDefaults,
   resetGameState,
+  clearRenderCache,
+  getRenderedMeasuresCount,
 } from './app/app-controller';
 import { initMidiHandler } from './engine/midi-handler';
 import {
@@ -61,4 +63,5 @@ export {
   getTotalSteps,
   resetAllToDefaults,
   clearRenderCache,
+  getRenderedMeasuresCount,
 };

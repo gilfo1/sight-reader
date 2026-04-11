@@ -18,7 +18,7 @@ function getGeneratorConfig(config?: Partial<GeneratorConfig>): GeneratorConfig 
   return { ...getEffectiveUIConfig(), ...config };
 }
 
-function getRenderContext() {
+function getRenderContext(): any {
   return {
     musicData,
     currentStepIndex,

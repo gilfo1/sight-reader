@@ -25,7 +25,7 @@ export interface KeyboardRangeState extends KeyboardRange {
 export const DEFAULT_KEYBOARD_SIZE_MODE: KeyboardSizeMode = 'small';
 export const KEYBOARD_CENTER_NOTE = 'C4';
 
-const WHITE_NOTES = ALL_PIANO_NOTES.filter((note) => !isBlackKey(note));
+export const WHITE_NOTES = ALL_PIANO_NOTES.filter((note) => !isBlackKey(note));
 const KEYBOARD_SIZE_ORDER: KeyboardSizeMode[] = ['large', 'medium', 'small'];
 const KEYBOARD_SIZING: Record<KeyboardSizeMode, KeyboardSizing> = {
   large: {

@@ -66,7 +66,8 @@ describe('Highlighter Rendering', (): void => {
         activeMidiNotes: new Set(),
         suppressedNotes: new Set()
       }, {
-        getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
+        getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i }),
+        getRenderedMeasuresCount: () => 1
       });
 
       expect(fillRectSpy).toHaveBeenCalled();
@@ -88,7 +89,8 @@ describe('Highlighter Rendering', (): void => {
         activeMidiNotes: new Set(),
         suppressedNotes: new Set()
       }, {
-        getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i })
+        getStepInfo: (i: number) => ({ measureIdx: 0, stepIdx: i }),
+        getRenderedMeasuresCount: () => 1
       });
       [, , width] = fillRectSpy.mock.calls[0];
       expect(width).toBeGreaterThan(22);
