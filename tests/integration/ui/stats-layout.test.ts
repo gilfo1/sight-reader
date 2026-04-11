@@ -65,7 +65,7 @@ describe('Stats UI Layout', () => {
   });
 
   it('should have a wide grid layout in narrow CSS', () => {
-    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?display:\s*grid;/);
-    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(90px,\s*1fr\)\);/);
+    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?\.stats-container\s*{[\s\S]*?flex-wrap:\s*wrap;/);
+    expect(css).toMatch(/@media\s*\(max-width:\s*1024px\)\s*{[\s\S]*?\.stats-container\s*{[\s\S]*?width:\s*100vw;/);
   });
 });

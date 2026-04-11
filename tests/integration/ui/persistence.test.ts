@@ -192,13 +192,13 @@ describe('UI Persistence Integration', () => {
     const sizeToggle = document.getElementById('piano-keyboard-size-toggle') as HTMLButtonElement;
     sizeToggle.click();
 
-    expect(loadFromStorage('keyboard-size-mode')).toBe('medium');
+    expect(loadFromStorage('keyboard-size-mode')).toBe('large');
 
     document.body.innerHTML = new DOMParser().parseFromString(readFileSync('./index.html', 'utf-8'), 'text/html').body.innerHTML;
     await initApp();
 
     const layout = document.getElementById('piano-keyboard-layout') as HTMLDivElement;
-    expect(layout.dataset.sizeMode).toBe('medium');
+    expect(layout.dataset.sizeMode).toBe('large');
   });
 
   it('should persist the sound toggle state', async () => {

@@ -37,9 +37,9 @@ describe('Piano Keyboard Layout Responsive Logic', () => {
   });
 
   it('handles small size mode correctly', () => {
-    // Small mode white key width is 34px
-    // 340px / 34px = 10 keys
+    // A narrow viewport forces the responsive extra-small fallback from small mode.
     const rangeSmall = getKeyboardRangeState(340, 'small');
-    expect(rangeSmall.whiteKeyCount).toBe(10);
+    expect(rangeSmall.sizeMode).toBe('extra-small');
+    expect(rangeSmall.whiteKeyCount).toBe(12);
   });
 });

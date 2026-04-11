@@ -683,10 +683,6 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     overlay.appendChild(handle);
     if (activeDragTarget && activeDragTarget.bound === 'lower') {
       setRenderedNoteHoverState(lowerNoteElement, true);
-      // Sync drag offset if we are dragging this bound
-      if (currentBoundBeingProcessed === 'lower') {
-        // No-op: draggedHandleY was unused
-      }
     }
   });
   previewLayout.upperHandles.forEach((handleLayout) => {
@@ -694,10 +690,6 @@ function renderVexFlowPreview(staffType: StaffType, range: NoteRange): void {
     overlay.appendChild(handle);
     if (activeDragTarget && activeDragTarget.bound === 'upper') {
       setRenderedNoteHoverState(upperNoteElement, true);
-      // Sync drag offset if we are dragging this bound
-      if (currentBoundBeingProcessed === 'upper') {
-        // No-op: draggedHandleY was unused
-      }
     }
   });
   visual.appendChild(overlay);

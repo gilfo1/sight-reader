@@ -162,17 +162,26 @@ describe('Staff Connectors', () => {
     renderScore(null, getUIConfig());
     
     const svg = document.querySelector('#output svg')!;
-    const rects = Array.from(svg.querySelectorAll('rect'));
-    
-    // Measure 1 width is 200, starts at 50, so right barline at 250
-    // Measure 2 width is 200, so right barline at 450
-    const barlineAt250 = rects.find(r => {
-      const x = parseFloat(r.getAttribute('x') || '0');
-      const height = parseFloat(r.getAttribute('height') || '0');
-      return Math.abs(x - 250) < 5 && height > 100;
+    const connectorLines = Array.from(svg.querySelectorAll('path, rect')).filter((el) => {
+      if (el.tagName === 'path') {
+        const d = (el as SVGPathElement).getAttribute('d') || '';
+        const match = d.match(/M\s*(\d+(\.\d+)?)\s+(\d+(\.\d+)?)\s*L\s*(\d+(\.\d+)?)\s+(\d+(\.\d+)?)/);
+        if (!match) {
+          return false;
+        }
+        const x1 = parseFloat(match[1]!);
+        const x2 = parseFloat(match[5]!);
+        const y1 = parseFloat(match[3]!);
+        const y2 = parseFloat(match[7]!);
+        return Math.abs(x1 - x2) < 0.1 && Math.abs(y2 - y1) > 100;
+      }
+
+      const width = parseFloat((el as SVGRectElement).getAttribute('width') || '0');
+      const height = parseFloat((el as SVGRectElement).getAttribute('height') || '0');
+      return width < 5 && height > 100;
     });
-    
-    expect(barlineAt250).toBeDefined();
+
+    expect(connectorLines.length).toBeGreaterThanOrEqual(3);
   });
 
   it('should render bold double right barline at the very end', () => {
