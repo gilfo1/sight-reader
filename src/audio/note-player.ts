@@ -8,7 +8,7 @@ interface ActiveTone {
 }
 
 const ATTACK_SECONDS = 0.01;
-const RELEASE_SECONDS = 0.05;
+const RELEASE_SECONDS = 0.15;
 const REVERB_DECAY_SECONDS = 1.1;
 const REVERB_DURATION_SECONDS = 1.6;
 const REVERB_WET_LEVEL = 0.24;
@@ -226,6 +226,10 @@ export function stopNote(note: string): void {
 
 export function stopAllNotes(): void {
   Array.from(activeNotes.keys()).forEach(stopNote);
+}
+
+export function resetAudioPlayer(): void {
+  stopAllNotes();
   audioContext = null;
   resetAudioRouting();
 }

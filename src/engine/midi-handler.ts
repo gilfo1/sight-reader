@@ -15,7 +15,7 @@ import {
 } from './state';
 import { getNoteValue } from '@/utils/theory';
 
-type MidiStateChangeHandler = (shouldRegenerate?: boolean) => void;
+type MidiStateChangeHandler = (shouldRegenerate?: boolean, keepHeldNotes?: boolean) => void;
 type NoteIdentifierEvent = Pick<NoteMessageEvent, 'note'>;
 
 export interface MIDIInitFunction {
@@ -29,8 +29,8 @@ export interface MIDIInitFunction {
 }
 
 export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiStateChangeHandler): void {
-  const notifyStateChange = (shouldRegenerate?: boolean): void => {
-    onStateChange?.(shouldRegenerate);
+  const notifyStateChange = (shouldRegenerate?: boolean, keepHeldNotes?: boolean): void => {
+    onStateChange?.(shouldRegenerate, keepHeldNotes);
   };
 
   const deviceNameEl = document.getElementById('midi-device-name');
@@ -71,7 +71,7 @@ export const initMidiHandler: MIDIInitFunction = function(onStateChange?: MidiSt
       stepStartTime = Date.now(); // Reset timer for next step
       
       if (nextIndex >= getTotalSteps()) {
-          notifyStateChange(true); 
+          notifyStateChange(true, true); 
       } else {
           activeMidiNotes.forEach(n => suppressedNotes.add(n));
           notifyStateChange();

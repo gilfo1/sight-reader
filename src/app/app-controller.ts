@@ -1,3 +1,4 @@
+import { stopAllNotes } from '@/audio/note-player';
 import {
   activeMidiNotes,
   currentStepIndex,
@@ -5,6 +6,7 @@ import {
   musicData,
   resetSessionState,
   setMusicData,
+  suppressedNotes,
 } from '@/engine/session-state';
 import { initMidiHandler } from '@/engine/midi-handler';
 import { generateScoreData } from '@/engine/music-generator';
@@ -12,8 +14,8 @@ import { resetStats } from '@/engine/state';
 import type { GeneratorConfig, Measure } from '@/engine/types';
 import { clearRenderCache, renderScore as drawScore } from '@/rendering/score-renderer';
 import {
-  DEFAULT_CONFIG,
   applyUIConfig,
+  DEFAULT_CONFIG,
   getEffectiveUIConfig,
   getUIConfig,
   initKeySignatures,
@@ -28,15 +30,14 @@ import { initPianoKeyboard, releaseAllKeyboardNotes, updatePianoKeyboardActiveNo
 import { closeSettingsModal, initSettingsModal } from '@/ui/settings-modal';
 import { initSoundToggle, resetSoundToggle } from '@/ui/sound-toggle';
 import { clearStorage, loadFromStorage } from '@/utils/storage';
-import { suppressedNotes } from '@/engine/session-state';
 
 function getGeneratorConfig(config?: Partial<GeneratorConfig>): GeneratorConfig {
   return { ...getEffectiveUIConfig(), ...config };
 }
 
-function resetGameState(): void {
+function resetGameState(keepHeldNotes = false): void {
   releaseAllKeyboardNotes();
-  resetSessionState();
+  resetSessionState(keepHeldNotes);
   clearRenderCache();
 }
 
@@ -59,14 +60,14 @@ function renderCurrentScore(outputDiv: HTMLElement | null = null, config?: Parti
   drawScore(outputDiv, actualConfig, getRenderContext(), { getStepInfo });
 }
 
-function regenerateScore(): void {
-  resetGameState();
+function regenerateScore(keepHeldNotes = false): void {
+  resetGameState(keepHeldNotes);
   setMusicData(generateScoreData(getEffectiveUIConfig()));
 }
 
-function handleStateChange(shouldRegenerate = false): void {
+function handleStateChange(shouldRegenerate = false, keepHeldNotes = false): void {
   if (shouldRegenerate) {
-    regenerateScore();
+    regenerateScore(keepHeldNotes);
   }
 
   updatePianoKeyboardActiveNotes();
@@ -82,7 +83,8 @@ export function resetAllToDefaults(): void {
   applyUIConfig(DEFAULT_CONFIG);
   saveUIConfig();
   resetAccordionState();
-  handleStateChange(true);
+  stopAllNotes(); // Stop all sound on hard reset
+  handleStateChange(true, false); // Don't keep notes on hard reset
 }
 
 export function generateAndStoreScore(config?: Partial<GeneratorConfig>): Measure[] {

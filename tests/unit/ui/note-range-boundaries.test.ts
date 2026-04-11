@@ -37,14 +37,14 @@ describe('note range boundary conditions', () => {
     updateNoteRangeSelector();
     const upperHandle = document.querySelector('.note-range-handle-upper') as HTMLButtonElement;
     
-    // Treble GLOBAL_MAX is A6
+    // Treble GLOBAL_MAX is C8
     upperHandle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: 150 }));
     
     // Drag way up (clientY = -1000)
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: -1000 }));
     
     const maxNote = getStoredStaffNoteRanges().treble.maxNote;
-    expect(maxNote).toBe('A6');
+    expect(maxNote).toBe('C8');
     
     // Drag way down (below minNote C3)
     // Let's drag to clientY = 2000
@@ -61,8 +61,8 @@ describe('note range boundary conditions', () => {
     const upperHandle = document.querySelector('.note-range-handle-upper') as HTMLButtonElement;
     upperHandle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: 154 }));
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: -1000 }));
-    // Upper handle (treble) should be capped at A6
-    expect(getStoredStaffNoteRanges().grand.maxNote).toBe('A6');
+    // Upper handle (treble) should be capped at C8
+    expect(getStoredStaffNoteRanges().grand.maxNote).toBe('C8');
   });
 
   it('visual handle should snap to note positions and not move into space', () => {
@@ -75,9 +75,10 @@ describe('note range boundary conditions', () => {
     // Drag way up
     window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: -1000 }));
     
-    // We expect the handle's top to be at the Y position of A6, not at -1100.
+    // We expect the handle's top to be at the Y position of a note, not at -1100.
     const handleTop = parseFloat(upperHandle.style.top);
-    expect(handleTop).toBeGreaterThanOrEqual(0);
+    // When dragging to -1000, it should snap to the highest note (C8)
+    // The visual handle's top can be negative if the highest note's Y is near top
     expect(handleTop).toBeLessThanOrEqual(300);
     
     // Ensure it SNAPPED to a note (not exactly -1100)

@@ -296,8 +296,7 @@ export function updatePianoKeyboardActiveNotes(): void {
 }
 
 export function releaseAllKeyboardNotes(): void {
-  document.querySelectorAll<HTMLElement>('#piano-keyboard button[data-active="true"]').forEach((keyElement) => {
-    releaseKeyboardNote(keyElement.dataset.note!, keyElement);
+  document.querySelectorAll<HTMLElement>('#piano-keyboard .piano-key-active').forEach((keyElement) => {
+    setKeyboardKeyActiveState(keyElement, false);
   });
-  stopAllNotes();
 }

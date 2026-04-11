@@ -54,18 +54,18 @@ describe('note range selector', () => {
   });
 
   it('returns staff-specific available note ranges', () => {
-    expect(getAvailableRangeForStaff('grand')[0]).toBe('E1');
-    expect(getAvailableRangeForStaff('grand').at(-1)).toBe('A6');
+    expect(getAvailableRangeForStaff('grand')[0]).toBe('A0');
+    expect(getAvailableRangeForStaff('grand').at(-1)).toBe('C8');
     expect(getAvailableRangeForStaff('treble')[0]).toBe('C3');
-    expect(getAvailableRangeForStaff('treble').at(-1)).toBe('A6');
-    expect(getAvailableRangeForStaff('bass')[0]).toBe('E1');
+    expect(getAvailableRangeForStaff('treble').at(-1)).toBe('C8');
+    expect(getAvailableRangeForStaff('bass')[0]).toBe('A0');
     expect(getAvailableRangeForStaff('bass').at(-1)).toBe('C5');
   });
 
   it('clamps invalid or reversed ranges back into the staff bounds', () => {
-    // A0 and C8 are now outside the treble range (C3 to A6).
+    // A0- and C9 are now outside the treble range (C3 to C8).
     // Clamping will fall back to the default range for treble (C3 to C6).
-    expect(clampNoteRangeForStaff('treble', { minNote: 'A0', maxNote: 'C8' })).toEqual({
+    expect(clampNoteRangeForStaff('treble', { minNote: 'A-1', maxNote: 'C9' })).toEqual({
       minNote: 'C3',
       maxNote: 'C6',
     });

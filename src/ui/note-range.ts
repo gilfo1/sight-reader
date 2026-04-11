@@ -49,7 +49,7 @@ const STAFF_LABELS: Record<StaffType, string> = {
 };
 
 const DEFAULT_STAFF_RANGES: StaffNoteRanges = {
-  bass: { minNote: 'E1', maxNote: 'C5' },
+  bass: { minNote: 'C1', maxNote: 'C5' },
   grand: { minNote: 'C2', maxNote: 'C6' },
   treble: { minNote: 'C3', maxNote: 'C6' },
 };
@@ -174,10 +174,10 @@ export function getAvailableRangeForStaff(staffType: StaffType): string[] {
   }
 
   // Common limits for all staff types to prevent notes from going too far off screen
-  // Highest: A6 (about 4 ledger lines above treble staff)
-  // Lowest: E1 (under 4 ledger lines below bass staff)
-  const GLOBAL_MIN = 'E1';
-  const GLOBAL_MAX = 'A6';
+  // Highest: C8 (top of 88-key piano)
+  // Lowest: A0 (bottom of 88-key piano)
+  const GLOBAL_MIN = 'A0';
+  const GLOBAL_MAX = 'C8';
 
   let result: string[];
   if (staffType === 'treble') {
@@ -820,13 +820,6 @@ export function setCurrentStaffNoteRange(range: Partial<NoteRange>, notifyChange
   const staffType = getCurrentStaffType();
   const nextRange = clampNoteRangeForStaff(staffType, range);
   const storedRanges = getStoredStaffNoteRanges();
-
-  // If the range hasn't changed, but we are skipping re-render (dragging), 
-  // we still might want to keep the handle moving which is already handled in handleMove.
-  // But we MUST check if the logical note has changed.
-  if (storedRanges[staffType].minNote === nextRange.minNote && storedRanges[staffType].maxNote === nextRange.maxNote) {
-    return;
-  }
 
   storedRanges[staffType] = nextRange;
   saveStoredStaffNoteRanges(storedRanges);

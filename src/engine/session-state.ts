@@ -14,10 +14,16 @@ export function setCurrentStepIndex(index: number): void {
   currentStepIndex = index;
 }
 
-export function resetSessionState(): void {
+export function resetSessionState(keepHeldNotes = false): void {
   currentStepIndex = 0;
-  suppressedNotes.clear();
-  activeMidiNotes.clear();
+  if (keepHeldNotes) {
+    const held = Array.from(activeMidiNotes);
+    suppressedNotes.clear();
+    held.forEach((note) => suppressedNotes.add(note));
+  } else {
+    suppressedNotes.clear();
+    activeMidiNotes.clear();
+  }
   musicData.length = 0;
 }
 

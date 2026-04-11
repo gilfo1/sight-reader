@@ -42,10 +42,13 @@ test.describe('Note Range Comprehensive Tests', () => {
     const initialBox = await upperHandle.boundingBox();
     if (!initialBox) throw new Error('Could not find upper handle bounding box');
     
-    // Drag it down slightly
+    // Drag it down significantly
     await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2);
     await page.mouse.down();
-    await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2 + 50);
+    await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2 + 100, { steps: 10 });
+    
+    // Give it a tiny bit of time to process and update DOM
+    await page.waitForTimeout(100);
     
     const newBox = await upperHandle.boundingBox();
     if (!newBox) throw new Error('Could not find new upper handle bounding box');

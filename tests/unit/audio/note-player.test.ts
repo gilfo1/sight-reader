@@ -5,9 +5,9 @@ import {
   isSoundEnabled,
   noteToFrequency,
   playNote,
+  resetAudioPlayer,
   setSoundEnabled,
   setSoundMode,
-  stopAllNotes,
   stopNote,
   toggleSoundEnabled,
   toggleSoundMode,
@@ -89,7 +89,7 @@ function installAudioContextMock() {
 
 describe('Note Player', () => {
   beforeEach(() => {
-    stopAllNotes();
+    resetAudioPlayer();
     setSoundEnabled(true);
     Object.defineProperty(window.navigator, 'userAgent', {
       configurable: true,
@@ -98,7 +98,7 @@ describe('Note Player', () => {
   });
 
   afterEach(() => {
-    stopAllNotes();
+    resetAudioPlayer();
     setSoundEnabled(true);
   });
 
