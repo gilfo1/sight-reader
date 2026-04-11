@@ -152,4 +152,4 @@ export async function initApp(): Promise<void> {
   });
 }
 
-export { getUIConfig, initKeySignatures, renderCurrentScore as renderScore, resetGameState };
+export { getUIConfig, initKeySignatures, renderCurrentScore as renderScore, resetGameState, clearRenderCache };

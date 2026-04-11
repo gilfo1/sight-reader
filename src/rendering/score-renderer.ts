@@ -60,7 +60,7 @@ function getTargetNotes(
   const stem = isTreble ? 'up' : 'down';
   const currentStep = getStepInfo(currentStepIndex);
 
-  return steps.map((pitches, bIdx) => {
+  const notes = steps.map((pitches, bIdx) => {
     const duration = pattern[bIdx] ?? 'q';
     const isCurrent = currentStep?.measureIdx === measureIdx && currentStep.stepIdx === bIdx;
     
@@ -73,6 +73,23 @@ function getTargetNotes(
     if (isCurrent && currentNotesArray) currentNotesArray.push(note);
     return note;
   });
+
+  // Auto-beam eighth notes to ensure correct stem alignment during formatting.
+  // Pre-linking beams to notes allows VexFlow's Formatter to properly align stems
+  // and resolve potential rendering issues.
+  try {
+    const beams = Beam.generateBeams(notes);
+    for (const b of beams) {
+      const beamedNotes = b.getNotes() as StaveNote[];
+      for (const note of beamedNotes) {
+        note.setBeam(b);
+      }
+    }
+  } catch (e) {
+    // Ignore beaming errors to ensure rendering continues
+  }
+
+  return notes;
 }
 
 function drawHighlight(f: Factory, currentNotes: StaveNote[]): void {
@@ -128,10 +145,6 @@ function createRendererElementId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-function getSystemOptions(system: System): { width: number; x: number; y: number } {
-  return (system as unknown as { options: { width: number; x: number; y: number } }).options;
-}
-
 function configureStave(stave: Stave, isTreble: boolean, m: number, keySig: string): void {
   if (m === 0) {
     stave.addClef(isTreble ? 'treble' : 'bass').addTimeSignature('4/4');
@@ -162,7 +175,7 @@ function calculateColumnWidths(
   selectors: RenderSelectors
 ): number[] {
   const { musicData } = state;
-  const colWidths: number[] = new Array(measuresPerLine).fill(200);
+  const colWidths: number[] = new Array(measuresPerLine).fill(150);
   const hiddenDiv: HTMLDivElement = document.createElement('div');
   hiddenDiv.id = createRendererElementId('temp-vf');
   hiddenDiv.style.display = 'none';
@@ -175,7 +188,7 @@ function calculateColumnWidths(
     for (let l = 0; l < linesCount; l++) {
       const measureIdx = (l * measuresPerLine) + m;
       const measureData = getMeasureOrDefault(musicData, measureIdx);
-      const system = widthCalculator.System({ x: 0, y: 0 });
+      const system = widthCalculator.System({ x: 0, y: 0, width: 200 });
       const keySig = getValidKey(measureData.keySignature);
 
       if (staffType === 'treble' || staffType === 'grand') {
@@ -188,7 +201,35 @@ function calculateColumnWidths(
       }
       
       system.format();
-      colWidths[m] = Math.max(colWidths[m]!, getSystemOptions(system).width);
+      
+      // Get the width of the staves to account for clef, key signature, etc.
+      // In VexFlow 5 Factory.System, we might need to access internal staves differently
+      const systemObj = system as any;
+      const staves = systemObj.staves || systemObj.staveList || [];
+      let maxWidth = 0;
+      for (const s of staves) {
+        const stave = s.stave || s; 
+        if (!stave || typeof stave.getNoteStartX !== 'function') {
+           continue;
+        }
+        // In JSDOM/Headless, getNoteStartX might not return accurate values if fonts are not loaded.
+        // We ensure a minimum width for modifiers in the first measure.
+        const modifiersWidth = Math.max(stave.getNoteStartX() - stave.getX(), (m === 0) ? 70 : 0);
+        const formatterWidth = systemObj.formatter?.getMinTotalWidth() || 0;
+        
+        // Add padding: more padding for the first measure to account for modifiers
+        const padding = (m === 0) ? 80 : 40;
+        const totalMeasureWidth = modifiersWidth + formatterWidth + padding;
+        
+        maxWidth = Math.max(maxWidth, totalMeasureWidth);
+      }
+
+      if (staves.length === 0) {
+        // Fallback if we can't find staves (e.g. VexFlow 5 internals change)
+        maxWidth = (m === 0) ? 250 : 150;
+      }
+
+      colWidths[m] = Math.max(colWidths[m]!, maxWidth);
       widthCalculator.reset();
       hiddenDiv.innerHTML = '';
     }
@@ -276,11 +317,17 @@ function drawBeams(vf: Factory, voicesToBeam: Voice[]): void {
   for (const v of voicesToBeam) {
     if (!v) continue;
     try {
-      const beams = Beam.generateBeams(v.getTickables() as StaveNote[]);
-      if (Array.isArray(beams)) {
-        for (const b of beams) {
-          if (b) b.setContext(vf.getContext()).draw();
-        }
+      const notes = v.getTickables() as StaveNote[];
+      // We collect the beams that were pre-linked to notes in getTargetNotes.
+      // This ensures we draw them exactly once in the correct context.
+      const beams = new Set<Beam>();
+      for (const note of notes) {
+        const beam = note.getBeam();
+        if (beam) beams.add(beam);
+      }
+      
+      for (const b of beams) {
+        b.setContext(vf.getContext()).draw();
       }
     } catch (e) {
       // Ignore
@@ -361,7 +408,8 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
       
       const renderClef = (isTreble: boolean): void => {
         const v = addVoicesWithPlayed(vf, score, measureData, measureIdx, isTreble, currentNotes, actualState, actualSelectors, voicesToBeam);
-        configureStave(system.addStave({ voices: v }), isTreble, m, keySig);
+        const stave = system.addStave({ voices: v });
+        configureStave(stave, isTreble, m, keySig);
       };
 
       if (staffType === 'treble' || staffType === 'grand') renderClef(true);
@@ -381,8 +429,9 @@ export function renderScore(outputDiv: HTMLElement | null = null, config?: Parti
       system.format();
     }
   }
-  vf.draw();
+  // Process beams before draw so flags are suppressed.
   drawBeams(vf, voicesToBeam);
+  vf.draw();
   drawHighlight(vf, currentNotes);
   return renderedMeasuresCount;
 }

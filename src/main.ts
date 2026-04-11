@@ -60,4 +60,5 @@ export {
   getStepInfo,
   getTotalSteps,
   resetAllToDefaults,
+  clearRenderCache,
 };
