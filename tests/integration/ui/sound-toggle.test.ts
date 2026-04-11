@@ -36,11 +36,10 @@ describe('Sound Toggle UI', () => {
     expect(soundIcon.dataset.enabled).toBe('true');
     expect(soundIcon.dataset.soundMode).toBe(SOUND_MODE.ON);
     expect(soundIcon.querySelector('.sound-icon-speaker')).not.toBeNull();
-    expect(soundIcon.querySelectorAll('.sound-icon-wave')).toHaveLength(2);
+    expect(soundIcon.querySelectorAll('.sound-icon-wave')).toHaveLength(3);
     expect(soundIcon.querySelector('.sound-icon-wave-primary')).not.toBeNull();
     expect(soundIcon.querySelector('.sound-icon-wave-secondary')).not.toBeNull();
-    expect(soundIcon.querySelector('.sound-icon-reverb-badge')).not.toBeNull();
-    expect(soundIcon.querySelectorAll('.sound-icon-reverb-ring')).toHaveLength(2);
+    expect(soundIcon.querySelector('.sound-icon-wave-tertiary')).not.toBeNull();
     expect(soundIcon.querySelector('.sound-icon-mute-slash')).not.toBeNull();
   });
 

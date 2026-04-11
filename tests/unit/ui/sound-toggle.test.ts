@@ -10,10 +10,7 @@ function renderSoundToggle(): void {
         <span class="sound-icon-speaker"></span>
         <span class="sound-icon-wave sound-icon-wave-primary"></span>
         <span class="sound-icon-wave sound-icon-wave-secondary"></span>
-        <span class="sound-icon-reverb-badge">
-          <span class="sound-icon-reverb-ring sound-icon-reverb-ring-inner"></span>
-          <span class="sound-icon-reverb-ring sound-icon-reverb-ring-outer"></span>
-        </span>
+        <span class="sound-icon-wave sound-icon-wave-tertiary"></span>
         <span class="sound-icon-mute-slash"></span>
       </span>
     </button>
@@ -41,7 +38,7 @@ describe('sound toggle ui helpers', () => {
     expect(icon.dataset.soundMode).toBe(SOUND_MODE.ON);
     expect(icon.querySelector('.sound-icon-wave-primary')).not.toBeNull();
     expect(icon.querySelector('.sound-icon-wave-secondary')).not.toBeNull();
-    expect(icon.querySelector('.sound-icon-reverb-badge')).not.toBeNull();
+    expect(icon.querySelector('.sound-icon-wave-tertiary')).not.toBeNull();
   });
 
   it('renders the off state metadata', () => {

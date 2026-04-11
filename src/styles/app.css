@@ -157,115 +157,98 @@ body.app-shell {
 .sound-icon-speaker {
   position: absolute;
   left: 1px;
-  top: 6px;
-  width: 7px;
-  height: 10px;
+  top: 7px;
+  width: 5px;
+  height: 8px;
   background: currentColor;
-  border-radius: 2px 1px 1px 2px;
-  transition:
-    opacity 0.14s ease,
-    color 0.14s ease;
+  border-radius: 1px;
 }
 
 .sound-icon-speaker::after {
   content: "";
   position: absolute;
-  left: 6px;
-  top: 1px;
-  width: 6px;
-  height: 8px;
+  left: 2px;
+  top: -4px;
+  width: 8px;
+  height: 16px;
   background: currentColor;
-  clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 80%);
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 70%);
 }
 
 .sound-icon-wave {
   position: absolute;
   top: 50%;
+  left: 10px;
   border: 2px solid transparent;
   border-right-color: currentColor;
   border-radius: 50%;
   transform: translateY(-50%);
   opacity: 0;
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
+  transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
 .sound-icon-wave-primary {
-  right: 3px;
-  width: 7px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
 }
 
 .sound-icon-wave-secondary {
-  right: -1px;
-  width: 10px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+}
+
+.sound-icon-wave-tertiary {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
 }
 
 .sound-icon-mute-slash {
   position: absolute;
-  left: 12px;
-  top: 1px;
-  width: 2.5px;
-  height: 19px;
-  background: currentColor;
-  border-radius: 999px;
-  transform: rotate(35deg);
+  left: 1px;
+  top: 10px;
+  width: 18px;
+  height: 2px;
+  background: #ff4d4f; /* Clearly indicate muted with a red slash */
+  border-radius: 1px;
+  transform: rotate(-45deg);
   opacity: 0;
   transition: opacity 0.14s ease;
-}
-
-.sound-icon-reverb-badge {
-  position: absolute;
-  right: -2px;
-  top: -1px;
-  width: 8px;
-  height: 8px;
-  opacity: 0;
-  transform: scale(0.8);
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
-}
-
-.sound-icon-reverb-ring {
-  position: absolute;
-  inset: 0;
-  border: 1.5px solid currentColor;
-  border-radius: 999px;
-}
-
-.sound-icon-reverb-ring-inner {
-  inset: 1.5px;
-  opacity: 0.95;
-}
-
-.sound-icon-reverb-ring-outer {
-  opacity: 0.45;
+  z-index: 2;
 }
 
 .icon-button:hover .sound-icon-wave,
 .icon-button:focus-visible .sound-icon-wave {
-  transform: translateY(-50%) scale(1.05);
+  transform: translateY(-50%) scale(1.1);
 }
 
 .icon-button[data-sound-mode="on"] .sound-icon-wave-primary,
 .icon-button[data-sound-mode="reverb"] .sound-icon-wave-primary {
-  opacity: 0.92;
+  opacity: 0.9;
 }
 
+.icon-button[data-sound-mode="on"] .sound-icon-wave-secondary,
 .icon-button[data-sound-mode="reverb"] .sound-icon-wave-secondary {
-  opacity: 0.78;
+  opacity: 0.7;
+}
+
+.icon-button[data-sound-mode="reverb"] .sound-icon-wave-tertiary {
+  opacity: 0.5;
+  animation: sound-reverb-vibrate 1s infinite alternate ease-in-out;
+}
+
+@keyframes sound-reverb-vibrate {
+  0% { transform: translateY(-50%) scale(1); opacity: 0.3; }
+  100% { transform: translateY(-50%) scale(1.15); opacity: 0.6; }
 }
 
 .icon-button[data-enabled="false"] .sound-icon-mute-slash {
   opacity: 1;
 }
 
-.icon-button[data-sound-mode="reverb"] .sound-icon-reverb-badge {
-  opacity: 0.82;
-  transform: scale(1);
+.icon-button[data-enabled="false"] .sound-icon-speaker {
+  opacity: 0.6;
 }
 
 .panel {
