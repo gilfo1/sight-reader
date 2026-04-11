@@ -1,4 +1,4 @@
-import { Factory, Accidental, StaveNote, Voice, Stave, Beam, EasyScore, System } from 'vexflow';
+import { Factory, Accidental, StaveNote, Voice, Stave, Beam, EasyScore } from 'vexflow';
 import { KEY_SIGNATURES } from '@/constants';
 import type { GeneratorConfig, Measure, StepLocation } from '@/engine';
 
@@ -189,6 +189,7 @@ function calculateColumnWidths(
       const measureIdx = (l * measuresPerLine) + m;
       const measureData = getMeasureOrDefault(musicData, measureIdx);
       const system = widthCalculator.System({ x: 0, y: 0, width: 200 });
+      const systemObj = system as any;
       const keySig = getValidKey(measureData.keySignature);
 
       if (staffType === 'treble' || staffType === 'grand') {
@@ -204,8 +205,7 @@ function calculateColumnWidths(
       
       // Get the width of the staves to account for clef, key signature, etc.
       // In VexFlow 5 Factory.System, we might need to access internal staves differently
-      const systemObj = system as any;
-      const staves = systemObj.staves || systemObj.staveList || [];
+      const staves = systemObj.partStaves || systemObj.staves || systemObj.staveList || [];
       let maxWidth = 0;
       for (const s of staves) {
         const stave = s.stave || s; 
@@ -215,10 +215,22 @@ function calculateColumnWidths(
         // In JSDOM/Headless, getNoteStartX might not return accurate values if fonts are not loaded.
         // We ensure a minimum width for modifiers in the first measure.
         const modifiersWidth = Math.max(stave.getNoteStartX() - stave.getX(), (m === 0) ? 70 : 0);
-        const formatterWidth = systemObj.formatter?.getMinTotalWidth() || 0;
+        
+        let formatterWidth = 0;
+        try {
+          formatterWidth = systemObj.formatter?.getMinTotalWidth() || 0;
+        } catch (e) {
+          // In some test environments, getMinTotalWidth might throw if formatting didn't complete.
+          // Fallback to a density-based estimation.
+          const noteCount = Math.max(measureData.trebleSteps.length, measureData.bassSteps.length);
+          formatterWidth = Math.max(100, noteCount * 20);
+        }
         
         // Add padding: more padding for the first measure to account for modifiers
-        const padding = (m === 0) ? 80 : 40;
+        // For measures with many notes (e.g. sixteenths), add extra padding for readability
+        const noteCount = Math.max(measureData.trebleSteps.length, measureData.bassSteps.length);
+        const densityPadding = Math.max(0, (noteCount - 4) * 12);
+        const padding = ((m === 0) ? 80 : 40) + densityPadding;
         const totalMeasureWidth = modifiersWidth + formatterWidth + padding;
         
         maxWidth = Math.max(maxWidth, totalMeasureWidth);
