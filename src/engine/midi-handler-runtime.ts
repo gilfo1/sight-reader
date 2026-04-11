@@ -28,6 +28,7 @@ export function createMidiRuntime(
 ): MidiRuntime {
   let stepStartTime = Date.now();
   let lastProcessedStep = -1;
+  const wrongNoteAuxiliaryNotes = new Map<string, string[]>();
 
   const checkMatch = (): void => {
     const targetNotes = getTargetNotesAtStep(currentStepIndex);
@@ -81,6 +82,15 @@ export function createMidiRuntime(
       } else {
         recordWrongNote(identifier, targetPitches, measureData.keySignature);
         suppressedNotes.clear();
+
+        const auxiliary: string[] = [];
+        targetPitches.forEach((pitch) => {
+          playNote(pitch);
+          auxiliary.push(pitch);
+        });
+        if (auxiliary.length > 0) {
+          wrongNoteAuxiliaryNotes.set(identifier, auxiliary);
+        }
       }
     }
 
@@ -95,6 +105,18 @@ export function createMidiRuntime(
     activeMidiNotes.delete(identifier);
     suppressedNotes.delete(identifier);
     stopNote(identifier);
+
+    const auxiliary = wrongNoteAuxiliaryNotes.get(identifier);
+    if (auxiliary) {
+      wrongNoteAuxiliaryNotes.delete(identifier);
+      auxiliary.forEach((pitch) => {
+        const stillNeeded = Array.from(wrongNoteAuxiliaryNotes.values()).some((notes) => notes.includes(pitch));
+        if (!stillNeeded && !activeMidiNotes.has(pitch)) {
+          stopNote(pitch);
+        }
+      });
+    }
+
     renderCurrentNote();
     checkMatch();
     notifyStateChange();
