@@ -1,6 +1,9 @@
 {
   "name": "sight-reader",
   "version": "1.0.0",
+  "description": "A dynamic, interactive music sight-reading application for MIDI and on-screen keyboards.",
+  "author": "Luke Gilfeather",
+  "license": "MIT",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {

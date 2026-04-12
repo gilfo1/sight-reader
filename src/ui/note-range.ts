@@ -106,7 +106,7 @@ const handleMove = (event: MouseEvent | PointerEvent | TouchEvent): void => {
 };
 
 const handleUp = (_event: MouseEvent | PointerEvent | TouchEvent): void => {
-  // If it's a touch event, it might not have coordinates on touchend/touchcancel
+  // If it's a touch event, it might not have coordinates on touchend/touchcancel,
   // but we just want to stop dragging.
   stopDragging();
 };
@@ -171,7 +171,7 @@ export function getAvailableRangeForStaff(staffType: StaffType): string[] {
     return availableNotesCache;
   }
 
-  // Common limits for all staff types to prevent notes from going too far off screen
+  // Common limits for all staff types to prevent notes from going too far off-screen
   // Highest: C8 (top of 88-key piano)
   // Lowest: A0 (bottom of 88-key piano)
   const GLOBAL_MIN = 'A0';
@@ -418,7 +418,7 @@ function findClosestNoteForClientY(staffType: StaffType, clef: 'treble' | 'bass'
   }
 
   // Also ensure that minNote doesn't exceed maxNote and vice versa during drag.
-  // We allow them to be equal, but not cross.
+  // We allow them to be equal but not cross.
   if (bound === 'lower') {
     const maxVal = getNoteValue(currentRange.maxNote);
     notes = notes.filter(note => getNoteValue(note) <= maxVal);
@@ -498,16 +498,6 @@ function unbindDragListeners(): void {
   window.removeEventListener('touchcancel', handleUp);
 
   dragListenersBound = false;
-}
-
-export function setNoteRangeForStaff(staffType: StaffType, range: Partial<NoteRange>): void {
-  const storedRanges = getStoredStaffNoteRanges();
-  storedRanges[staffType] = clampNoteRangeForStaff(staffType, range);
-  saveStoredStaffNoteRanges(storedRanges);
-
-  if (staffType === getCurrentStaffType()) {
-    updateRangeUI(staffType, storedRanges[staffType]);
-  }
 }
 
 export function setCurrentStaffNoteRange(

@@ -1,14 +1,14 @@
 <div style="text-align: center;">
-  <img width="1062" height="834" alt="image" src="https://github.com/user-attachments/assets/498a46d7-06d0-42dc-8c2f-45213c31c5f3" />
+  <img width="1200" height="1000" alt="MIDI Sight Reader Interface" src="./docs/screenshots/readme-hero.png" />
 </div>
 
 # MIDI Sight Reader
 
-A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI keyboard.
+A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI or on-screen keyboard.
 
 ## Features at a Glance
 
-- **Interactive MIDI Feedback**: Real-time highlighting of the current beat and visual feedback for correct/incorrect notes.
+- **Interactive Input Feedback**: Real-time highlighting of the current beat and visual feedback for correct/incorrect notes from your MIDI or on-screen keyboard.
 - **Dynamic Music Generation**: Randomly generates music based on your selected settings (staff type, key, range, rhythm).
 - **Customizable Layout**: Adjust measures per line and total lines to fit your screen.
 - **Full Piano Range Support**: Configure note ranges from A0 to C8 (88 keys).

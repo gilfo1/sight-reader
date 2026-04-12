@@ -1,130 +1,124 @@
 # MIDI Sight Reader - User Guide
 
-Welcome to the MIDI Sight Reader! This guide will help you understand the features of the application and how to configure it for the best practice experience.
+Welcome to the **MIDI Sight Reader**! This application is designed to help musicians of all levels improve their sight-reading skills through real-time feedback, dynamic music generation, and intelligent adaptive learning.
+
+![Main Interface](./docs/screenshots/main-interface.png)
 
 ---
 
-<a id="table-of-contents" name="table-of-contents"></a>
-## 📋 Table of Contents
-- [MIDI & Connectivity](#midi-connectivity)
-- [Interactive Sight-Reading](#interactive-sight-reading)
-- [Dynamic Music Generation](#dynamic-music-generation)
-- [Stats & Progress Tracking](#stats-progress-tracking)
-- [Adaptive Learning](#adaptive-learning)
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Core Interactive Features](#core-interactive-features)
+  - [Visual Feedback & Real-time Scoring](#visual-feedback--real-time-scoring)
+  - [On-Screen Piano Keyboard](#on-screen-piano-keyboard)
+    - [Keyboard Sizing & Middle C Indicator](#keyboard-sizing--middle-c-indicator)
+  - [Audio & Reverb](#audio--reverb)
+- [Intelligent Learning](#intelligent-learning)
+  - [Adaptive Learning System](#adaptive-learning-system)
+  - [Stats & Progress Tracking](#stats--progress-tracking)
+- [Customizing Your Practice](#customizing-your-practice)
+  - [Score Layout Settings](#score-layout-settings)
+  - [Music Generation Settings](#music-generation-settings)
+  - [MIDI & Connectivity](#midi--connectivity)
+- [Responsiveness](#responsiveness)
 
 ---
 
-<a id="midi-connectivity" name="midi-connectivity"></a>
-## 🎸 MIDI & Connectivity
+## Quick Start
+1. Connect your MIDI keyboard or use the on-screen keyboard with adaptive and adjustable sizes to practice.
+2. Open the application in a WebMIDI-supported browser (like Chrome or Edge).
+3. Play the notes shown on the staff. The blue highlight will advance as you play correctly.
+4. Adjust settings in the side menu (accessible via the hamburger icon ☰) to match your skill level.
 
-The application uses the **WebMIDI** API to detect any USB MIDI device connected to your computer.
+---
 
-- **Real-time Input**: As you press keys on your MIDI keyboard, the notes are displayed on the screen instantly.
-- **Connection Indicator**: A green dot in the settings panel shows when a device is ready, turning red if no device is detected.
+## Core Interactive Features
 
-<div style="text-align: center;">
-  <img width="350" alt="MIDI Status" src="https://github.com/user-attachments/assets/ff062096-bb71-4244-87b1-f78093f0a8c0" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
-</div>
+### Visual Feedback & Real-time Scoring
+The app provides instant visual feedback to help you correct mistakes as they happen.
+- **Beat Highlighting**: A light blue highlight indicates the current notes you need to play.
+- **Correct/Wrong Notes**: When you play a note, it appears on the staff. Correct notes advance the piece, while wrong notes are shown in semi-transparent red to help you see the interval error.
+- **Hearing Both Notes**: You will hear both the target note and the note you actually played, allowing you to use your ear to correct your hand position.
 
-### MIDI Settings
-- **MIDI Status**: Shows the name of your connected device.
-- **Show MIDI Notes**: Expand this to see a text display of the notes you are currently pressing.
+![Visual Feedback](./docs/screenshots/visual-feedback.png)
+
+### On-Screen Piano Keyboard
+For those without a MIDI controller or who want a visual reference, the on-screen keyboard can be used to practice. It shows:
+- **Real-time Input**: Keys light up as you play (via MIDI, mouse, or touch).
+- **Practice Mode**: Use the on-screen keys to play the notes on the staff, allowing you to practice even without external hardware.
+- **Correct/Incorrect Cues**: Keys flash green for correct notes and red for incorrect ones.
+- **Responsiveness**: The keyboard scales perfectly from mobile phones to large desktop monitors.
+
+![Piano Keyboard](./docs/screenshots/piano-keyboard.png)
+
+### Keyboard Sizing & Middle C Indicator
+The on-screen keyboard is designed to be flexible for different screen sizes and preferences.
+- **Middle C Indicator**: A small green marker (three horizontal dashes) is located above Middle C (C4). This serves as a quick visual reference point for your hands.
+- **Adjustable Sizes**: Click the **Middle C Indicator** to cycle through three different keyboard sizes:
+  - **Large**: Best for touch devices and precise clicking.
+  - **Medium**: A balanced size for laptop screens.
+  - **Small**: Compact view for maximum score visibility.
+- **Persistent Settings**: The app remembers your preferred keyboard size between sessions.
+
+![Keyboard Size Indicator](./docs/screenshots/keyboard-size-indicator.png)
+
+### Audio & Reverb
+Enhance your practice experience with high-quality synthesized sound.
+- **Sound Toggle**: Click the speaker icon in the toolbar to toggle sound.
+- **Reverb Feature**: The default sound mode includes a rich **reverb** that simulates a concert hall, making practice more enjoyable and natural-sounding.
+
+---
+
+## Intelligent Learning
+
+### Adaptive Learning System
+The "Adaptive Learning" toggle enables an intelligent engine that identifies your weak spots.
+- **Trouble Weights**: Every mistake you make increases the "trouble weight" for that specific note, octave, and key signature.
+- **Targeted Practice**: The generator uses these weights to ensure difficult areas appear more frequently until you master them.
+- **Natural Decay**: As you play notes correctly, their trouble weights decrease, eventually returning the music distribution to normal.
+
+![Adaptive Learning Settings](./docs/screenshots/adaptive-learning-ui.png)
+
+### Stats & Progress Tracking
+Track your accuracy and speed over time. Open the stats panel by clicking the bar chart icon 📊.
+- **Accuracy & Streaks**: View your total notes played, percentage correct, and your longest consecutive streak.
+- **Error Analysis**: See specific counts for octave errors and key signature misses.
+- **Session Reset**: Click "Reset" to clear your stats and reset the Adaptive Learning weights for a fresh start.
+
+![Stats Panel](./docs/screenshots/stats-panel.png)
+
+---
+
+## Customizing Your Practice
+
+All practice settings are found in the **Settings Window**.
+
+![Settings Panel](./docs/screenshots/settings-panel.png)
+
+### Score Layout Settings
+- **Measures per Line**: 1 to 8. Fewer measures make the notes larger and easier to read.
+- **Lines**: Display up to 10 lines of music at once.
+- **Staff Type**: Choose between **Grand Staff** (Piano), **Treble Clef**, or **Bass Clef**.
+
+### Music Generation Settings
+- **Notes per Step**: Set to 1 for melody practice, or up to 10 for complex chord practice.
+- **Note Range**: Click and drag on the visual range selector to set the pitch boundaries.
+- **Max Hand Reach**: Limits the distance between the lowest and highest note in a chord to ensure it's physically playable for your hand size.
+- **Note Values**: Toggle Whole, Half, Quarter, Eighth, and Sixteenth notes to practice different rhythms.
+- **Key Signatures**: Select which keys the generator should cycle through.
+
+### MIDI & Connectivity
+- **Device Status**: The bottom of the settings panel shows your current MIDI device name and connection status (Green = Connected, Red = Disconnected).
+- **Show MIDI Notes**: Expand this section to see a raw text readout of the MIDI notes the app is receiving.
+
+---
+
+## Responsiveness
+The MIDI Sight Reader is built with a "mobile-first" responsive design. Whether you are using a smartphone at your piano or a 4K monitor on your desk, the interface adjusts to provide the best reading experience.
+
+![Mobile View](./docs/screenshots/mobile-view.png)
 
 [⬆️ Back to Top](#table-of-contents)
 
 ---
-
-<a id="interactive-sight-reading" name="interactive-sight-reading"></a>
-## 🎼 Interactive Sight-Reading
-
-Instead of reading static sheet music, the app tracks your progress in real-time.
-
-- **Beat Highlighting**: A transparent light blue highlight shows you exactly which beat you should be playing.
-- **Exact Note Matching**: The highlight only advances once you have played all the correct notes for the current beat.
-- **Visual Feedback**: If you hit a wrong key, it appears as a semi-transparent note on the staff, helping you see your error relative to the target note.
-
-<div style="text-align: center;">
-  <img width="700" alt="Interactive Staff" src="https://github.com/user-attachments/assets/28140776-879e-40b3-9e73-a05f583b412d" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
-</div>
-
-### Layout Settings
-- **Measures per Line**: Choose how many measures to display on a single line (1 to 8).
-- **Lines**: Set the total number of lines to display at once (1 to 10).
-- **Staff Type**: 
-    - **Grand Staff**: Standard for piano (Treble and Bass).
-    - **Treble Clef**: Single staff for right-hand practice.
-    - **Bass Clef**: Single staff for left-hand practice.
-
-[⬆️ Back to Top](#table-of-contents)
-
----
-
-<a id="dynamic-music-generation" name="dynamic-music-generation"></a>
-## 🎹 Dynamic Music Generation
-
-You'll never run out of practice material. Every time you finish a piece, a new one is automatically generated.
-
-- **Randomized Melodies & Chords**: Based on your selected range and scale.
-- **Rhythmic Variety**: Mixes different note values (Whole to 16th notes).
-- **Key Signature Support**: Practice in any of the 15 major key signatures.
-- **Chromatic Mode**: Adds non-diatonic sharps and flats for extra challenge.
-
-<div style="text-align: center;">
-  <img width="750" alt="Music Generation" src="https://github.com/user-attachments/assets/1a35978b-8485-46d2-959e-227e998c36c5" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
-</div>
-
-### Generation Controls
-- **Notes per Beat**: Controls how many notes are stacked (1 = melody, 2+ = chords).
-- **Min/Max Note**: Defines the pitch range. Options adjust dynamically based on your Staff Type.
-- **Max Hand Reach**: Sets the maximum interval distance relative to an Octave (e.g., -1 for 11 half steps, +1 for 13 half steps) between the lowest and highest note in a chord or interval, ensuring the music is playable for your hand size. Options range from -7 (5 half steps) to +7 (19 half steps) around the Octave (12 half steps).
-- **Note Values**: Check the durations you want to practice (Whole to 16th).
-- **Key Signatures**: Select one or more major keys. The app will rotate through your selections.
-- **Chromatic Mode**: Toggle this for music rich in accidentals and chromaticism.
-
-[⬆️ Back to Top](#table-of-contents)
-
----
-
-<a id="stats-progress-tracking" name="stats-progress-tracking"></a>
-## 📊 Stats & Progress Tracking
-
-Track your performance with the built-in stats accordion.
-
-- **Real-time Accuracy**: See your total notes played, correct count, and percentage.
-- **Streak Counter**: Keeps track of how many notes you've hit in a row, along with your all-time high score.
-- **Unobtrusive Design**: The stats panel is greyed out and collapsible to keep your focus on the music.
-- **Reset Stats**: Found in the Stats panel, this button clears all session data, including accuracy, streaks, and all Adaptive Learning weights.
-
-<div style="text-align: center;">
-  <img width="300" alt="Stats" src="https://github.com/user-attachments/assets/c18b5a0f-e69e-43dd-965c-0b84bb8dbdfd" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
-</div>
-
-[⬆️ Back to Top](#table-of-contents)
-
----
-
-<a id="adaptive-learning" name="adaptive-learning"></a>
-## 🧠 Adaptive Learning
-
-The "Adaptive Learning" system is an intelligent practice assistant that analyzes your performance to help you improve faster by identifying and focusing on your weak spots.
-
-<div style="text-align: center;">
-  <img width="800" alt="Adaptive Learning" src="https://github.com/user-attachments/assets/8e7eae6f-37bc-4ed5-b1c6-13cf57aec6df" style="max-width: 100%; height: auto; box-shadow: 10px 10px 20px rgba(0,0,0,0.3);" />
-</div>
-
-### How It Works
-The system works by assigning "trouble weights" to every note, octave, and key signature.
-
-1.  **Error Detection**: When you play a wrong note, the system increments the weight for that specific pitch, its octave, and the current key signature.
-2.  **Weighted Randomization**: During music generation, these weights are used to influence the probability. A note with a high trouble weight is significantly more likely to appear than a "mastered" note.
-3.  **The Decay Mechanism**: Every time you play a note **correctly**, its trouble weight is slightly reduced. This means that as you improve, the music naturally balances back out to a standard distribution.
-
-### Configuration & Controls
-- **Adaptive Learning Toggle**: Found in the Generation section of the settings, this enables or disables the intelligent error-correction system.
-- **Resetting Stats**: You can clear all adaptive data by clicking **"Reset Stats"** in the Stats panel. This will reset all trouble weights and start the learning process over.
-
-[⬆️ Back to Top](#table-of-contents)
-
----
-
 [⬅️ Back to Home](./README.md)
