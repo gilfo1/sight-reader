@@ -1,9 +1,14 @@
 <div style="text-align: center;">
   <img width="1200" height="1000" alt="MIDI Sight Reader Interface" src="./docs/screenshots/readme-hero.png" />
 </div>
+<br></br>
 
-# MIDI Sight Reader
+# *_Get Good!_* 
+- A Music Sight Reading Tool
 
+<div style="text-align: center;">
+  <img width="350" alt="get good logo" src="./docs/get-good-logo.png" />
+</div>
 A dynamic, interactive music sight-reading application that helps you practice piano by connecting your MIDI or on-screen keyboard.
 
 ## Features at a Glance
