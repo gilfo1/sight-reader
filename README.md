@@ -5,6 +5,7 @@
 
 # *_Get Good!_* 
 - A Music Sight Reading Tool
+- Esse quam videri
 
 <div style="text-align: center;">
   <img width="350" alt="get good logo" src="./docs/get-good-logo.png" />
