@@ -17,10 +17,10 @@ A dynamic, interactive music sight-reading application that helps you practice p
 <BR></BR>
 
 ## For Musicians: Version 2.0 Now Available - Download Desktop App:
-- **Windows X86**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Sight-Reader-Windows-x86-2.0.0.exe)
-- **Intel Mac**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Sight-Reader-Intel-Mac-2.0.0.dmg)
-- **Apple Silicon (M1/M2/M3) Mac**: [Download v1.0.0](https://github.com/gilfo1/sight-reader/releases/download/mac-arm-v1.0.0/Sight.Reader-1.0.0-arm64.dmg)
-- **Linux AppImage Arm64**:[Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Sight-Reader-2.0.0-arm64-linux.AppImage)
+- **Windows X86**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Get-Good-Sight-Reader-Windows-x86-2.0.0.exe)
+- **Intel Mac**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Get-Good-Sight-Reader-Intel-Mac-2.0.0.dmg)
+- **Apple Silicon (M1/M2/M3) Mac**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Get-Good-Sight-Reader-Apple-Silicon-arm64-2.0.0.dmg)
+- **Linux AppImage Arm64**: [Download v2.0.0](https://github.com/gilfo1/sight-reader/releases/download/v2.0.0/Get-Good-Sight-Reader-Linux-arm64-2.0.0.AppImage)
 
 For more information on how to use the application and its features, see the [User Guide](./USER_GUIDE.md).
 
