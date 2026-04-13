@@ -3,8 +3,7 @@
 Welcome to the **MIDI Sight Reader**! This application is designed to help musicians of all levels improve their sight-reading skills through real-time feedback, dynamic music generation, and intelligent adaptive learning.
 
 ---
-- This app helped me discover I have to look at my hands too much.
-- I have been training with this app to not look at my hands.
+- This app helped me discover I look at my hands too much when reading music.
 - It is often recommended by music teachers to not look at your hands while reading music.
 - This is a great tool to learn your way around the keyboard without looking.
 
