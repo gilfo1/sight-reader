@@ -1,4 +1,8 @@
-# MIDI Sight Reader - User Guide
+<div style="text-align: center;">
+  <img width="350" alt="get good logo" src="./docs/get-good-logo.png" />
+</div>
+
+# A Music Sight Reading Training Tool - User Guide
 
 Welcome to the **MIDI Sight Reader**! This application is designed to help musicians of all levels improve their sight-reading skills through real-time feedback, dynamic music generation, and intelligent adaptive learning.
 
